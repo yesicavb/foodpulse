@@ -9,7 +9,7 @@ import { applyPoints } from "@/lib/loyalty";
 import { buildOrder, type OrderInput } from "@/lib/orders";
 import type { SectionId } from "@/lib/profile";
 import { demoUserData, newUserData } from "@/lib/seed";
-import { cloudError, supabase, USER_DATA_TABLE } from "@/lib/supabase";
+import { cloudError, errorMessage, supabase, USER_DATA_TABLE } from "@/lib/supabase";
 import type { Account, AppState, ListItem, Order, Profile, Store, UserData } from "@/lib/types";
 import type { User } from "@supabase/supabase-js";
 
@@ -155,7 +155,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTabState("basket");
       return null;
     } catch (e) {
-      return cloudError(e instanceof Error ? e.message : String(e));
+      console.error("FoodPulse: Supabase error", e);
+      return cloudError(errorMessage(e));
     }
   }, []);
 
