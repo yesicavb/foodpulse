@@ -9,14 +9,58 @@ import { applyPoints } from "@/lib/loyalty";
 import { buildOrder, type OrderInput } from "@/lib/orders";
 import type { SectionId } from "@/lib/profile";
 import { demoUserData, newUserData } from "@/lib/seed";
+import { cloudError, supabase, USER_DATA_TABLE } from "@/lib/supabase";
 import type { Account, AppState, ListItem, Order, Profile, Store, UserData } from "@/lib/types";
+import type { User } from "@supabase/supabase-js";
 
 /**
- * App state saved on the device (localStorage).
- * Can be replaced with Supabase while keeping the same actions interface.
+ * App state.
+ * - Demo account (and every account when Supabase is not configured): saved on the device (localStorage).
+ * - Supabase accounts: loaded from the `user_data` table at login and saved back after every change,
+ *   so the same account works on any device. They are never written to localStorage.
  */
 const KEY = "foodpulse-app-v2";
 const DEMO_EMAIL = "demo@foodpulse.app";
+const CLOUD_SAVE_DELAY_MS = 600;
+
+/** The part of the state that is kept on the device: everything except Supabase accounts */
+function localPart(s: AppState): AppState {
+  const cloudIds = new Set(s.accounts.filter((a) => a.cloud).map((a) => a.id));
+  if (!cloudIds.size) return s;
+  return {
+    ...s,
+    accounts: s.accounts.filter((a) => !a.cloud),
+    data: Object.fromEntries(Object.entries(s.data).filter(([id]) => !cloudIds.has(id))),
+    session: s.session && cloudIds.has(s.session) ? null : s.session,
+  };
+}
+
+/** Loads the user's row from Supabase, creating it on first login */
+async function loadCloudData(user: User): Promise<UserData> {
+  if (!supabase) throw new Error("Supabase not configured");
+  const { data: row, error } = await supabase.from(USER_DATA_TABLE).select("data").eq("user_id", user.id).maybeSingle();
+  if (error) throw error;
+  if (row?.data) return row.data as UserData;
+  const meta = (user.user_metadata ?? {}) as { first_name?: string; last_name?: string };
+  const fresh = newUserData(meta.first_name ?? "", meta.last_name ?? "");
+  const { error: insertError } = await supabase.from(USER_DATA_TABLE).insert({ user_id: user.id, data: fresh });
+  if (insertError) throw insertError;
+  return fresh;
+}
+
+/** Adds (or refreshes) a Supabase account in the state and logs it in */
+function withCloudUser(s: AppState, user: User, data: UserData): AppState {
+  const acc: Account = { id: user.id, email: user.email ?? "", passHash: "", createdAt: user.created_at, cloud: true };
+  return {
+    ...s,
+    accounts: [...s.accounts.filter((a) => a.id !== user.id), acc],
+    data: { ...s.data, [user.id]: data },
+    session: user.id,
+  };
+}
+
+/** Page to come back to from confirmation and password-reset emails */
+const redirectUrl = () => (typeof window === "undefined" ? undefined : window.location.origin + window.location.pathname);
 
 export type Tab = "basket" | "cart" | "qr" | "profile";
 export type ProfileView = "home" | SectionId | "orders" | "loyalty" | "impact" | "feedbacks";
@@ -36,10 +80,17 @@ function load(): AppState {
   return emptyState();
 }
 
-type Result = { ok: true } | { ok: false; error: string };
+/** `info` = success that still needs a step from the user (e.g. confirming the email) */
+type Result = { ok: true; info?: string } | { ok: false; error: string };
 
 interface Ctx {
   ready: boolean;
+  /** true when accounts are stored in Supabase (works across devices) */
+  cloud: boolean;
+  /** true after opening a password-reset link: the app asks for a new password */
+  recovering: boolean;
+  requestPasswordReset: (email: string) => Promise<Result>;
+  setNewPassword: (password: string) => Promise<Result>;
   account: Account | null;
   data: UserData | null;
   store: Store | null;
@@ -84,12 +135,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [qrOrderId, setQrOrderId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [recovering, setRecovering] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** last data object loaded from or saved to Supabase, to skip saving unchanged data */
+  const lastCloudData = useRef<UserData | null>(null);
 
-  useEffect(() => setState(load()), []);
+  const notify = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  /** Loads a Supabase user's data and logs them in; returns an error message on failure */
+  const attachCloudUser = useCallback(async (user: User): Promise<string | null> => {
+    try {
+      const d = await loadCloudData(user);
+      lastCloudData.current = d;
+      setState((s) => withCloudUser(s ?? emptyState(), user, d));
+      setTabState("basket");
+      return null;
+    } catch (e) {
+      return cloudError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+
+  // Start-up: local data first, then an existing Supabase session (also after an email link)
+  useEffect(() => {
+    const local = load();
+    if (!supabase) {
+      setState(local);
+      return;
+    }
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") setRecovering(true);
+    });
+    let cancelled = false;
+    (async () => {
+      const { data: s } = await supabase.auth.getSession();
+      const user = s.session?.user;
+      if (user) {
+        try {
+          const d = await loadCloudData(user);
+          if (cancelled) return;
+          lastCloudData.current = d;
+          setState(withCloudUser(local, user, d));
+          return;
+        } catch {
+          if (!cancelled) notify("Non riusciamo a caricare il tuo account. Riprova più tardi.");
+        }
+      }
+      if (!cancelled) setState(local);
+    })();
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [notify]);
+
+  // Device storage: everything except Supabase accounts
   useEffect(() => {
     if (!state) return;
     try {
-      window.localStorage.setItem(KEY, JSON.stringify(state));
+      window.localStorage.setItem(KEY, JSON.stringify(localPart(state)));
     } catch {
       /* keep going in memory */
     }
@@ -99,11 +206,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const data = account && state ? state.data[account.id] ?? null : null;
   const store = storeById(data?.storeId);
 
-  const notify = useCallback((msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 2600);
-  }, []);
+  // Supabase storage: save the logged-in user's data shortly after each change
+  const pendingSave = useRef<{ userId: string; snapshot: UserData } | null>(null);
+  const saveNow = useCallback(async () => {
+    const job = pendingSave.current;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    pendingSave.current = null;
+    if (!supabase || !job) return;
+    const { error } = await supabase
+      .from(USER_DATA_TABLE)
+      .upsert({ user_id: job.userId, data: job.snapshot, updated_at: new Date().toISOString() });
+    if (error) notify("Modifica non salvata online. Controlla la connessione.");
+    else lastCloudData.current = job.snapshot;
+  }, [notify]);
+
+  useEffect(() => {
+    if (!supabase || !account?.cloud || !data || data === lastCloudData.current) return;
+    pendingSave.current = { userId: account.id, snapshot: data };
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void saveNow(), CLOUD_SAVE_DELAY_MS);
+  }, [account, data, saveNow]);
+
+  // Save right away when the page is hidden or closed, so no change is lost
+  useEffect(() => {
+    if (!supabase) return;
+    const flush = () => {
+      if (document.visibilityState === "hidden") void saveNow();
+    };
+    document.addEventListener("visibilitychange", flush);
+    return () => document.removeEventListener("visibilitychange", flush);
+  }, [saveNow]);
 
   const setTab = useCallback((t: Tab) => {
     setTabState(t);
@@ -121,6 +253,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const register: Ctx["register"] = useCallback(async ({ firstName, lastName, email, password }) => {
     const e = email.trim().toLowerCase();
+    if (supabase) {
+      const { data: r, error } = await supabase.auth.signUp({
+        email: e,
+        password,
+        options: { data: { first_name: firstName.trim(), last_name: lastName.trim() }, emailRedirectTo: redirectUrl() },
+      });
+      if (error) return { ok: false, error: cloudError(error.message) };
+      if (!r.session || !r.user) {
+        return { ok: true, info: `Ti abbiamo inviato un'email a ${e}. Apri il link per confermare l'account, poi accedi.` };
+      }
+      const err = await attachCloudUser(r.user);
+      return err ? { ok: false, error: err } : { ok: true };
+    }
     if (state?.accounts.some((a) => a.email === e)) return { ok: false, error: "Esiste già un account con questa email. Accedi oppure usa un'altra email." };
     const acc: Account = { id: `u-${Date.now().toString(36)}`, email: e, passHash: await hashPassword(e, password), createdAt: new Date().toISOString() };
     setState((s) => {
@@ -129,17 +274,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     setTabState("basket");
     return { ok: true };
-  }, [state]);
+  }, [state, attachCloudUser]);
 
   const login: Ctx["login"] = useCallback(async (email, password) => {
     const e = email.trim().toLowerCase();
+    if (supabase) {
+      const { data: r, error } = await supabase.auth.signInWithPassword({ email: e, password });
+      if (error || !r.user) return { ok: false, error: cloudError(error?.message ?? "") };
+      const err = await attachCloudUser(r.user);
+      return err ? { ok: false, error: err } : { ok: true };
+    }
     const acc = state?.accounts.find((a) => a.email === e && !a.demo);
     if (!acc) return { ok: false, error: "Non troviamo un account con questa email su questo dispositivo. Registrati o prova la demo." };
     if (acc.passHash !== (await hashPassword(e, password))) return { ok: false, error: "Password non corretta. Riprova o recuperala." };
     setState((s) => (s ? { ...s, session: acc.id } : s));
     setTabState("basket");
     return { ok: true };
-  }, [state]);
+  }, [state, attachCloudUser]);
+
+  const requestPasswordReset: Ctx["requestPasswordReset"] = useCallback(async (email) => {
+    if (!supabase) return { ok: true };
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: redirectUrl() });
+    return error ? { ok: false, error: cloudError(error.message) } : { ok: true };
+  }, []);
+
+  const setNewPassword: Ctx["setNewPassword"] = useCallback(async (password) => {
+    if (!supabase) return { ok: false, error: cloudError("") };
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) return { ok: false, error: cloudError(error.message) };
+    setRecovering(false);
+    return { ok: true };
+  }, []);
 
   const startDemo = useCallback(() => {
     setState((s) => {
@@ -164,11 +329,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    setState((s) => (s ? { ...s, session: null } : s));
+    if (account?.cloud && supabase) {
+      const client = supabase;
+      // save any pending change first, then end the Supabase session
+      void saveNow().finally(() => client.auth.signOut());
+      lastCloudData.current = null;
+    }
+    setState((s) => (s ? { ...localPart(s), session: null } : s));
     setTabState("basket");
     setProfileView("home");
     setQrOrderId(null);
-  }, []);
+  }, [account, saveNow]);
 
   const updateProfile = useCallback((patch: Partial<Profile>) => update((d) => ({ ...d, profile: { ...d.profile, ...patch } })), [update]);
   const setOnboarded = useCallback(() => update((d) => ({ ...d, onboarded: true })), [update]);
@@ -300,6 +471,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value = useMemo<Ctx>(
     () => ({
       ready: state !== null,
+      cloud: supabase !== null,
+      recovering,
+      requestPasswordReset,
+      setNewPassword,
       account,
       data,
       store,
@@ -334,7 +509,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitFeedback,
       dismissFeedback,
     }),
-    [state, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

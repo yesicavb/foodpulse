@@ -285,6 +285,8 @@ export interface Account {
   passHash: string;
   createdAt: string;
   demo?: boolean;
+  /** account stored in Supabase: its data is loaded from and saved to the database */
+  cloud?: boolean;
 }
 
 export interface AppState {
