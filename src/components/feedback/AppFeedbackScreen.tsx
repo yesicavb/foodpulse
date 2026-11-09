@@ -1,174 +1,163 @@
 "use client";
 
-import { Bug, CheckCircle2, Lightbulb, Loader2, MessageSquare, Send, Star } from "lucide-react";
+import { CheckCircle2, Gift, Loader2, Send } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { SectionTitle, Stars, Toggle } from "@/components/ui/Controls";
+import { SectionTitle, Stars } from "@/components/ui/Controls";
+import { POINTS } from "@/data/config";
+import { APP_FEEDBACK_QUESTIONS as Q } from "@/data/options";
 import { formatDate } from "@/lib/format";
-import type { AppFeedbackKind } from "@/lib/types";
+import type { AppFeedbackAnswers } from "@/lib/types";
 import { useApp } from "@/store/AppStore";
 
-const KINDS: { id: AppFeedbackKind; label: string; icon: typeof Lightbulb }[] = [
-  { id: "idea", label: "Idea", icon: Lightbulb },
-  { id: "problema", label: "Problema", icon: Bug },
-  { id: "altro", label: "Altro", icon: MessageSquare },
-];
-const KIND_LABEL: Record<AppFeedbackKind, string> = { idea: "Idea", problema: "Problema", altro: "Altro" };
 const MAX_LENGTH = 2000;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMPTY: AppFeedbackAnswers = { visual_rating: 0, preorder: "", profile_banners: "", discounts: "", improvements: "" };
 
 /**
- * Feedback tab: general feedback about the app (ideas, problems, comments),
- * separate from the post-shopping survey of each order.
+ * Feedback tab: five questions about the app itself (questions in data/options.ts),
+ * separate from the post-pickup survey of each order.
  */
 export function AppFeedbackScreen() {
-  const { data, account, sendAppFeedback, notify } = useApp();
-  const [kind, setKind] = useState<AppFeedbackKind>("idea");
-  const [rating, setRating] = useState(0);
-  const [message, setMessage] = useState("");
-  const [canContact, setCanContact] = useState(false);
-  const [email, setEmail] = useState("");
+  const { data, sendAppFeedback } = useApp();
+  const [answers, setAnswers] = useState<AppFeedbackAnswers>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
+  const [earned, setEarned] = useState<number | null>(null);
 
   if (!data) return null;
   const history = data.appFeedbacks ?? [];
-  const askEmail = canContact && !account?.cloud;
+  const pointsAvailable = !history.some((f) => f.points > 0);
+  const set = <K extends keyof AppFeedbackAnswers>(k: K, v: AppFeedbackAnswers[K]) => {
+    setAnswers((a) => ({ ...a, [k]: v }));
+    setError(null);
+  };
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!message.trim()) return setError("Scrivi il tuo messaggio prima di inviare.");
-    if (askEmail && !EMAIL_RE.test(email.trim())) return setError("Inserisci un indirizzo email valido per essere ricontattato.");
+    if (!answers.visual_rating || !answers.preorder || !answers.profile_banners || !answers.discounts) {
+      return setError("Rispondi alle domande da 1 a 4 prima di inviare. La 5 è facoltativa.");
+    }
     setBusy(true);
     setError(null);
-    const r = await sendAppFeedback({ kind, rating, message, canContact, email });
+    const r = await sendAppFeedback(answers);
     setBusy(false);
     if (!r.ok) return setError(r.error);
-    setSent(true);
-    setMessage("");
-    setRating(0);
-    setCanContact(false);
-    setEmail("");
-    notify("Feedback inviato. Grazie!");
+    setEarned(r.points ?? 0);
+    setAnswers(EMPTY);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (earned !== null) {
+    return (
+      <div className="card flex flex-col items-center px-6 py-10 text-center">
+        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+          <CheckCircle2 size={28} />
+        </span>
+        <h2 className="mt-4 text-lg font-bold text-ink-900">Grazie per il tuo feedback!</h2>
+        <p className="mt-1 max-w-[32ch] text-sm text-ink-500">Lo useremo per migliorare FOODPULSE.</p>
+        {earned > 0 && (
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-bold text-brand-700">
+            <Gift size={16} /> +{earned} punti aggiunti
+          </p>
+        )}
+        <button type="button" className="btn-secondary mt-6" onClick={() => setEarned(null)}>
+          Invia un altro feedback
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5">
-      <SectionTitle
-        eyebrow="Feedback"
-        title="Aiutaci a migliorare FOODPULSE"
-        subtitle="Un'idea, un problema o un commento sull'app? Leggiamo ogni messaggio."
-      />
+    <div className="space-y-4">
+      <SectionTitle eyebrow="Feedback" title="Com'è la tua esperienza con FOODPULSE?" subtitle="Bastano un paio di minuti. Le tue risposte ci aiutano a migliorare l'app." />
 
-      {sent ? (
-        <div className="card flex flex-col items-center px-6 py-8 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
-            <CheckCircle2 size={28} />
-          </span>
-          <h2 className="mt-4 text-base font-bold text-ink-900">Grazie per il tuo feedback!</h2>
-          <p className="mt-1 max-w-[32ch] text-sm text-ink-500">Lo abbiamo ricevuto e lo useremo per migliorare l&apos;app.</p>
-          <button type="button" className="btn-secondary mt-5" onClick={() => setSent(false)}>
-            Scrivi un altro feedback
-          </button>
-        </div>
+      {pointsAvailable ? (
+        <p className="flex items-center gap-2 rounded-xl bg-brand-50 px-3.5 py-2.5 text-[13.5px] font-semibold text-brand-800">
+          <Gift size={17} className="shrink-0" /> Ricevi +{POINTS.appFeedback} punti per il tuo primo feedback
+        </p>
       ) : (
-        <form onSubmit={submit} className="card space-y-5 p-4" noValidate>
-          <div>
-            <p className="field-label">Di cosa si tratta?</p>
-            <div role="radiogroup" aria-label="Tipo di feedback" className="flex flex-wrap gap-2">
-              {KINDS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="radio"
-                  aria-checked={kind === id}
-                  onClick={() => setKind(id)}
-                  className={`chip ${kind === id ? "chip-on" : ""}`}
-                >
-                  <Icon size={15} /> {label}
-                </button>
-              ))}
-            </div>
-          </div>
+        history[0] && <p className="px-1 text-[13px] text-ink-500">Ultimo feedback inviato il {formatDate(history[0].date)}. Puoi inviarne un altro quando vuoi.</p>
+      )}
 
-          <div>
-            <p className="field-label">Come valuti l&apos;app finora? <span className="font-normal text-ink-500">(facoltativo)</span></p>
-            <Stars value={rating} onChange={setRating} label="Valutazione dell'app" />
-          </div>
+      <form onSubmit={submit} className="space-y-4" noValidate>
+        <Question n={1} label={Q.visual_rating.label}>
+          <Stars value={answers.visual_rating} onChange={(v) => set("visual_rating", v)} label={Q.visual_rating.label} />
+        </Question>
 
-          <div>
-            <label htmlFor="app-fb-message" className="field-label">Il tuo messaggio</label>
-            <textarea
-              id="app-fb-message"
-              className="input min-h-[120px] resize-y"
-              value={message}
-              maxLength={MAX_LENGTH}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={
-                kind === "problema"
-                  ? "Cosa è successo? In quale schermata?"
-                  : kind === "idea"
-                    ? "Cosa ti piacerebbe trovare nell'app?"
-                    : "Scrivi qui il tuo commento"
-              }
-            />
-            <p className="mt-1 text-right text-[12px] tabular-nums text-ink-500">
-              {message.length}/{MAX_LENGTH}
-            </p>
-          </div>
+        <Question n={2} label={Q.preorder.label}>
+          <Options name="preorder" options={Q.preorder.options} value={answers.preorder} onChange={(v) => set("preorder", v)} />
+        </Question>
 
-          <div className="border-t border-ink-100">
-            <Toggle
-              checked={canContact}
-              onChange={setCanContact}
-              label="Potete ricontattarmi"
-              description={account?.cloud ? `Ti scriveremo a ${account.email} solo per questo feedback.` : "Ti scriveremo solo per questo feedback."}
-            />
-            {askEmail && (
-              <div>
-                <label htmlFor="app-fb-email" className="field-label">La tua email</label>
-                <input
-                  id="app-fb-email"
-                  type="email"
-                  autoComplete="email"
-                  className="input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="nome@esempio.it"
-                />
-              </div>
-            )}
-          </div>
+        <Question n={3} label={Q.profile_banners.label}>
+          <Options name="profile_banners" options={Q.profile_banners.options} value={answers.profile_banners} onChange={(v) => set("profile_banners", v)} />
+        </Question>
 
-          {error && <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2.5 text-[13.5px] text-rose-700">{error}</p>}
+        <Question n={4} label={Q.discounts.label}>
+          <Options name="discounts" options={Q.discounts.options} value={answers.discounts} onChange={(v) => set("discounts", v)} />
+        </Question>
 
-          <button type="submit" className="btn-primary h-12 w-full" disabled={busy}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Invia feedback
+        <Question n={5} label={Q.improvements.label} optional>
+          <textarea
+            id="app-fb-improvements"
+            aria-label={Q.improvements.label}
+            className="input min-h-[110px] resize-y"
+            value={answers.improvements}
+            maxLength={MAX_LENGTH}
+            onChange={(e) => set("improvements", e.target.value)}
+            placeholder="Scrivi qui le tue idee"
+          />
+          <p className="mt-1 text-right text-[12px] tabular-nums text-ink-500">
+            {answers.improvements.length}/{MAX_LENGTH}
+          </p>
+        </Question>
+
+        {error && <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2.5 text-[13.5px] text-rose-700">{error}</p>}
+
+        <button type="submit" className="btn-primary h-12 w-full" disabled={busy}>
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />} Invia feedback
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function Question({ n, label, optional, children }: { n: number; label: string; optional?: boolean; children: React.ReactNode }) {
+  return (
+    <fieldset className="card p-4">
+      <legend className="sr-only">{label}</legend>
+      <p aria-hidden="true" className="mb-3 flex gap-2.5 text-[14.5px] font-semibold leading-snug text-ink-900">
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-600 text-[12px] font-bold text-white">{n}</span>
+        <span>
+          {label}
+          {optional && <span className="ml-1 font-normal text-ink-500">(facoltativa)</span>}
+        </span>
+      </p>
+      {children}
+    </fieldset>
+  );
+}
+
+function Options({ name, options, value, onChange }: { name: string; options: readonly string[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div role="radiogroup" className="grid gap-2">
+      {options.map((o) => {
+        const on = value === o;
+        return (
+          <button
+            key={o}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            data-group={name}
+            onClick={() => onChange(o)}
+            className={`flex min-h-[44px] items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left text-[14px] font-semibold transition ${on ? "border-brand-600 bg-brand-50 text-brand-800" : "border-ink-200 bg-white text-ink-700 hover:border-ink-300"}`}
+          >
+            <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${on ? "border-brand-600" : "border-ink-300"}`}>
+              {on && <span className="h-2.5 w-2.5 rounded-full bg-brand-600" />}
+            </span>
+            {o}
           </button>
-        </form>
-      )}
-
-      {history.length > 0 && (
-        <section aria-labelledby="app-fb-history">
-          <h2 id="app-fb-history" className="eyebrow mb-2 px-1">I tuoi feedback inviati</h2>
-          <ul className="card divide-y divide-ink-100">
-            {history.map((f) => (
-              <li key={f.id} className="px-4 py-3">
-                <div className="flex items-center gap-2 text-[12px] text-ink-500">
-                  <span className="badge bg-brand-50 text-brand-700">{KIND_LABEL[f.kind]}</span>
-                  {f.rating > 0 && (
-                    <span className="inline-flex items-center gap-0.5" aria-label={`${f.rating} stelle su 5`}>
-                      <Star size={12} className="fill-amber-400 text-amber-400" /> {f.rating}/5
-                    </span>
-                  )}
-                  <span className="ml-auto">{formatDate(f.date)}</span>
-                </div>
-                <p className="mt-1.5 line-clamp-2 text-[14px] leading-snug text-ink-800">{f.message}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+        );
+      })}
     </div>
   );
 }

@@ -148,3 +148,64 @@ from user_data d,
      jsonb_array_elements_text(d.data->'profile'->'interests') i
 group by interest
 order by users desc;
+
+
+-- ===========================================================================
+-- Feedback tab (table app_feedback, created with supabase/app-feedback.sql)
+-- "demo = true" rows come from people trying the demo without an account.
+-- ===========================================================================
+
+
+-- 12. Feedback at a glance  (one row; use "Results")
+select count(*)                                          as responses,
+       count(*) filter (where not demo)                  as from_accounts,
+       count(*) filter (where demo)                      as from_demo,
+       round(avg(visual_rating), 2)                      as avg_visual_rating,
+       count(*) filter (where improvements is not null)  as wrote_suggestions,
+       max(created_at)                                   as latest
+from app_feedback;
+
+
+-- 13. Question 1: visual look and navigation, 1-5 stars  (chart: bar, x = stars, y = responses)
+select visual_rating                                       as stars,
+       count(*)                                            as responses,
+       round(100.0 * count(*) / sum(count(*)) over (), 1)  as share_pct
+from app_feedback
+group by stars
+order by stars;
+
+
+-- 14. Questions 2-4: how the answers are split  (results table; one row per answer)
+select question,
+       answer,
+       count(*)                                                                as responses,
+       round(100.0 * count(*) / sum(count(*)) over (partition by question), 1) as share_pct
+from (
+  select '2. Pre-order & AI cart' as question, preorder        as answer from app_feedback
+  union all
+  select '3. Profile & banners',              profile_banners             from app_feedback
+  union all
+  select '4. Discount mechanism',             discounts                   from app_feedback
+) a
+group by question, answer
+order by question, responses desc;
+
+
+-- 15. Question 5: all written suggestions, newest first  (results table; export as CSV to read them all)
+select f.created_at::date                          as date,
+       coalesce(u.email, case when f.demo then 'demo' else 'anonymous' end) as who,
+       f.visual_rating                             as stars,
+       f.improvements                              as suggestion
+from app_feedback f
+left join auth.users u on u.id = f.user_id
+where f.improvements is not null
+order by f.created_at desc;
+
+
+-- 16. Feedback responses per day  (chart: bar, x = day, y = responses)
+select created_at::date            as day,
+       count(*)                    as responses,
+       round(avg(visual_rating), 2) as avg_visual_rating
+from app_feedback
+group by day
+order by day;

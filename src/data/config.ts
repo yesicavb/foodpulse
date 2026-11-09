@@ -20,6 +20,8 @@ export const POINTS = {
   bonusAdvance3: 10,
   bonusAdvance5: 20,
   feedback: 30,
+  /** first feedback about the app (Feedback tab), once per account */
+  appFeedback: 30,
   welcome: 50,
 };
 

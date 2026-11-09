@@ -262,16 +262,22 @@ export interface Feedback {
   points: number;
 }
 
-export type AppFeedbackKind = "idea" | "problema" | "altro";
+/** Answers to the Feedback tab questions (see APP_FEEDBACK_QUESTIONS in data/options.ts) */
+export interface AppFeedbackAnswers {
+  visual_rating: number;
+  preorder: string;
+  profile_banners: string;
+  discounts: string;
+  improvements: string;
+}
 
-/** General feedback about the app, sent from the Feedback tab */
+/** Feedback about the app sent from the Feedback tab */
 export interface AppFeedback {
   id: string;
   date: string;
-  kind: AppFeedbackKind;
-  rating: number;
-  message: string;
-  canContact: boolean;
+  answers: AppFeedbackAnswers;
+  /** points earned with this feedback (only the first one earns points) */
+  points: number;
 }
 
 export interface UserData {
