@@ -95,13 +95,14 @@ export function SmartList() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-ink-100 pt-2.5">
-                  <div className="leading-tight">
+                {/* wraps onto two lines on narrow phones (360 px) instead of overflowing the screen */}
+                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-ink-100 pt-2.5">
+                  <div className="min-w-0 leading-tight">
                     <span className="text-[16px] font-extrabold tabular-nums text-ink-900">{money(pi.final * qty)}</span>
                     <span className="ml-1.5 text-[12px] tabular-nums text-ink-400 line-through">{money(pi.price * qty)}</span>
                     <span className="block text-[11px] text-ink-500">Quantità suggerita: {s.qty}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="ml-auto flex items-center gap-2">
                     {!added && <QtyStepper value={qty} min={1} onChange={(n) => setSuggestionQty(s.id, n)} label={prod.name} />}
                     {added ? (
                       <button type="button" onClick={() => setTab("cart")} className="btn-sm btn bg-brand-50 text-brand-800">
