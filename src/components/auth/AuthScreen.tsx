@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, Leaf, Loader2, ShoppingBasket, Sparkles } from 
 import { useState, type FormEvent } from "react";
 import { LogoMark, Wordmark } from "@/components/ui/Logo";
 import { useApp } from "@/store/AppStore";
+import { LanguageSwitch } from "@/i18n/LanguageProvider";
 
 type View = "welcome" | "login" | "register" | "forgot";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,7 +24,10 @@ export function AuthScreen() {
 function Welcome({ go }: { go: (v: View) => void }) {
   const { startDemo } = useApp();
   return (
-    <div className="gutter flex min-h-screen flex-col pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(40px,env(safe-area-inset-top))]">
+    <div className="gutter flex min-h-screen flex-col pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
+      <div className="flex justify-end">
+        <LanguageSwitch />
+      </div>
       <div className="flex flex-1 flex-col items-center justify-center text-center animate-rise">
         <div className="grid h-28 w-28 place-items-center rounded-[32px] bg-brand-50">
           <LogoMark size={76} />
@@ -67,9 +71,12 @@ function Welcome({ go }: { go: (v: View) => void }) {
 function AuthLayout({ title, subtitle, back, children }: { title: string; subtitle: string; back: () => void; children: React.ReactNode }) {
   return (
     <div className="gutter mx-auto flex min-h-screen max-w-md flex-col pb-10 pt-[max(20px,env(safe-area-inset-top))]">
-      <button type="button" onClick={back} aria-label="Indietro" className="grid h-10 w-10 place-items-center rounded-full bg-ink-100 text-ink-700">
-        <ArrowLeft size={18} />
-      </button>
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={back} aria-label="Indietro" className="grid h-10 w-10 place-items-center rounded-full bg-ink-100 text-ink-700">
+          <ArrowLeft size={18} />
+        </button>
+        <LanguageSwitch />
+      </div>
       <div className="mt-6 flex items-center gap-2">
         <LogoMark size={30} />
         <Wordmark size={16} />

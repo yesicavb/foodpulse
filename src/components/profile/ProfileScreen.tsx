@@ -87,6 +87,17 @@ function ProfileHome() {
             <Award size={12} /> {lvl.current.name}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => setProfileView("loyalty")}
+          className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-50 px-3.5 py-2.5 text-left transition hover:bg-brand-100"
+        >
+          <span className="flex items-center gap-2 text-[14px] font-bold text-brand-800">
+            <span className="h-2 w-2 rounded-full bg-brand-500" aria-hidden="true" />
+            {formatInt(data.points.balance)} punti
+          </span>
+          <span className="text-[12.5px] font-semibold text-brand-700">Punti e voucher</span>
+        </button>
         <div className="mt-4">
           <div className="flex items-center justify-between text-[13px]">
             <span className="font-semibold text-ink-700">Profilo completo al {comp.pct}%</span>

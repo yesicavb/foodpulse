@@ -1,5 +1,6 @@
 "use client";
 
+import { locale } from "@/i18n/lang";
 import { Check, ChevronRight, Lock, MapPin, Search, Store as StoreIcon, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Sheet } from "@/components/ui/Controls";
@@ -57,7 +58,7 @@ export function StorePicker() {
             <span className="min-w-0 flex-1">
               <span className="block text-[16px] font-bold leading-snug">{store.name}</span>
               <span className="mt-0.5 flex items-start gap-1 text-[12.5px] leading-snug text-white/75">
-                <MapPin size={12} className="mt-0.5 shrink-0" /> {store.address}, {store.city} · {store.distanceKm.toLocaleString("it-IT")} km
+                <MapPin size={12} className="mt-0.5 shrink-0" /> {store.address}, {store.city} · {store.distanceKm.toLocaleString(locale())} km
               </span>
             </span>
             <span className="shrink-0 rounded-full bg-leaf px-3 py-1.5 text-[12px] font-bold text-brand-900">Cambia</span>
@@ -102,7 +103,7 @@ export function StorePicker() {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-start justify-between gap-2">
                     <span className="text-[15px] font-bold text-ink-900">{s.name}</span>
-                    <span className="shrink-0 text-[12px] font-bold tabular-nums text-ink-500">{s.distanceKm.toLocaleString("it-IT")} km</span>
+                    <span className="shrink-0 text-[12px] font-bold tabular-nums text-ink-500">{s.distanceKm.toLocaleString(locale())} km</span>
                   </span>
                   <span className="mt-0.5 block text-[13px] text-ink-500">
                     {s.address}, {s.city} · {s.hours}
