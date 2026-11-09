@@ -262,6 +262,24 @@ export interface Feedback {
   points: number;
 }
 
+/** Answers to the Feedback tab questions (see APP_FEEDBACK_QUESTIONS in data/options.ts) */
+export interface AppFeedbackAnswers {
+  visual_rating: number;
+  preorder: string;
+  profile_banners: string;
+  discounts: string;
+  improvements: string;
+}
+
+/** Feedback about the app sent from the Feedback tab */
+export interface AppFeedback {
+  id: string;
+  date: string;
+  answers: AppFeedbackAnswers;
+  /** points earned with this feedback (only the first one earns points) */
+  points: number;
+}
+
 export interface UserData {
   profile: Profile;
   storeId: string | null;
@@ -277,6 +295,8 @@ export interface UserData {
   feedbacks: Feedback[];
   pendingFeedback: string | null;
   onboarded: boolean;
+  /** feedback about the app sent from the Feedback tab (optional: older saved data has none) */
+  appFeedbacks?: AppFeedback[];
 }
 
 export interface Account {

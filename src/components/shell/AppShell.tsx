@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, QrCode, ShoppingCart, Sparkles, User } from "lucide-react";
+import { CheckCircle2, MessageSquareHeart, QrCode, ShoppingCart, Sparkles, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/ui/Logo";
 import { formatInt } from "@/lib/format";
@@ -12,6 +12,7 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
   { id: "cart", label: "Il mio carrello", icon: ShoppingCart },
   { id: "qr", label: "Il mio QR Code", icon: QrCode },
   { id: "profile", label: "Il mio profilo", icon: User },
+  { id: "feedback", label: "Feedback", icon: MessageSquareHeart },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -51,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <nav aria-label="Navigazione principale" className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 border-t border-ink-100 bg-white/95 pb-[max(8px,env(safe-area-inset-bottom))] backdrop-blur">
-        <ul className="grid grid-cols-4 px-1 pt-1.5">
+        <ul className="grid grid-cols-5 px-0.5 pt-1.5">
           {TABS.map(({ id, label, icon: Icon }) => {
             const active = tab === id;
             const badge = id === "cart" ? cartCount : id === "qr" ? activeOrders : 0;
@@ -63,7 +64,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={`relative flex w-full flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10.5px] font-bold leading-tight transition ${active ? "text-brand-700" : "text-ink-500 hover:text-ink-700"}`}
                 >
-                  <span className={`grid h-8 w-14 place-items-center rounded-full transition ${active ? "bg-brand-100" : ""}`}>
+                  <span className={`grid h-8 w-12 place-items-center rounded-full transition ${active ? "bg-brand-100" : ""}`}>
                     <Icon size={21} strokeWidth={active ? 2.5 : 2} />
                   </span>
                   <span className="text-center">{label}</span>

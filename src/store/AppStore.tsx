@@ -10,7 +10,7 @@ import { buildOrder, type OrderInput } from "@/lib/orders";
 import type { SectionId } from "@/lib/profile";
 import { demoUserData, newUserData } from "@/lib/seed";
 import { cloudError, errorMessage, supabase, USER_DATA_TABLE } from "@/lib/supabase";
-import type { Account, AppState, ListItem, Order, Profile, Store, UserData } from "@/lib/types";
+import type { Account, AppFeedback, AppFeedbackAnswers, AppState, ListItem, Order, Profile, Store, UserData } from "@/lib/types";
 import type { User } from "@supabase/supabase-js";
 
 /**
@@ -62,7 +62,7 @@ function withCloudUser(s: AppState, user: User, data: UserData): AppState {
 /** Page to come back to from confirmation and password-reset emails */
 const redirectUrl = () => (typeof window === "undefined" ? undefined : window.location.origin + window.location.pathname);
 
-export type Tab = "basket" | "cart" | "qr" | "profile";
+export type Tab = "basket" | "cart" | "qr" | "profile" | "feedback";
 export type ProfileView = "home" | SectionId | "orders" | "loyalty" | "impact" | "feedbacks";
 
 const emptyState = (): AppState => ({ v: 2, accounts: [], data: {}, session: null });
@@ -124,6 +124,11 @@ interface Ctx {
   cancelOrder: (id: string) => void;
   submitFeedback: (orderId: string, ratings: Record<string, number>, comment: string) => void;
   dismissFeedback: () => void;
+  /**
+   * Feedback about the app (Feedback tab): saved in the account and, with Supabase, in the app_feedback table.
+   * The first feedback of an account earns POINTS.appFeedback; returns the points earned.
+   */
+  sendAppFeedback: (answers: AppFeedbackAnswers) => Promise<Result & { points?: number }>;
 }
 
 const AppContext = createContext<Ctx | null>(null);
@@ -469,6 +474,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const dismissFeedback = useCallback(() => update((d) => ({ ...d, pendingFeedback: null })), [update]);
 
+  const sendAppFeedback: Ctx["sendAppFeedback"] = useCallback(
+    async (raw) => {
+      const answers: AppFeedbackAnswers = { ...raw, improvements: raw.improvements.trim() };
+      if (supabase) {
+        const { error } = await supabase.from("app_feedback").insert({
+          user_id: account?.cloud ? account.id : null,
+          demo: !!account?.demo,
+          ...answers,
+          improvements: answers.improvements || null,
+        });
+        if (error) {
+          console.error("FoodPulse: feedback not sent", error);
+          return { ok: false, error: cloudError(errorMessage(error)) };
+        }
+      }
+      // points only for the first feedback of the account, so they can't be collected repeatedly
+      const points = (data?.appFeedbacks ?? []).some((f) => f.points > 0) ? 0 : POINTS.appFeedback;
+      const entry: AppFeedback = { id: `fb-${Date.now().toString(36)}`, date: new Date().toISOString(), answers, points };
+      update((d) => {
+        const next: UserData = { ...d, appFeedbacks: [entry, ...(d.appFeedbacks ?? [])] };
+        return points ? applyPoints(next, points, "Feedback sull'app") : next;
+      });
+      return { ok: true, points };
+    },
+    [account, data, update]
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       ready: state !== null,
@@ -509,8 +541,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancelOrder,
       submitFeedback,
       dismissFeedback,
+      sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

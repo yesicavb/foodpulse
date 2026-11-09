@@ -71,3 +71,29 @@ export const FEEDBACK_QUESTIONS = [
   { id: "timing", label: "Il ritiro o la consegna sono avvenuti nei tempi previsti?" },
   { id: "recommend", label: "Consiglieresti FOODPULSE?" },
 ];
+
+/**
+ * Feedback tab: questions about the app itself (separate from the post-pickup survey).
+ * Text and options can be edited here. The `id` of each question is also the column
+ * name in the Supabase table `app_feedback` (see supabase/app-feedback.sql), so keep ids as they are.
+ */
+export const APP_FEEDBACK_QUESTIONS = {
+  visual_rating: {
+    label: "Come valuti l'aspetto visivo e la fluidità di navigazione dell'app?",
+  },
+  preorder: {
+    label: "Quanto è stato intuitivo capire come funziona il pre-ordine e navigare nel carrello generato dall'IA?",
+    options: ["Molto intuitivo", "Abbastanza", "Poco chiaro", "Molto difficile"],
+  },
+  profile_banners: {
+    label: "La sezione del profilo personale e i banner con i prodotti consigliati ti sono sembrati chiari e ben inseriti nel flusso della spesa?",
+    options: ["Sì, si integrano bene", "Sono ok ma migliorabili", "Li ho trovati confusi o invasivi"],
+  },
+  discounts: {
+    label: "Esplorando l'app, il meccanismo per ottenere gli sconti (prenotando in anticipo per evitare gli sprechi) ti è sembrato facile da capire?",
+    options: ["Sì, chiarissimo", "Abbastanza chiaro", "No, andrebbe spiegato meglio"],
+  },
+  improvements: {
+    label: "Cosa miglioreresti, cambieresti o aggiungeresti a questa interfaccia per renderla perfetta?",
+  },
+} as const;
