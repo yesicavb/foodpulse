@@ -1,5 +1,6 @@
 "use client";
 
+import { AppFeedbackScreen } from "@/components/feedback/AppFeedbackScreen";
 import { AuthScreen, NewPasswordScreen } from "@/components/auth/AuthScreen";
 import { SmartBasketScreen } from "@/components/basket/SmartBasketScreen";
 import { CartScreen } from "@/components/cart/CartScreen";
@@ -27,6 +28,7 @@ function Gate() {
       {tab === "cart" && <CartScreen />}
       {tab === "qr" && <QrScreen />}
       {tab === "profile" && <ProfileScreen />}
+      {tab === "feedback" && <AppFeedbackScreen />}
       {data.pendingFeedback && <FeedbackSheet orderId={data.pendingFeedback} />}
     </AppShell>
   );

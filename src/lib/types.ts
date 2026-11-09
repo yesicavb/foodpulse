@@ -262,6 +262,18 @@ export interface Feedback {
   points: number;
 }
 
+export type AppFeedbackKind = "idea" | "problema" | "altro";
+
+/** General feedback about the app, sent from the Feedback tab */
+export interface AppFeedback {
+  id: string;
+  date: string;
+  kind: AppFeedbackKind;
+  rating: number;
+  message: string;
+  canContact: boolean;
+}
+
 export interface UserData {
   profile: Profile;
   storeId: string | null;
@@ -277,6 +289,8 @@ export interface UserData {
   feedbacks: Feedback[];
   pendingFeedback: string | null;
   onboarded: boolean;
+  /** feedback about the app sent from the Feedback tab (optional: older saved data has none) */
+  appFeedbacks?: AppFeedback[];
 }
 
 export interface Account {

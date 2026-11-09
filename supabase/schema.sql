@@ -31,3 +31,31 @@ create policy "Users can update their own data"
   to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+
+-- ---------------------------------------------------------------------------
+-- App feedback (Feedback tab). Added later: safe to run again on an existing
+-- project, it only creates what is missing.
+--
+-- Anyone using the app can SEND feedback, also from the demo without an
+-- account. Nobody can read it through the app: only admins see it, in the
+-- dashboard (Table Editor -> app_feedback).
+
+create table if not exists public.app_feedback (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  user_id uuid references auth.users (id) on delete set null,
+  email text,
+  kind text not null check (kind in ('idea', 'problema', 'altro')),
+  rating int check (rating between 1 and 5),
+  message text not null check (char_length(message) between 1 and 2000),
+  can_contact boolean not null default false
+);
+
+alter table public.app_feedback enable row level security;
+
+drop policy if exists "Anyone can send feedback" on public.app_feedback;
+create policy "Anyone can send feedback"
+  on public.app_feedback for insert
+  to anon, authenticated
+  with check (user_id is null or user_id = (select auth.uid()));
