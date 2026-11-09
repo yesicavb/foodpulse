@@ -32,14 +32,25 @@ await build({
 const css = readFileSync("standalone/app.css", "utf8");
 const js = readFileSync("standalone/app.js", "utf8").replace(/<\/script/gi, "<\\/script");
 
-const html = `<title>FOODPULSE</title>
+// A complete page (doctype, charset, viewport) so phones show it at mobile size,
+// whether it is opened directly, on GitHub Pages or inside a Claude artifact.
+const html = `<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FOODPULSE</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#1F7A43">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=Figtree:wght@400;500;600;700;800&display=swap">
 <style>${css}</style>
+</head>
+<body>
 <div id="root"></div>
 <script>${js}</script>
+</body>
+</html>
 `;
 writeFileSync("standalone/foodpulse.html", html);
 console.log(`standalone/foodpulse.html (${Math.round(html.length / 1024)} KB)`);
