@@ -1,6 +1,6 @@
 node_modules
 .next
 out
-standalone
+/standalone/
 *.tsbuildinfo
 .DS_Store
