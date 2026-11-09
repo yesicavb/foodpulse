@@ -1,5 +1,6 @@
 "use client";
 
+import { locale } from "@/i18n/lang";
 import { Award, ChevronDown, Cloud, Gift, Info, Leaf, MessageSquareText, PiggyBank, Package, Star, Ticket } from "lucide-react";
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -189,7 +190,7 @@ export function ImpactView() {
             <BarChart data={s.weeks} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="#EDEEE8" />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString("it-IT", { maximumFractionDigits: 1 })} />
+              <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString(locale(), { maximumFractionDigits: 1 })} />
               <Tooltip formatter={(v: number) => [money(v), "Risparmio"]} labelFormatter={(l) => (l === "Questa" ? "Questa settimana" : `${String(l).replace("-", "")} settimane fa`)} cursor={{ fill: "#EEF7F0" }} />
               <Bar dataKey="saved" fill="#1F7A43" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
@@ -205,7 +206,7 @@ export function ImpactView() {
             <BarChart data={s.weeks} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke="#EDEEE8" />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString("it-IT", { maximumFractionDigits: 1 })} />
+              <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString(locale(), { maximumFractionDigits: 1 })} />
               <Tooltip formatter={(v: number) => [formatKg(v), "Cibo non sprecato"]} cursor={{ fill: "#EEF7F0" }} />
               <Bar dataKey="kg" fill="#4FA96B" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
@@ -218,7 +219,7 @@ export function ImpactView() {
         <p className="mt-1">
           Non tutto ciò che prenoti sarebbe stato sprecato. Per ogni kg prenotato e non annullato contiamo come &ldquo;non sprecato&rdquo; il {Math.round(AVOIDED_WASTE_SHARE * 100)}%, cioè la quota media
           di invenduto dei freschi. La CO₂e usa fattori indicativi per reparto (kg CO₂e per kg):{" "}
-          {(Object.keys(CO2_FACTORS) as CategoryId[]).map((c) => `${CATEGORIES[c].label.toLowerCase()} ${CO2_FACTORS[c].toLocaleString("it-IT")}`).join(", ")}. Sono stime dimostrative, non
+          {(Object.keys(CO2_FACTORS) as CategoryId[]).map((c) => `${CATEGORIES[c].label.toLowerCase()} ${CO2_FACTORS[c].toLocaleString(locale())}`).join(", ")}. Sono stime dimostrative, non
           certificazioni.
         </p>
       </section>

@@ -1,9 +1,10 @@
 "use client";
 
 import { CheckCircle2, MessageSquareHeart, QrCode, ShoppingCart, Sparkles, User } from "lucide-react";
+import { LanguageSwitch } from "@/i18n/LanguageProvider";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/ui/Logo";
-import { formatInt } from "@/lib/format";
+import { initials } from "@/lib/format";
 import { isAvailable } from "@/lib/pricing";
 import { useApp, type Tab } from "@/store/AppStore";
 
@@ -11,12 +12,14 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
   { id: "basket", label: "Smart Basket", icon: Sparkles },
   { id: "cart", label: "Il mio carrello", icon: ShoppingCart },
   { id: "qr", label: "Il mio QR Code", icon: QrCode },
-  { id: "profile", label: "Il mio profilo", icon: User },
   { id: "feedback", label: "Feedback", icon: MessageSquareHeart },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { tab, setTab, data, store, toast, setProfileView } = useApp();
+  const p = data?.profile;
+  const hasName = !!(p?.firstName || p?.lastName);
+  const onProfile = tab === "profile";
   const cartCount = data ? data.cart.filter((l) => isAvailable(l.productId, store)).reduce((a, l) => a + l.qty, 0) : 0;
   const activeOrders = data ? data.orders.filter((o) => o.status === "attivo").length : 0;
 
@@ -26,19 +29,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         <button type="button" onClick={() => setTab("basket")} aria-label="Vai allo Smart Basket">
           <Logo size={32} wordSize={18} />
         </button>
-        {data && (
-          <button
-            type="button"
-            onClick={() => {
-              setTab("profile");
-              setProfileView("loyalty");
-            }}
-            className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-brand-50 px-3 text-[12.5px] font-bold text-brand-800"
-          >
-            <span className="h-2 w-2 rounded-full bg-brand-500" aria-hidden="true" />
-            {formatInt(data.points.balance)} punti
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <LanguageSwitch />
+          {data && (
+            <button
+              type="button"
+              onClick={() => {
+                setTab("profile");
+                setProfileView("home");
+              }}
+              aria-label="Il mio profilo"
+              aria-current={onProfile ? "page" : undefined}
+              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-[14px] font-extrabold transition ${onProfile ? "bg-brand-600 text-white ring-2 ring-brand-200 ring-offset-2" : "bg-brand-50 text-brand-800 hover:bg-brand-100"}`}
+            >
+              {hasName ? initials(p!.firstName, p!.lastName) : <User size={20} />}
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="gutter flex-1 pb-36 pt-4">{children}</main>
@@ -52,7 +59,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <nav aria-label="Navigazione principale" className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 border-t border-ink-100 bg-white/95 pb-[max(8px,env(safe-area-inset-bottom))] backdrop-blur">
-        <ul className="grid grid-cols-5 px-0.5 pt-1.5">
+        <ul className="grid grid-cols-4 px-1 pt-1.5">
           {TABS.map(({ id, label, icon: Icon }) => {
             const active = tab === id;
             const badge = id === "cart" ? cartCount : id === "qr" ? activeOrders : 0;
@@ -64,12 +71,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                   aria-current={active ? "page" : undefined}
                   className={`relative flex w-full flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10.5px] font-bold leading-tight transition ${active ? "text-brand-700" : "text-ink-500 hover:text-ink-700"}`}
                 >
-                  <span className={`grid h-8 w-12 place-items-center rounded-full transition ${active ? "bg-brand-100" : ""}`}>
+                  <span className={`grid h-8 w-14 place-items-center rounded-full transition ${active ? "bg-brand-100" : ""}`}>
                     <Icon size={21} strokeWidth={active ? 2.5 : 2} />
                   </span>
                   <span className="text-center">{label}</span>
                   {badge > 0 && (
-                    <span className="absolute right-[16%] top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-extrabold tabular-nums text-white">
+                    <span className="absolute right-[18%] top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-brand-600 px-1 text-[10px] font-extrabold tabular-nums text-white">
                       {badge}
                     </span>
                   )}

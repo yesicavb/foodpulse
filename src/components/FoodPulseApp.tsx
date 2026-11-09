@@ -9,6 +9,7 @@ import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { QrScreen } from "@/components/qr/QrScreen";
 import { AppShell } from "@/components/shell/AppShell";
 import { LogoMark } from "@/components/ui/Logo";
+import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { AppProvider, useApp } from "@/store/AppStore";
 
 function Gate() {
@@ -38,7 +39,9 @@ function Gate() {
 export function FoodPulseApp() {
   return (
     <AppProvider>
-      <Gate />
+      <LanguageProvider>
+        <Gate />
+      </LanguageProvider>
     </AppProvider>
   );
 }

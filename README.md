@@ -53,14 +53,32 @@ Supabase's built-in email service only sends a few emails per hour and is meant 
 
 `npm run build:standalone` reads the same variables from the environment at build time; without them, the single-file version runs browser-only.
 
+## Languages (Italian / English)
+
+The **IT | EN** switch in the header (and on the welcome and login screens) changes the whole app, including products, stores and messages. The choice is remembered per device.
+
+**How it works:** all texts stay written in Italian in the code. In English mode, `src/i18n/translator.ts` replaces every text on screen with its English version from `src/i18n/en.ts`. Dates and prices switch format too (`src/lib/format.ts`).
+
+**When you add or change an Italian text,** add its English in `src/i18n/en.ts`:
+
+```ts
+"Il tuo nuovo testo": "Your new text",
+```
+
+The key must be the Italian text exactly as it appears on screen. Texts with a changing part (a number or a name) go in `EN_PATTERNS` at the bottom of the same file. A text without an English entry simply stays in Italian, so nothing breaks.
+
+Saved data (profile choices, feedback answers in Supabase) always stays in Italian, whatever language the user picks, so the admin queries keep working.
+
 ## Navigation
 
-There is no separate Home screen: after logging in, the **Smart Basket** opens. The bottom bar has 4 sections, always visible and freely accessible:
+There is no separate Home screen: after logging in, the **Smart Basket** opens. The profile is the round button with your initials at the top right, next to the IT | EN switch. The bottom bar has 4 sections, always visible and freely accessible:
 
 1. **Smart Basket**: A) choose the supermarket · B) your smart shopping list · C) add more fresh products · D) discover more products for you (sponsored)
 2. **My cart** (Il mio carrello): booking, discounts, a "pick up in store" list, choice of pickup method
 3. **My QR code** (Il mio QR Code): active bookings with QR code, pickup simulation, cancellation
-4. **My profile** (Il mio profilo): 7 profile sections, orders, points and vouchers, impact, feedback
+4. **Feedback**: five questions about the app (see `APP_FEEDBACK_QUESTIONS` in `src/data/options.ts`)
+
+**My profile** (top right): points, 7 profile sections, orders, points and vouchers, impact, feedback
 
 Cart, profile, bookings and points stay saved when switching sections and reloading the page.
 
