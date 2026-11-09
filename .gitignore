@@ -4,3 +4,4 @@ out
 /standalone/
 *.tsbuildinfo
 .DS_Store
+next-env.d.ts
