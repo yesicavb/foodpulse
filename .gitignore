@@ -4,4 +4,6 @@ out
 /standalone/
 *.tsbuildinfo
 .DS_Store
+.env
+.env*.local
 next-env.d.ts

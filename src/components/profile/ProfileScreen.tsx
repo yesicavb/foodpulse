@@ -141,7 +141,7 @@ function ProfileHome() {
               }}
             />
           )}
-          <Row icon={<LogOut size={20} className="text-ink-500" />} label="Esci" detail="I tuoi dati restano salvati su questo dispositivo" onClick={logout} />
+          <Row icon={<LogOut size={20} className="text-ink-500" />} label="Esci" detail={account?.cloud ? "I tuoi dati restano salvati nel tuo account" : "I tuoi dati restano salvati su questo dispositivo"} onClick={logout} />
         </div>
       </section>
       <p className="px-1 text-center text-[11.5px] leading-snug text-ink-500">

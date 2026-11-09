@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthScreen } from "@/components/auth/AuthScreen";
+import { AuthScreen, NewPasswordScreen } from "@/components/auth/AuthScreen";
 import { SmartBasketScreen } from "@/components/basket/SmartBasketScreen";
 import { CartScreen } from "@/components/cart/CartScreen";
 import { FeedbackSheet } from "@/components/feedback/FeedbackSheet";
@@ -11,7 +11,7 @@ import { LogoMark } from "@/components/ui/Logo";
 import { AppProvider, useApp } from "@/store/AppStore";
 
 function Gate() {
-  const { ready, account, data, tab } = useApp();
+  const { ready, recovering, account, data, tab } = useApp();
   if (!ready) {
     return (
       <div className="grid min-h-screen place-items-center bg-white">
@@ -19,6 +19,7 @@ function Gate() {
       </div>
     );
   }
+  if (recovering) return <NewPasswordScreen />;
   if (!account || !data) return <AuthScreen />;
   return (
     <AppShell>

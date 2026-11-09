@@ -30,8 +30,28 @@ To try it straight away: on the welcome screen, tap **Prova la demo senza regist
 
 ## Stack
 
-Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Lucide React · Recharts · qrcode.react.
-Mock data is stored in the browser (localStorage), structured so it can later move to Supabase. A PWA manifest is included.
+Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Lucide React · Recharts · qrcode.react · Supabase (optional).
+A PWA manifest is included.
+
+## Database (Supabase, optional)
+
+With Supabase configured, accounts are real (email + password, confirmation email, password reset) and each user's data (profile, cart, orders, points, vouchers) is stored online, so the same account works on any device. Without it, everything is saved in the browser, as before. The demo account is always saved in the browser only.
+
+**How it works:** one table, `user_data`, holds one row per user with that user's whole app state as JSON. Row Level Security lets each user read and write only their own row. The app loads the row at login and saves it about half a second after every change (`src/store/AppStore.tsx`). If the same account is used on two devices at the same time, the last change saved wins.
+
+**Setup (once):**
+
+1. Create a free project at supabase.com. Choose a region in Europe, e.g. Frankfurt.
+2. In the dashboard, open **SQL Editor → New query**, paste the contents of `supabase/schema.sql` and click **Run**.
+3. Under **Authentication → URL Configuration**, set **Site URL** to the app's address (e.g. `https://foodpulse-xyz.vercel.app`) and add `http://localhost:3000` under **Redirect URLs**. Confirmation and password-reset emails link back to these addresses.
+4. Copy the **Project URL** and the **publishable key** (or the legacy `anon` key) from **Project Settings → API**.
+5. Locally: copy `.env.example` to `.env.local` and paste the two values. On Vercel: add the same two variables under **Project → Settings → Environment Variables**, then redeploy.
+
+The publishable key is meant to be public: it can only do what the Row Level Security rules allow. Never put the `service_role` / secret key in the app.
+
+Supabase's built-in email service only sends a few emails per hour and is meant for testing. For a pilot with outside users, connect your own email provider (Authentication → Emails → SMTP settings).
+
+`npm run build:standalone` reads the same variables from the environment at build time; without them, the single-file version runs browser-only.
 
 ## Navigation
 
@@ -69,8 +89,8 @@ All parameters are in `src/data/config.ts`; supermarkets, products and campaigns
 
 | Feature | In the prototype | For real use |
 |---|---|---|
-| Sign-up and login | accounts saved in the browser, password hashed with SHA-256 | Supabase Auth (or similar), verification email and password recovery |
-| User data | the device's localStorage | a database (Supabase/Postgres) with Row Level Security |
+| Sign-up and login | Supabase Auth when configured (confirmation email, password reset); otherwise accounts saved in the browser | own email provider (SMTP) for reliable delivery |
+| User data | Supabase: one JSON row per user, with Row Level Security; otherwise the device's localStorage | separate tables for orders, points and stock, with points and stock checked on the server |
 | Supermarkets, prices, availability | demo data. Esselunga, Coop, Conad and Despar are used for illustration only, **with no official integration** | integration with the ERP/catalogue and stock levels of participating chains |
 | Smart Basket | rules based on history and profile | real history from loyalty cards (with consent), possibly a recommendation model |
 | Sponsored products | fictional campaigns and brands | a retail media platform, contracts with brands, impression measurement |

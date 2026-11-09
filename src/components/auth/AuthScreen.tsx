@@ -147,6 +147,7 @@ function Register({ go }: { go: (v: View) => void }) {
   const [f, setF] = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "" });
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
 
@@ -158,9 +159,22 @@ function Register({ go }: { go: (v: View) => void }) {
     if (f.password !== f.confirm) return setError("Le due password non coincidono.");
     if (!terms) return setError("Per creare l'account accetta le condizioni d'uso e l'informativa privacy.");
     setBusy(true);
+    setError(null);
     const r = await register(f);
     setBusy(false);
     if (!r.ok) setError(r.error);
+    else if (r.info) setInfo(r.info);
+  }
+
+  if (info) {
+    return (
+      <AuthLayout title="Controlla la tua email" subtitle="Manca solo un passaggio." back={() => go("welcome")}>
+        <div className="grid gap-4">
+          <p className="rounded-xl bg-brand-50 px-4 py-3 text-[14px] leading-relaxed text-brand-800">{info}</p>
+          <button type="button" className="btn-primary h-12" onClick={() => go("login")}>Vai all&apos;accesso</button>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
@@ -212,16 +226,27 @@ function Register({ go }: { go: (v: View) => void }) {
 }
 
 function Forgot({ go }: { go: (v: View) => void }) {
+  const { cloud, requestPasswordReset } = useApp();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
     <AuthLayout title="Recupera la password" subtitle="Inserisci l'email con cui ti sei registrato." back={() => go("login")}>
       {sent ? (
         <div className="grid gap-4">
           <p className="rounded-xl bg-brand-50 px-4 py-3 text-[14px] leading-relaxed text-brand-800">
-            Funzione simulata: nella versione reale riceveresti a <strong>{email}</strong> un link per scegliere una nuova password. In questa demo nessuna
-            email viene inviata.
+            {cloud ? (
+              <>
+                Se esiste un account con <strong>{email}</strong>, ti abbiamo inviato un link per scegliere una nuova password. Controlla anche la cartella
+                spam.
+              </>
+            ) : (
+              <>
+                Funzione simulata: nella versione reale riceveresti a <strong>{email}</strong> un link per scegliere una nuova password. In questa demo
+                nessuna email viene inviata.
+              </>
+            )}
           </p>
           <button type="button" className="btn-primary h-12" onClick={() => go("login")}>Torna all&apos;accesso</button>
         </div>
@@ -229,9 +254,14 @@ function Forgot({ go }: { go: (v: View) => void }) {
         <form
           className="grid gap-4"
           noValidate
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             if (!EMAIL_RE.test(email)) return setError("Inserisci un indirizzo email valido.");
+            setBusy(true);
+            setError(null);
+            const r = await requestPasswordReset(email);
+            setBusy(false);
+            if (!r.ok) return setError(r.error);
             setSent(true);
           }}
         >
@@ -240,9 +270,54 @@ function Forgot({ go }: { go: (v: View) => void }) {
             <input id="forgot-email" className="input" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           {error && <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2.5 text-[13.5px] text-rose-700">{error}</p>}
-          <button type="submit" className="btn-primary h-12">Invia link di recupero</button>
+          <button type="submit" className="btn-primary h-12" disabled={busy}>
+            {busy && <Loader2 size={16} className="animate-spin" />} Invia link di recupero
+          </button>
         </form>
       )}
     </AuthLayout>
+  );
+}
+
+/** Shown after opening a password-reset link from the email (Supabase accounts only) */
+export function NewPasswordScreen() {
+  const { setNewPassword, notify } = useApp();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (password.length < 8) return setError("La password deve avere almeno 8 caratteri.");
+    if (password !== confirm) return setError("Le due password non coincidono.");
+    setBusy(true);
+    setError(null);
+    const r = await setNewPassword(password);
+    setBusy(false);
+    if (!r.ok) return setError(r.error);
+    notify("Password aggiornata");
+  }
+
+  return (
+    <div className="min-h-screen bg-white">
+      <AuthLayout title="Scegli una nuova password" subtitle="La userai da ora in poi per accedere." back={() => window.location.assign(window.location.pathname)}>
+        <form onSubmit={submit} className="grid gap-4" noValidate>
+          <div>
+            <label htmlFor="new-pass" className="field-label">Nuova password</label>
+            <PasswordInput id="new-pass" value={password} onChange={setPassword} autoComplete="new-password" />
+            <p className="mt-1 text-[12px] text-ink-500">Almeno 8 caratteri.</p>
+          </div>
+          <div>
+            <label htmlFor="new-confirm" className="field-label">Conferma password</label>
+            <PasswordInput id="new-confirm" value={confirm} onChange={setConfirm} autoComplete="new-password" />
+          </div>
+          {error && <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2.5 text-[13.5px] text-rose-700">{error}</p>}
+          <button type="submit" className="btn-primary h-12" disabled={busy}>
+            {busy && <Loader2 size={16} className="animate-spin" />} Salva password
+          </button>
+        </form>
+      </AuthLayout>
+    </div>
   );
 }
