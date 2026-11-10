@@ -401,19 +401,49 @@ export const ART: Record<string, Art> = {
   steak: (u) => (
     <>
       <defs>
-        <Rad id={u("m")} cx={0.4} cy={0.35} r={0.8} s={[[0, "#E8505A"], [0.6, "#C02A34"], [1, "#7E1219"]]} />
+        <Lin id={u("board")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#D9A86C"], [1, "#A8743D"]]} />
+        <Rad id={u("fat")} cx={0.45} cy={0.35} r={0.75} s={[[0, "#FFF6E6"], [0.7, "#F2DCBE"], [1, "#D5B48A"]]} />
+        <Rad id={u("m")} cx={0.42} cy={0.38} r={0.72} s={[[0, "#E3424D"], [0.55, "#B61F2B"], [1, "#741019"]]} />
       </defs>
-      <Shadow u={u} w={52} />
-      <path d="M8 34 Q8 17 30 17 Q51 17 55 30 Q58 45 42 49 Q27 53 17 49 Q8 45 8 34 Z" fill="#F3D4C0" />
-      <path d="M11 34 Q11 20 30 20 Q48 20 52 31 Q54 43 40 46 Q27 49 18 46 Q11 42 11 34 Z" fill={f(u, "m")} />
-      {["M17 29 Q24 25 31 29 Q37 33 45 30", "M16 37 Q24 34 33 38 Q40 41 47 37", "M23 43 Q30 41 37 44", "M28 24 Q34 23 39 26"].map((d) => (
-        <path key={d} d={d} fill="none" stroke="#FBE3DA" strokeWidth="1.4" strokeLinecap="round" opacity="0.85" />
+      <Shadow u={u} w={56} y={55} />
+      <rect x="4" y="30" width="56" height="24" rx="6" fill={f(u, "board")} />
+      {[35, 41, 47].map((y) => (
+        <path key={y} d={`M8 ${y} Q32 ${y + 1.5} 56 ${y}`} stroke="#9A6532" strokeWidth="0.6" fill="none" opacity="0.6" />
       ))}
-      <path d="M40 34 a5 5 0 1 0 0.1 0 Z" fill="#FFF8EE" stroke="#E9D9C3" strokeWidth="1" />
-      <Shine cx={22} cy={24} rx={6} ry={1.8} rot={-18} o={0.4} />
+      {/* ribeye with a thin fat edge, a fat "eye" and natural marbling */}
+      <path d="M9 32 Q8 18 23 15.5 Q33 13 44 16.5 Q57 21.5 56 33 Q55 46 40 48 Q27 50 17 46 Q9 42 9 32 Z" fill={f(u, "fat")} />
+      <path d="M11.8 32 Q11.5 20.5 24 18.3 Q33 16.2 43 19.3 Q53.2 23.5 52.8 33 Q51.5 43.5 39.5 45.3 Q27 47.2 18.5 43.7 Q11.8 40.3 11.8 32 Z" fill={f(u, "m")} />
+      <path d="M33 26.5 Q36.5 24 40 26.5 Q41.5 29 39.6 31.4 Q37 33.4 34 32.2 Q31.6 31 32 28.6 Q32.2 27.4 33 26.5 Z" fill="#EBC2A8" opacity="0.8" />
+      <path d="M34 27.6 Q36.5 26 39 27.4" stroke="#F8E2D2" strokeWidth="0.8" fill="none" opacity="0.7" strokeLinecap="round" />
+      {[
+        "M15 29 Q18.5 27.5 21 29.5 Q23 31 26.5 30",
+        "M16.5 36 Q20 33.6 24 35.2 Q27 36.6 30 35.6 Q32.6 34.8 34.5 36.6",
+        "M21 41.5 Q24.5 39.6 28 41 Q30.5 42 33 40.8",
+        "M41.5 37.5 Q44.6 35.8 47.6 37.4 Q49.4 38.4 50.4 37.2",
+        "M43.5 26.5 Q46.4 25.6 48.6 28.4",
+        "M22 23.5 Q24.6 21.8 27.8 22.8",
+        "M36.5 41.8 Q40 40.4 43.4 42.2",
+        "M26.5 30 Q28.5 32 30.2 31.2",
+        "M41 31.5 Q43.5 33.5 46.5 32.6",
+      ].map((d, i) => (
+        <path key={d} d={d} fill="none" stroke="#F7D9CF" strokeWidth={i % 2 ? 0.7 : 1} strokeLinecap="round" opacity="0.85" />
+      ))}
+      {[[19, 25], [27, 26.5], [45.5, 30.5], [24, 38.5], [38, 38.5], [48.5, 34], [30, 43.5], [17.5, 33], [43, 22.5]].map(([x, y], i) => (
+        <ellipse key={i} cx={x} cy={y} rx={i % 2 ? 0.9 : 1.3} ry={0.5} fill="#F3CEC5" opacity="0.8" transform={`rotate(${i * 23} ${x} ${y})`} />
+      ))}
+      <Shine cx={21} cy={22.5} rx={6} ry={1.5} rot={-20} o={0.3} />
+      <path d="M44 51 L58 44" stroke="#4E6B2E" strokeWidth="1.2" strokeLinecap="round" />
+      {[46, 49, 52, 55].map((x, i) => (
+        <g key={x}>
+          <path d={`M${x} ${50.5 - i * 1.6} l1.5 -3`} stroke="#3F6B2A" strokeWidth="1.3" strokeLinecap="round" />
+          <path d={`M${x} ${50.5 - i * 1.6} l2.6 1.6`} stroke="#3F6B2A" strokeWidth="1.3" strokeLinecap="round" />
+        </g>
+      ))}
+      {[[12, 50], [15, 52], [10, 53]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="1" fill="#2B211A" />
+      ))}
     </>
   ),
-
   /* ---------- Fish ---------- */
   salmon: (u) => (
     <>
@@ -466,23 +496,48 @@ export const ART: Record<string, Art> = {
       <Shine cx={24} cy={28} rx={9} ry={2} rot={-6} o={0.7} />
     </>
   ),
-  prawns: (u) => (
-    <>
-      <defs>
-        <Lin id={u("p")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFC1A8"], [0.5, "#F2845F"], [1, "#C9553A"]]} />
-      </defs>
-      <Shadow u={u} w={48} />
-      {[[22, 34, -10], [41, 33, 15]].map(([x, y, r], i) => (
-        <g key={i} transform={`rotate(${r} ${x} ${y})`}>
-          <path d={`M${x - 10} ${y - 5} A11 11 0 1 0 ${x + 9} ${y - 8}`} fill="none" stroke="#B84A30" strokeWidth="8.4" strokeLinecap="round" />
-          <path d={`M${x - 10} ${y - 5} A11 11 0 1 0 ${x + 9} ${y - 8}`} fill="none" stroke={f(u, "p")} strokeWidth="7" strokeLinecap="round" />
-          <path d={`M${x - 10} ${y - 5} A11 11 0 1 0 ${x + 9} ${y - 8}`} fill="none" stroke="#FFE1D4" strokeWidth="1" strokeDasharray="0.8 3.4" strokeLinecap="round" />
-          <path d={`M${x + 9} ${y - 8} l5 -4 l-1 6 z`} fill="#E36F4C" />
-        </g>
-      ))}
-    </>
-  ),
-
+  prawns: (u) => {
+    /* a peeled, cooked prawn: one tapering "C" body with shell bands and the tail fan attached */
+    type P = [number, number];
+    const bz = (a: P, b: P, c: P, d: P, t: number): P => {
+      const m = 1 - t;
+      return [m * m * m * a[0] + 3 * m * m * t * b[0] + 3 * m * t * t * c[0] + t * t * t * d[0], m * m * m * a[1] + 3 * m * m * t * b[1] + 3 * m * t * t * c[1] + t * t * t * d[1]];
+    };
+    const O: [P, P, P, P] = [[3, -12], [-15, -12], [-16, 11], [4, 11]];
+    const I: [P, P, P, P] = [[3, 5], [-8, 5], [-8.5, -5], [3, -5]];
+    const prawn = (x: number, y: number, s: number, r: number, key: string) => (
+      <g key={key} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+        <path d="M3 5 C 8 6 12 8 14 13 C 10 13 8 12 6 11 C 8 15 7 17 5 18 C 3 15 3 12 4 11 Z" fill={f(u, "tail")} transform="translate(3.5 8) scale(0.58) translate(-3.5 -8) rotate(-18 3.5 8)" />
+        <path d="M3 -12 C -15 -12 -16 11 4 11 L3 5 C -8 5 -8.5 -5 3 -5 Z" fill="#B9452B" transform="translate(0.6 0.8)" />
+        <path d="M3 -12 C -15 -12 -16 11 4 11 L3 5 C -8 5 -8.5 -5 3 -5 Z" fill={f(u, "body")} />
+        {[0.12, 0.27, 0.42, 0.57, 0.72, 0.86].map((t) => {
+          const o = bz(...O, t);
+          const i = bz(...I, 1 - t);
+          return <path key={t} d={`M${o[0]} ${o[1]} Q${(o[0] + i[0]) / 2 - 1} ${(o[1] + i[1]) / 2} ${i[0]} ${i[1]}`} stroke="#FFF3EC" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.9" />;
+        })}
+        <path d="M3 -11 C -12 -11 -13.5 9 3 10" stroke="#C4512F" strokeWidth="0.9" fill="none" opacity="0.6" />
+        <ellipse cx="3.3" cy="-8.5" rx="1.6" ry="3.4" fill="#FFE0D2" />
+        <path d="M-6 -6 C -9 -2 -9 2 -7 5" stroke="#FFFFFF" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.55" />
+      </g>
+    );
+    return (
+      <>
+        <defs>
+          <Lin id={u("body")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFC9B2"], [0.45, "#F7865C"], [1, "#D4542F"]]} />
+          <Lin id={u("tail")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#F26A40"], [1, "#A9361C"]]} />
+          <Rad id={u("plate")} cx={0.5} cy={0.4} r={0.7} s={[[0, "#FFFFFF"], [1, "#DCE6EE"]]} />
+          <Rad id={u("lem")} cx={0.4} cy={0.4} s={[[0, "#FFF6B0"], [1, "#F6D23A"]]} />
+        </defs>
+        <ellipse cx="32" cy="47" rx="28" ry="8.5" fill={f(u, "plate")} />
+        <ellipse cx="32" cy="47" rx="28" ry="8.5" fill="none" stroke="#C9D5DF" strokeWidth="0.9" />
+        <path d="M45 48.5 A9 9 0 0 1 60.5 43.5 Z" fill="#E9B91F" />
+        <path d="M46.3 47.8 A7.6 7.6 0 0 1 59.2 43.8 Z" fill={f(u, "lem")} />
+        <path d="M46.3 47.8 L50 42.7 M46.3 47.8 L54.5 42 M46.3 47.8 L58 43.2" stroke="#FFFFFF" strokeWidth="0.7" opacity="0.85" />
+        {prawn(22, 31, 1.25, -8, "a")}
+        {prawn(40, 32, 1.05, 14, "b")}
+      </>
+    );
+  },
   /* ---------- Fruit and vegetables ---------- */
   lettuce: (u) => (
     <>
