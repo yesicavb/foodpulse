@@ -590,24 +590,52 @@ export const ART: Record<string, Art> = {
       ))}
     </>
   ),
-  courgette: (u) => (
-    <>
-      <defs>
-        <Lin id={u("z")} s={[[0, "#3E7D2C"], [0.35, "#86B866"], [0.6, "#3F7E2D"], [1, "#1E4C18"]]} />
-        <Rad id={u("fl")} cx={0.3} cy={0.4} s={[[0, "#FFE680"], [1, "#F2A71B"]]} />
-      </defs>
-      <Shadow u={u} w={54} />
-      <g transform="rotate(-18 32 34)">
-        <rect x="8" y="26" width="46" height="15" rx="7.5" fill={f(u, "z")} />
-        {Array.from({ length: 14 }, (_, i) => (
-          <circle key={i} cx={13 + ((i * 7) % 38)} cy={29 + ((i * 5) % 9)} r="0.6" fill="#D9F0C4" opacity="0.8" />
+  courgette: (u) => {
+    /* a romanesco courgette: tapering ribbed body, stem, flower at the tip */
+    const zuc = (x: number, y: number, r: number, s: number, key: string, flower: boolean) => (
+      <g key={key} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+        <path d="M-24 -4.5 Q-24 -6.5 -21 -6.5 L16 -5 Q24 -4.8 24 0 Q24 4.8 16 5 L-21 6.5 Q-24 6.5 -24 4.5 Z" fill={f(u, "skin")} />
+        {[-3.6, -1.2, 1.2, 3.6].map((dy) => (
+          <path key={dy} d={`M-21 ${dy * 1.15} Q0 ${dy * 1.05} 20 ${dy * 0.75}`} stroke="#9CCB7A" strokeWidth="0.75" fill="none" opacity="0.75" />
         ))}
-        <rect x="3" y="30" width="7" height="7" rx="2" fill="#5B7F2F" />
-        <path d="M53 33.5 L62 26 Q60 33 62 41 Z" fill={f(u, "fl")} />
-        <path d="M53 33.5 L59 30" stroke="#E08E0B" strokeWidth="0.8" />
+        {Array.from({ length: 16 }, (_, i) => (
+          <circle key={i} cx={-19 + ((i * 11) % 38)} cy={-4 + ((i * 5) % 8)} r="0.45" fill="#E3F5D3" opacity="0.85" />
+        ))}
+        <path d="M-20 -4.6 Q0 -4.4 18 -3.4" stroke="#FFFFFF" strokeWidth="1.2" fill="none" opacity="0.4" strokeLinecap="round" />
+        <path d="M-24 -3 L-29 -2.2 L-30 2.2 L-24 3 Z" fill="#7A8B3C" />
+        <path d="M-29 -2.2 L-30 2.2" stroke="#55622A" strokeWidth="1" />
+        {flower && (
+          <g transform="translate(23.5 0)">
+            {[-40, -14, 12, 38].map((a) => (
+              <path key={a} d="M0 0 Q5 -4 10 -1 Q6 2 0 0 Z" fill={f(u, "fl")} transform={`rotate(${a})`} />
+            ))}
+            <circle cx="1.5" cy="0" r="1.6" fill="#E89A0C" />
+          </g>
+        )}
       </g>
-    </>
-  ),
+    );
+    return (
+      <>
+        <defs>
+          <Lin id={u("skin")} s={[[0, "#2F6A23"], [0.3, "#7CB45B"], [0.55, "#3E7D2D"], [1, "#1C4716"]]} />
+          <Rad id={u("fl")} cx={0.3} cy={0.4} s={[[0, "#FFF08A"], [1, "#F4A81C"]]} />
+          <Rad id={u("flesh")} cx={0.5} cy={0.5} r={0.6} s={[[0, "#FBFDE8"], [0.7, "#E6F2C4"], [1, "#CFE3A0"]]} />
+        </defs>
+        <Shadow u={u} w={54} y={53} />
+        {zuc(30, 31, -16, 1, "back", true)}
+        {zuc(29, 41, -4, 0.92, "front", false)}
+        {/* a cut slice showing the flesh and seeds */}
+        <g transform="translate(51 47)">
+          <ellipse cx="0" cy="0.8" rx="7.4" ry="5.6" fill="#2F6A23" />
+          <ellipse cx="0" cy="0" rx="7" ry="5.2" fill={f(u, "flesh")} />
+          <ellipse cx="0" cy="0" rx="3.6" ry="2.6" fill="none" stroke="#D9E9AE" strokeWidth="1.6" />
+          {[0, 60, 120, 180, 240, 300].map((a) => (
+            <ellipse key={a} cx={3.4 * Math.cos((a * Math.PI) / 180)} cy={2.5 * Math.sin((a * Math.PI) / 180)} rx="0.8" ry="0.45" fill="#F4F8DC" />
+          ))}
+        </g>
+      </>
+    );
+  },
   apples: (u) => (
     <>
       <defs>
@@ -947,19 +975,55 @@ export const ART: Record<string, Art> = {
       </g>
     </>
   ),
-  cereal: (u) => (
-    <Carton u={u} c="#F06A43" side="#B03E25">
-      <defs>
-        <Rad id={u("bowl")} cx={0.5} cy={0.3} s={[[0, "#FFFFFF"], [1, "#DDE3E8"]]} />
-      </defs>
-      <path d="M20 37 Q29.5 50 39 37 Z" fill={f(u, "bowl")} />
-      <ellipse cx="29.5" cy="37" rx="9.5" ry="3.5" fill="#FFF8EE" />
-      {[[25, 36], [29, 35], [33, 36.5], [27, 38], [31, 38]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.7" fill={i === 1 || i === 3 ? "#C2185B" : "#E0A94C"} />
-      ))}
-      <rect x="19" y="16" width="21" height="7" rx="2" fill="#FFF8EE" />
-    </Carton>
-  ),
+  cereal: (u) => {
+    /* box at the back, a bowl of wholegrain flakes with red berries and milk in front */
+    const flakes: [number, number, number, number][] = [
+      [17, 33, 20, 1], [22, 31, -30, 0.9], [27, 33, 50, 1.1], [32, 30.5, 10, 1], [37, 32.5, -40, 1], [42, 31, 30, 0.9], [47, 33, -10, 1],
+      [20, 35.5, 70, 0.9], [25, 36, -15, 1], [30, 34.5, 35, 1.1], [35, 35.5, -60, 0.9], [40, 35, 15, 1], [45, 35.5, 55, 0.9], [29, 29, -50, 0.8], [39, 29, 70, 0.8],
+    ];
+    return (
+      <>
+        <defs>
+          <Lin id={u("box")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#F37B4C"], [1, "#C2462A"]]} />
+          <Rad id={u("fl")} cx={0.35} cy={0.3} s={[[0, "#F7D58C"], [0.6, "#DDA04A"], [1, "#A8682A"]]} />
+          <Rad id={u("rasp")} cx={0.35} cy={0.3} s={[[0, "#FF8FB1"], [0.5, "#E0245E"], [1, "#8C0F34"]]} />
+          <Lin id={u("bowl")} s={[[0, "#FFFFFF"], [0.6, "#EEF2F5"], [1, "#C8D3DC"]]} />
+        </defs>
+        <Shadow u={u} w={56} y={55} />
+        {/* box */}
+        <path d="M38 6 L54 6 L58 9 L58 40 L42 40 L38 37 Z" fill="#A23A22" />
+        <rect x="38" y="6" width="16" height="34" rx="1.5" fill={f(u, "box")} />
+        <rect x="40" y="9" width="12" height="5" rx="1.5" fill="#FFF8EE" />
+        <ellipse cx="46" cy="24" rx="5" ry="4" fill="#F7D58C" opacity="0.9" />
+        <path d="M40 8 L40 37" stroke="#FFFFFF" strokeWidth="1" opacity="0.4" />
+        {/* bowl */}
+        <path d="M9 34 Q11 53 32 53 Q53 53 55 34 Z" fill={f(u, "bowl")} />
+        <path d="M15 43 Q22 50 32 50.5" stroke="#FFFFFF" strokeWidth="2.2" fill="none" opacity="0.85" strokeLinecap="round" />
+        <ellipse cx="32" cy="34" rx="23" ry="6.5" fill="#F7F3EA" />
+        <ellipse cx="32" cy="34.4" rx="21" ry="5.2" fill="#FFFFFF" />
+        {flakes.map(([x, y, r, s], i) => (
+          <g key={i} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+            <path d="M-3.4 -1.6 Q-1 -3.2 2.6 -2.4 Q4 0 2.8 2 Q0 3.2 -3 2 Q-4.2 0 -3.4 -1.6 Z" fill={f(u, "fl")} stroke="#9C5F22" strokeWidth="0.35" />
+            <path d="M-1.8 -1.2 Q0 -1.8 1.6 -1" stroke="#FFF1CC" strokeWidth="0.6" fill="none" opacity="0.8" />
+          </g>
+        ))}
+        {[[24, 30], [36, 29], [44, 32.5]].map(([x, y], i) => (
+          <g key={`r${i}`}>
+            {[[-1.4, -1.4], [0, -1.9], [1.4, -1.4], [-1.9, 0], [0, 0], [1.9, 0], [-1.4, 1.4], [0, 1.9], [1.4, 1.4]].map(([dx, dy], k) => (
+              <circle key={k} cx={x + dx} cy={y + dy} r="1.25" fill={f(u, "rasp")} />
+            ))}
+          </g>
+        ))}
+        {[[31, 33.5], [20, 32]].map(([x, y], i) => (
+          <g key={`b${i}`}>
+            <circle cx={x} cy={y} r="1.9" fill="#3F4FA8" />
+            <circle cx={x - 0.6} cy={y - 0.6} r="0.6" fill="#FFFFFF" opacity="0.45" />
+          </g>
+        ))}
+        <path d="M48 24 Q51 19 55 21 Q52 25 48 24 Z" fill="#3F8E3A" />
+      </>
+    );
+  },
   vegburger: (u) => (
     <>
       <defs>
