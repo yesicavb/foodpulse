@@ -234,21 +234,54 @@ export const ART: Record<string, Art> = {
   ),
   chicken: (u) => (
     <>
+      {/* roast chicken seen from slightly above: two breast halves, tucked wings, drumsticks with bones */}
       <defs>
-        <Rad id={u("skin")} cx={0.38} cy={0.3} r={0.8} s={[[0, "#F6C07D"], [0.5, "#D9853A"], [1, "#8E4715"]]} />
+        <Rad id={u("skin")} cx={0.4} cy={0.3} r={0.8} s={[[0, "#F9CB87"], [0.45, "#DE8E3E"], [0.85, "#A45A1E"], [1, "#7A3E12"]]} />
+        <Rad id={u("leg")} cx={0.35} cy={0.3} r={0.8} s={[[0, "#F3B66F"], [0.6, "#C9772F"], [1, "#874317"]]} />
         <Rad id={u("plate")} cx={0.5} cy={0.4} r={0.7} s={[[0, "#FFFFFF"], [1, "#E3DDCD"]]} />
+        <Rad id={u("lem")} cx={0.4} cy={0.4} s={[[0, "#FFF6B0"], [1, "#F2CC2E"]]} />
       </defs>
-      <ellipse cx="32" cy="46" rx="28" ry="9" fill={f(u, "plate")} />
-      <ellipse cx="32" cy="46" rx="28" ry="9" fill="none" stroke="#D6CDB8" strokeWidth="1" />
-      <path d="M46 36 Q55 33 57 39 Q57 45 51 43 Q48 41 46 40 Z" fill={f(u, "skin")} />
-      <path d="M18 36 Q9 33 7 39 Q7 45 13 43 Q16 41 18 40 Z" fill={f(u, "skin")} />
-      <circle cx="57" cy="41" r="2.3" fill="#FFF8EE" />
-      <circle cx="7" cy="41" r="2.3" fill="#FFF8EE" />
-      <ellipse cx="32" cy="34" rx="19" ry="14" fill={f(u, "skin")} />
-      <Shine cx={26} cy={27} rx={6} ry={2.6} rot={-25} o={0.55} />
-      <Shine cx={38} cy={30} rx={3} ry={1.2} rot={20} o={0.4} />
-      <path d="M40 20 Q42 15 46 16 Q44 20 40 20 Z" fill="#3F8E3A" />
-      <path d="M12 49 l3 -2 M48 50 l4 -1" stroke="#3F8E3A" strokeWidth="1.6" strokeLinecap="round" />
+      <ellipse cx="32" cy="47" rx="29" ry="9.5" fill={f(u, "plate")} />
+      <ellipse cx="32" cy="47" rx="29" ry="9.5" fill="none" stroke="#D6CDB8" strokeWidth="0.9" />
+      {/* lemon slices and herbs on the plate */}
+      {[[10, 49], [53, 50]].map(([x, y], i) => (
+        <g key={i}>
+          <ellipse cx={x} cy={y} rx="4.2" ry="2.4" fill="#E2B21E" />
+          <ellipse cx={x} cy={y - 0.3} rx="3.6" ry="2" fill={f(u, "lem")} />
+          <path d={`M${x - 3} ${y - 0.3} L${x + 3} ${y - 0.3} M${x} ${y - 2} L${x} ${y + 1.4}`} stroke="#FFFFFF" strokeWidth="0.5" opacity="0.8" />
+        </g>
+      ))}
+      <path d="M17 53 l3 -2.5 M20 54 l3.5 -1.5 M44 54 l3 -2 M41 53 l2.5 -2.5" stroke="#3F8E3A" strokeWidth="1.5" strokeLinecap="round" />
+      {/* wings tucked at the sides */}
+      <path d="M14 29 Q7 29 7.5 35 Q10.5 37 15 34 Z" fill={f(u, "leg")} />
+      <path d="M50 29 Q57 29 56.5 35 Q53.5 37 49 34 Z" fill={f(u, "leg")} />
+      {/* body */}
+      <path d="M12 37 Q10 24 22 20 Q32 17 42 20 Q54 24 52 37 Q50 45 32 46 Q14 45 12 37 Z" fill={f(u, "skin")} />
+      {/* breast halves and the ridge in the middle */}
+      <path d="M32 20 Q30 31 32 44" stroke="#8E4A17" strokeWidth="1.3" fill="none" opacity="0.55" strokeLinecap="round" />
+      <path d="M22 23 Q16 30 19 38" stroke="#FFE2B0" strokeWidth="1.2" fill="none" opacity="0.5" strokeLinecap="round" />
+      <Shine cx={25} cy={26} rx={4.5} ry={2.2} rot={-30} o={0.6} />
+      <Shine cx={39} cy={25} rx={3.5} ry={1.8} rot={25} o={0.45} />
+      {/* crispy skin texture */}
+      {[[18, 33], [24, 37], [28, 31], [36, 33], [41, 38], [45, 30], [21, 28], [43, 26], [35, 41], [27, 42]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i % 3 ? 0.55 : 0.8} fill="#8E4A17" opacity="0.5" />
+      ))}
+      {/* drumsticks pointing forwards, with bone ends */}
+      <path d="M21 38 Q13 37 11 42.5 Q10.5 46.5 14.5 46 Q18.5 45 22.5 42 Z" fill={f(u, "leg")} />
+      <path d="M43 38 Q51 37 53 42.5 Q53.5 46.5 49.5 46 Q45.5 45 41.5 42 Z" fill={f(u, "leg")} />
+      <Shine cx={15} cy={41} rx={2.4} ry={1.1} rot={-25} o={0.5} />
+      <Shine cx={48} cy={41} rx={2.4} ry={1.1} rot={25} o={0.5} />
+      {[[10.6, 45.2], [53.4, 45.2]].map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x - 1.1} cy={y} r="1.6" fill="#FFF8EE" stroke="#E5D9C3" strokeWidth="0.5" />
+          <circle cx={x + 1.1} cy={y + 0.8} r="1.6" fill="#FFF8EE" stroke="#E5D9C3" strokeWidth="0.5" />
+        </g>
+      ))}
+      {/* sprig of rosemary on top */}
+      <path d="M35 21 L44 16" stroke="#4E6B2E" strokeWidth="1" strokeLinecap="round" />
+      {[37, 40, 43].map((x, i) => (
+        <path key={x} d={`M${x} ${20 - i * 1.6} l1 -2.6 M${x} ${20 - i * 1.6} l2.4 1.2`} stroke="#3F6B2A" strokeWidth="1.1" strokeLinecap="round" />
+      ))}
     </>
   ),
   ricesalad: (u) => (
