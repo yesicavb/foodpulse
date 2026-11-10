@@ -591,46 +591,46 @@ export const ART: Record<string, Art> = {
     </>
   ),
   courgette: (u) => {
-    /* a romanesco courgette: tapering ribbed body, stem, flower at the tip */
-    const zuc = (x: number, y: number, r: number, s: number, key: string, flower: boolean) => (
+    /* courgette, not cucumber: thick ridged woody stem, smooth skin with pale lengthwise streaks,
+       slightly wider at the end with a small brown blossom scar, creamy flesh with small seeds */
+    const zuc = (x: number, y: number, r: number, s: number, key: string) => (
       <g key={key} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
-        <path d="M-24 -4.5 Q-24 -6.5 -21 -6.5 L16 -5 Q24 -4.8 24 0 Q24 4.8 16 5 L-21 6.5 Q-24 6.5 -24 4.5 Z" fill={f(u, "skin")} />
-        {[-3.6, -1.2, 1.2, 3.6].map((dy) => (
-          <path key={dy} d={`M-21 ${dy * 1.15} Q0 ${dy * 1.05} 20 ${dy * 0.75}`} stroke="#9CCB7A" strokeWidth="0.75" fill="none" opacity="0.75" />
+        <path d="M-22 -5 Q-22 -6 -20 -6 L16 -6.6 Q23.5 -6.4 23.5 0 Q23.5 6.4 16 6.6 L-20 6 Q-22 6 -22 5 Z" fill={f(u, "skin")} />
+        {/* pale streaks and flecks along the length */}
+        {[-4.4, -2.2, 0, 2.2, 4.4].map((dy, i) => (
+          <path key={dy} d={`M-19 ${dy * 0.9} Q2 ${dy} 20 ${dy * 1.02}`} stroke="#C7E3A4" strokeWidth={i % 2 ? 0.9 : 0.6} fill="none" opacity={i % 2 ? 0.45 : 0.3} strokeLinecap="round" />
         ))}
-        {Array.from({ length: 16 }, (_, i) => (
-          <circle key={i} cx={-19 + ((i * 11) % 38)} cy={-4 + ((i * 5) % 8)} r="0.45" fill="#E3F5D3" opacity="0.85" />
+        {[[-12, -3], [-3, 2.6], [6, -1.2], [13, 3.4], [-15, 1.6], [2, -3.6], [10, -4.2], [-7, 0.6], [17, -0.8]].map(([fx, fy], i) => (
+          <ellipse key={i} cx={fx} cy={fy} rx={i % 2 ? 1.6 : 2.4} ry="0.35" fill="#DCEFC4" opacity="0.5" />
         ))}
-        <path d="M-20 -4.6 Q0 -4.4 18 -3.4" stroke="#FFFFFF" strokeWidth="1.2" fill="none" opacity="0.4" strokeLinecap="round" />
-        <path d="M-24 -3 L-29 -2.2 L-30 2.2 L-24 3 Z" fill="#7A8B3C" />
-        <path d="M-29 -2.2 L-30 2.2" stroke="#55622A" strokeWidth="1" />
-        {flower && (
-          <g transform="translate(23.5 0)">
-            {[-40, -14, 12, 38].map((a) => (
-              <path key={a} d="M0 0 Q5 -4 10 -1 Q6 2 0 0 Z" fill={f(u, "fl")} transform={`rotate(${a})`} />
-            ))}
-            <circle cx="1.5" cy="0" r="1.6" fill="#E89A0C" />
-          </g>
-        )}
+        <path d="M-18 -4.6 Q2 -5.4 18 -4.6" stroke="#FFFFFF" strokeWidth="1.3" fill="none" opacity="0.35" strokeLinecap="round" />
+        {/* blossom scar */}
+        <ellipse cx="22.6" cy="0" rx="1" ry="1.6" fill="#8A6A3A" />
+        {/* woody, ridged, flared stem */}
+        <path d="M-21.5 -5.4 Q-24 -3.6 -25.5 -2.6 L-29 -1.9 L-29 1.9 L-25.5 2.6 Q-24 3.6 -21.5 5.4 Z" fill={f(u, "stem")} />
+        {[-3.4, -1.2, 1.2, 3.4].map((dy) => (
+          <path key={dy} d={`M-22 ${dy * 1.35} L-28.6 ${dy * 0.5}`} stroke="#5E6A2A" strokeWidth="0.6" />
+        ))}
+        <path d="M-29 -1.9 L-29 1.9" stroke="#4E5622" strokeWidth="1.1" strokeLinecap="round" />
       </g>
     );
     return (
       <>
         <defs>
-          <Lin id={u("skin")} s={[[0, "#2F6A23"], [0.3, "#7CB45B"], [0.55, "#3E7D2D"], [1, "#1C4716"]]} />
-          <Rad id={u("fl")} cx={0.3} cy={0.4} s={[[0, "#FFF08A"], [1, "#F4A81C"]]} />
-          <Rad id={u("flesh")} cx={0.5} cy={0.5} r={0.6} s={[[0, "#FBFDE8"], [0.7, "#E6F2C4"], [1, "#CFE3A0"]]} />
+          <Lin id={u("skin")} s={[[0, "#2D6A25"], [0.3, "#5E9B3E"], [0.55, "#3B7A2C"], [1, "#1D4A17"]]} />
+          <Lin id={u("stem")} s={[[0, "#A9B46A"], [0.5, "#7D8B3E"], [1, "#56622A"]]} />
+          <Rad id={u("flesh")} cx={0.45} cy={0.45} r={0.65} s={[[0, "#FFFDEB"], [0.7, "#F2F0CC"], [1, "#DCE3A6"]]} />
         </defs>
-        <Shadow u={u} w={54} y={53} />
-        {zuc(30, 31, -16, 1, "back", true)}
-        {zuc(29, 41, -4, 0.92, "front", false)}
-        {/* a cut slice showing the flesh and seeds */}
-        <g transform="translate(51 47)">
-          <ellipse cx="0" cy="0.8" rx="7.4" ry="5.6" fill="#2F6A23" />
-          <ellipse cx="0" cy="0" rx="7" ry="5.2" fill={f(u, "flesh")} />
-          <ellipse cx="0" cy="0" rx="3.6" ry="2.6" fill="none" stroke="#D9E9AE" strokeWidth="1.6" />
-          {[0, 60, 120, 180, 240, 300].map((a) => (
-            <ellipse key={a} cx={3.4 * Math.cos((a * Math.PI) / 180)} cy={2.5 * Math.sin((a * Math.PI) / 180)} rx="0.8" ry="0.45" fill="#F4F8DC" />
+        <Shadow u={u} w={56} y={53} />
+        {zuc(33, 30, -14, 0.88, "back")}
+        {zuc(31, 41, -3, 0.82, "front")}
+        {/* cut slice: creamy flesh, small seeds, thin green rim */}
+        <g transform="translate(52 47)">
+          <ellipse cx="0" cy="1" rx="7.6" ry="5.8" fill="#2D6A25" />
+          <ellipse cx="0" cy="0" rx="7.2" ry="5.4" fill="#4E8B36" />
+          <ellipse cx="0" cy="0" rx="6.4" ry="4.8" fill={f(u, "flesh")} />
+          {[20, 80, 140, 200, 260, 320].map((a) => (
+            <ellipse key={a} cx={2.4 * Math.cos((a * Math.PI) / 180)} cy={1.8 * Math.sin((a * Math.PI) / 180)} rx="0.7" ry="0.38" fill="#E3E6B8" transform={`rotate(${a} ${2.4 * Math.cos((a * Math.PI) / 180)} ${1.8 * Math.sin((a * Math.PI) / 180)})`} />
           ))}
         </g>
       </>
