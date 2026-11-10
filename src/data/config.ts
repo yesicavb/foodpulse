@@ -53,11 +53,11 @@ export const CO2_FACTORS: Record<CategoryId, number> = {
 
 export const CATEGORIES: Record<CategoryId, { label: string; tile: string; text: string }> = {
   panetteria: { label: "Panetteria", tile: "bg-amber-50", text: "text-amber-700" },
-  gastronomia: { label: "Gastronomia", tile: "bg-orange-50", text: "text-orange-700" },
+  gastronomia: { label: "Gastronomia", tile: "bg-red-50", text: "text-red-700" },
   carne: { label: "Carne", tile: "bg-rose-50", text: "text-rose-700" },
   pesce: { label: "Pesce", tile: "bg-sky-50", text: "text-sky-700" },
   ortofrutta: { label: "Ortofrutta", tile: "bg-brand-50", text: "text-brand-600" },
-  latticini: { label: "Latticini e formaggi", tile: "bg-stone-100", text: "text-stone-700" },
+  latticini: { label: "Latticini e formaggi", tile: "bg-yellow-50", text: "text-yellow-800" },
 };
 export const CATEGORY_ORDER: CategoryId[] = ["panetteria", "gastronomia", "carne", "pesce", "ortofrutta", "latticini"];
 

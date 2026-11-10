@@ -192,7 +192,7 @@ export function ImpactView() {
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString(locale(), { maximumFractionDigits: 1 })} />
               <Tooltip formatter={(v: number) => [money(v), "Risparmio"]} labelFormatter={(l) => (l === "Questa" ? "Questa settimana" : `${String(l).replace("-", "")} settimane fa`)} cursor={{ fill: "#EEF7F0" }} />
-              <Bar dataKey="saved" fill="#1F7A43" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="saved" fill="#1B5E20" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -208,7 +208,7 @@ export function ImpactView() {
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#646D63" }} axisLine={false} tickLine={false} width={44} tickFormatter={(v: number) => v.toLocaleString(locale(), { maximumFractionDigits: 1 })} />
               <Tooltip formatter={(v: number) => [formatKg(v), "Cibo non sprecato"]} cursor={{ fill: "#EEF7F0" }} />
-              <Bar dataKey="kg" fill="#4FA96B" radius={[6, 6, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="kg" fill="#7CB342" radius={[6, 6, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>

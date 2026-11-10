@@ -1,10 +1,9 @@
 "use client";
 
-import { AlertCircle, ArrowRight, CheckSquare, ListChecks, Plus, ShoppingCart, Square, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckSquare, ChevronRight, Leaf, ListChecks, Plus, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { EmptyState, QtyStepper, SectionTitle } from "@/components/ui/Controls";
-import { ProductThumb } from "@/components/ui/ProductThumb";
-import { CATEGORIES } from "@/data/config";
+import { QtyStepper, SectionTitle } from "@/components/ui/Controls";
+import { BasketHero, FoodArt, ProductArt } from "@/components/ui/FoodArt";
 import { freshById } from "@/data/products";
 import { money } from "@/lib/format";
 import { cartTotals, isAvailable } from "@/lib/pricing";
@@ -26,28 +25,40 @@ export function CartScreen() {
 
   return (
     <div className="space-y-5">
-      <SectionTitle eyebrow={store ? store.name : "Nessun supermercato"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare. Lo sconto dipende da quanto in anticipo prenoti." />
-
       {t.lines.length === 0 ? (
-        <EmptyState
-          icon={<ShoppingCart size={26} />}
-          title="Il carrello è vuoto"
-          text={store ? "Aggiungi i freschi suggeriti nello Smart Basket o esplora il catalogo." : "Scegli un supermercato nello Smart Basket per iniziare."}
-          action={
-            <button type="button" className="btn-primary" onClick={() => setTab("basket")}>
-              Vai allo Smart Basket
+        <div className="flex animate-rise flex-col items-center pt-4 text-center">
+          <BasketHero size={190} />
+          <h1 className="mt-4 max-w-[14ch] text-[26px] font-bold leading-tight tracking-tight text-ink-900">Il tuo carrello è ancora vuoto</h1>
+          <p className="mt-2 max-w-[30ch] text-[14.5px] leading-relaxed text-ink-600">
+            {store ? "Aggiungi i tuoi prodotti preferiti o scopri la tua spesa intelligente generata dall'AI." : "Scegli un supermercato nello Smart Basket per iniziare."}
+          </p>
+          <button type="button" className="btn-primary mt-5 h-12 w-full max-w-[320px] text-[15px]" onClick={() => setTab("basket")}>
+            Vai allo Smart Basket <ArrowRight size={18} />
+          </button>
+          {store && (
+            <button
+              type="button"
+              onClick={goAdd}
+              className="mt-6 flex w-full items-center gap-3 overflow-hidden rounded-3xl bg-[#FFF1DC] py-2 pl-4 pr-2 text-left transition hover:brightness-[0.98]"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-brand-500">
+                <Leaf size={18} aria-hidden="true" />
+              </span>
+              <span className="flex-1 text-[14px] font-semibold leading-snug text-ink-900">Dai uno sguardo ai freschi in promo</span>
+              <ChevronRight size={18} className="shrink-0 text-ink-700" aria-hidden="true" />
+              <FoodArt id="pomodori" size={62} />
             </button>
-          }
-        />
+          )}
+        </div>
       ) : (
         <>
+          <SectionTitle eyebrow={store ? store.name : "Nessun supermercato"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare. Lo sconto dipende da quanto in anticipo prenoti." />
           <AdvanceSelector />
           <section aria-label="Prodotti da prenotare" className="grid gap-2.5">
             {t.lines.map((l) => {
-              const c = CATEGORIES[l.product.category];
               return (
                 <article key={l.product.id} className="card flex gap-3 p-3">
-                  <ProductThumb icon={l.product.icon} tile={c.tile} text={c.text} size={58} label={l.product.name} />
+                  <ProductArt id={l.product.id} size={64} label={l.product.name} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
@@ -63,10 +74,10 @@ export function CartScreen() {
                     <div className="mt-2 flex items-end justify-between gap-2">
                       <QtyStepper value={l.qty} onChange={(n) => setCartQty(l.product.id, n)} label={l.product.name} />
                       <div className="text-right leading-tight">
-                        <span className="badge bg-brand-50 text-brand-800">−{l.pct}%</span>
+                        <span className="badge bg-brand-400 text-white">−{l.pct}%</span>
                         <p className="mt-0.5">
                           <span className="text-[12px] tabular-nums text-ink-400 line-through">{money(l.price * l.qty)}</span>{" "}
-                          <span className="text-[16px] font-extrabold tabular-nums text-ink-900">{money(l.final * l.qty)}</span>
+                          <span className="text-[17px] font-bold tabular-nums text-ink-900">{money(l.final * l.qty)}</span>
                         </p>
                       </div>
                     </div>

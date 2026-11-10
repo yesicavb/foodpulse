@@ -2,7 +2,10 @@
 
 import { CheckCircle2, ShieldAlert } from "lucide-react";
 import type { ReactNode } from "react";
-import { ChipGroup, Toggle } from "@/components/ui/Controls";
+import { ChipGroup, FavoriteButton, Toggle } from "@/components/ui/Controls";
+import { FoodArt } from "@/components/ui/FoodArt";
+import { CAMPAIGNS } from "@/data/campaigns";
+import { freshById } from "@/data/products";
 import { CATEGORIES, CATEGORY_ORDER, INTEREST_LABEL } from "@/data/config";
 import { AGE_RANGES, ALLERGENS, DAYS, DIETS, FAVORITES, FREQUENCIES, GOALS, INTERESTS, KIDS_AGES, PETS, PRIORITIES, SHOPPING_FOR, WEEKLY_SPEND } from "@/data/options";
 import type { Allergen, CategoryId, Interest, Profile } from "@/lib/types";
@@ -128,6 +131,7 @@ export function DietSection() {
       <Block title="Prodotti preferiti">
         <ChipGroup options={opts(FAVORITES)} value={p.favorites} onToggle={(v) => set({ favorites: toggle(p.favorites, v) })} label="Prodotti preferiti" />
       </Block>
+      <SavedProducts />
       <Block title="Alimenti non graditi" hint="Separali con una virgola, ad esempio: zucchine, salsiccia.">
         <label htmlFor="pf-disliked" className="sr-only">Alimenti non graditi</label>
         <textarea id="pf-disliked" className="input min-h-[80px]" value={p.disliked} onChange={(e) => set({ disliked: e.target.value })} />
@@ -271,5 +275,39 @@ export function NotificationsSection() {
       </Block>
       <Saved />
     </div>
+  );
+}
+
+/** Products saved with the heart on the product cards */
+function SavedProducts() {
+  const [p] = useProfile();
+  const ids = p.favoriteProducts ?? [];
+  const items = ids
+    .map((id) => {
+      const f = freshById(id);
+      if (f) return { id, name: f.name, detail: f.unit };
+      const c = CAMPAIGNS.find((x) => x.id === id);
+      return c ? { id, name: c.product, detail: c.brand } : null;
+    })
+    .filter((x): x is { id: string; name: string; detail: string } => !!x);
+  return (
+    <Block title="I tuoi preferiti" hint="Tocca il cuore su un prodotto per salvarlo qui. Lo Smart Basket te lo proporrà più spesso.">
+      {items.length === 0 ? (
+        <p className="text-[13px] text-ink-500">Nessun prodotto salvato.</p>
+      ) : (
+        <ul className="grid gap-2">
+          {items.map((it) => (
+            <li key={it.id} className="flex items-center gap-3 rounded-2xl bg-cream p-2">
+              <FoodArt id={it.id} size={44} />
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block text-[14px] font-semibold text-ink-900">{it.name}</span>
+                <span className="text-[12px] text-ink-500">{it.detail}</span>
+              </span>
+              <FavoriteButton id={it.id} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </Block>
   );
 }

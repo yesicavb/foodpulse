@@ -158,6 +158,8 @@ export interface Profile {
   interests: Interest[];
   diet: Diet | "";
   favorites: string[];
+  /** products saved with the heart (fresh product or sponsored campaign ids) */
+  favoriteProducts?: string[];
   disliked: string;
   frequency: string;
   days: string[];

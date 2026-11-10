@@ -127,7 +127,10 @@ export function buildSmartList(profile: Profile, history: Record<string, number>
       score += 1.2;
       reasons.push({ w: 1.2, text: `Adatto alla tua alimentazione ${profile.diet}` });
     }
-    if (profile.favorites.some((f) => matchesFavorite(p, f))) {
+    if ((profile.favoriteProducts ?? []).includes(p.id)) {
+      score += 2.5;
+      reasons.push({ w: 2.5, text: "L'hai salvato tra i preferiti" });
+    } else if (profile.favorites.some((f) => matchesFavorite(p, f))) {
       score += 1.2;
       reasons.push({ w: 1.2, text: "Tra i prodotti che preferisci" });
     }

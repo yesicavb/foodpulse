@@ -38,7 +38,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function LanguageSwitch() {
   const { lang, setLang } = useLang();
   return (
-    <div data-no-translate role="group" aria-label="Lingua / Language" className="inline-flex shrink-0 rounded-full bg-ink-100 p-0.5 text-[12px] font-extrabold">
+    <div data-no-translate role="group" aria-label="Lingua / Language" className="inline-flex shrink-0 gap-0.5 rounded-full border border-brand-100 bg-white p-0.5 text-[12px] font-bold">
       {(["it", "en"] as const).map((l) => (
         <button
           key={l}
@@ -46,7 +46,7 @@ export function LanguageSwitch() {
           aria-pressed={lang === l}
           aria-label={l === "it" ? "Italiano" : "English"}
           onClick={() => setLang(l)}
-          className={`min-h-[32px] min-w-[38px] rounded-full px-2.5 uppercase transition ${lang === l ? "bg-white text-brand-800 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+          className={`min-h-[30px] min-w-[34px] rounded-full px-2 uppercase transition ${lang === l ? "bg-brand-50 text-brand-700" : "text-ink-500 hover:text-ink-700"}`}
         >
           {l}
         </button>
