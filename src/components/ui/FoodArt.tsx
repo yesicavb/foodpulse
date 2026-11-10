@@ -1,629 +1,1150 @@
 /**
- * Flat food illustrations drawn for FOODPULSE (no photos, no brand artwork).
- * One drawing per product, department and empty state. Each drawing uses a 64 × 64 grid.
+ * Food illustrations drawn for FOODPULSE (no photos, no brand artwork), in a soft
+ * realistic style: gradients for volume, highlights for shine, small details for texture.
+ * One drawing per product, department and empty state, on a 64 × 64 grid.
  * To give a new product a picture, add its id to ART_FOR below (or reuse a similar drawing).
  */
-import type { ReactElement, ReactNode } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 
-const C = {
-  crust: "#C98A4B",
-  crustDark: "#9C6430",
-  crumb: "#F2C98F",
-  red: "#E53935",
-  redDark: "#B71C1C",
-  leaf: "#43A047",
-  leafLight: "#7CB342",
-  leafDark: "#2E7D32",
-  cream: "#FFF8EE",
-  white: "#FFFFFF",
-  shadow: "rgba(27,94,32,0.10)",
-};
+/** Each drawing gets `u(name)`, which makes gradient ids unique per picture on the page */
+type U = (name: string) => string;
+type Art = (u: U) => ReactElement;
+type Stop = [number, string, number?];
 
-const Shadow = ({ w = 40, y = 54 }: { w?: number; y?: number }) => <ellipse cx="32" cy={y} rx={w / 2} ry="3.5" fill={C.shadow} />;
-
-/* Small reusable shapes */
-const Tub = ({ body, band, lid, top = "#FFFFFF", fill }: { body: string; band: string; lid: string; top?: string; fill?: ReactElement }) => (
-  <>
-    <Shadow w={34} y={55} />
-    <path d="M15 24 L49 24 L45 53 Q32 56 19 53 Z" fill={body} stroke="#D5DEE8" strokeWidth="1.5" />
-    <path d="M17.2 38 L46.8 38 L45.9 45 L18.1 45 Z" fill={band} />
-    <ellipse cx="32" cy="24" rx="17" ry="5" fill={lid} stroke="#C9D5E3" strokeWidth="1.2" />
-    <ellipse cx="32" cy="23.4" rx="14" ry="3.6" fill={top} />
-    {fill}
-    <path d="M19.5 28 L21.5 50" stroke="#E8EEF4" strokeWidth="2.5" strokeLinecap="round" />
-  </>
-);
-
-const Bag = ({ color, band, children }: { color: string; band: string; children?: ReactNode }) => (
-  <>
-    <Shadow w={34} />
-    <path d="M18 14 L46 14 L48 52 Q32 56 16 52 Z" fill={color} />
-    <path d="M18 14 L46 14 L46.4 20 L17.6 20 Z" fill={band} />
-    <path d="M18 17 L46 17" stroke="#FFFFFF" strokeOpacity="0.5" strokeDasharray="2 2" />
-    {children}
-  </>
-);
-
-const Jar = ({ lid, content, dots }: { lid: string; content: string; dots: string }) => (
-  <>
-    <Shadow w={30} />
-    <rect x="19" y="20" width="26" height="34" rx="7" fill="#EAF6E5" />
-    <rect x="21" y="26" width="22" height="26" rx="5" fill={content} />
-    {[[26, 31], [33, 30], [38, 35], [28, 38], [35, 41], [25, 46], [32, 47], [39, 47]].map(([x, y], i) => (
-      <circle key={i} cx={x} cy={y} r="3" fill={dots} />
+const Lin = ({ id, s, x1 = 0, y1 = 0, x2 = 0, y2 = 1 }: { id: string; s: Stop[]; x1?: number; y1?: number; x2?: number; y2?: number }) => (
+  <linearGradient id={id} x1={x1} y1={y1} x2={x2} y2={y2}>
+    {s.map(([o, c, a], i) => (
+      <stop key={i} offset={o} stopColor={c} stopOpacity={a ?? 1} />
     ))}
-    <rect x="18" y="14" width="28" height="8" rx="3" fill={lid} />
-    <path d="M23 26 L23 48" stroke="#FFFFFF" strokeOpacity="0.55" strokeWidth="2.5" strokeLinecap="round" />
-  </>
+  </linearGradient>
+);
+const Rad = ({ id, s, cx = 0.38, cy = 0.32, r = 0.75 }: { id: string; s: Stop[]; cx?: number; cy?: number; r?: number }) => (
+  <radialGradient id={id} cx={cx} cy={cy} r={r}>
+    {s.map(([o, c, a], i) => (
+      <stop key={i} offset={o} stopColor={c} stopOpacity={a ?? 1} />
+    ))}
+  </radialGradient>
+);
+const f = (u: U, n: string) => `url(#${u(n)})`;
+
+/** Soft contact shadow under each item */
+const Shadow = ({ u, w = 44, y = 55, o = 0.22 }: { u: U; w?: number; y?: number; o?: number }) => (
+  <ellipse cx="32" cy={y} rx={w / 2} ry="3.6" fill="#3B2A1A" opacity={o} filter={f(u, "blur")} />
+);
+/** Glossy highlight */
+const Shine = ({ cx, cy, rx, ry, rot = -30, o = 0.55 }: { cx: number; cy: number; rx: number; ry: number; rot?: number; o?: number }) => (
+  <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#FFFFFF" opacity={o} transform={`rotate(${rot} ${cx} ${cy})`} />
 );
 
-const Box = ({ color, side, children }: { color: string; side: string; children?: ReactNode }) => (
+/* A ceramic bowl; the food goes on top (surface at y≈33) */
+const Bowl = ({ u, children }: { u: U; children: ReactNode }) => (
   <>
-    <Shadow w={38} />
-    <path d="M17 13 L43 13 L49 17 L49 53 L23 53 L17 49 Z" fill={side} />
-    <rect x="17" y="13" width="26" height="40" rx="2" fill={color} />
+    <defs>
+      <Lin id={u("bowl")} s={[[0, "#FFFFFF"], [0.6, "#EEF2EA"], [1, "#C9D4C1"]]} />
+      <Lin id={u("rim")} s={[[0, "#FFFFFF"], [1, "#DDE5D6"]]} />
+    </defs>
+    <Shadow u={u} w={46} y={54} />
+    <path d="M8 33 Q10 53 32 53 Q54 53 56 33 Z" fill={f(u, "bowl")} />
+    <path d="M14 42 Q22 50 32 50" stroke="#FFFFFF" strokeWidth="2.4" fill="none" opacity="0.8" strokeLinecap="round" />
+    <ellipse cx="32" cy="33" rx="24" ry="7.5" fill={f(u, "rim")} />
     {children}
   </>
 );
 
-const ART: Record<string, ReactElement> = {
+/* A plastic tub with a printed band and a foil lid */
+const Tub = ({ u, band, top, fill }: { u: U; band: string; top: string; fill?: ReactElement }) => (
+  <>
+    <defs>
+      <Lin id={u("tub")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#E3E8EE"], [0.25, "#FFFFFF"], [0.6, "#F4F6F9"], [1, "#C7CFD9"]]} />
+      <Lin id={u("band")} x1={0} y1={0} x2={1} y2={0} s={[[0, band, 0.75], [0.3, band], [1, band, 0.7]]} />
+      <Rad id={u("foil")} cx={0.35} cy={0.3} s={[[0, "#FFFFFF"], [0.6, top], [1, "#B9C3CF"]]} />
+    </defs>
+    <Shadow u={u} w={36} y={55} />
+    <path d="M14 23 L50 23 L46 53 Q32 56.5 18 53 Z" fill={f(u, "tub")} />
+    <path d="M16.6 37 L47.4 37 L46.4 45 L17.6 45 Z" fill={f(u, "band")} />
+    <ellipse cx="32" cy="23" rx="18" ry="5.2" fill="#C9D2DD" />
+    <ellipse cx="32" cy="22.4" rx="16.6" ry="4.4" fill={f(u, "foil")} />
+    {fill}
+  </>
+);
+
+/* A glass jar with a lid; `inside` draws the contents */
+const Jar = ({ u, lid, inside }: { u: U; lid: string; inside: ReactElement }) => (
+  <>
+    <defs>
+      <Lin id={u("glass")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#FFFFFF", 0.5], [0.2, "#FFFFFF", 0.1], [0.8, "#FFFFFF", 0.05], [1, "#FFFFFF", 0.45]]} />
+      <Lin id={u("lid")} s={[[0, lid], [1, "#000000"]]} />
+    </defs>
+    <Shadow u={u} w={32} />
+    <rect x="18" y="19" width="28" height="36" rx="8" fill="#E9F1EC" opacity="0.9" />
+    {inside}
+    <rect x="18" y="19" width="28" height="36" rx="8" fill={f(u, "glass")} />
+    <path d="M22 25 L22 48" stroke="#FFFFFF" strokeWidth="2.6" strokeLinecap="round" opacity="0.85" />
+    <rect x="17" y="13" width="30" height="8" rx="3" fill={lid} />
+    <rect x="17" y="17" width="30" height="4" rx="2" fill={f(u, "lid")} opacity="0.35" />
+    <path d="M20 15 L44 15" stroke="#FFFFFF" strokeWidth="1.4" opacity="0.5" strokeLinecap="round" />
+  </>
+);
+
+/* A pouch / bag with a top seal */
+const Pouch = ({ u, c1, c2, band, children }: { u: U; c1: string; c2: string; band: string; children?: ReactNode }) => (
+  <>
+    <defs>
+      <Lin id={u("pouch")} x1={0} y1={0} x2={1} y2={0} s={[[0, c2], [0.3, c1], [0.7, c1], [1, c2]]} />
+    </defs>
+    <Shadow u={u} w={36} />
+    <path d="M17 13 L47 13 L49 52 Q32 56 15 52 Z" fill={f(u, "pouch")} />
+    <path d="M17 13 L47 13 L47.4 19 L16.6 19 Z" fill={band} />
+    <path d="M18 16 L46 16" stroke="#FFFFFF" strokeOpacity="0.55" strokeDasharray="1.5 1.5" />
+    {children}
+    <path d="M21 22 Q20 37 21 50" stroke="#FFFFFF" strokeWidth="2.2" opacity="0.35" fill="none" strokeLinecap="round" />
+  </>
+);
+
+/* A printed box in 3/4 view */
+const Carton = ({ u, c, side, children }: { u: U; c: string; side: string; children?: ReactNode }) => (
+  <>
+    <defs>
+      <Lin id={u("box")} x1={0} y1={0} x2={1} y2={1} s={[[0, c], [1, side]]} />
+    </defs>
+    <Shadow u={u} w={40} />
+    <path d="M16 12 L42 12 L49 17 L49 54 L23 54 L16 49 Z" fill={side} />
+    <rect x="16" y="12" width="27" height="42" rx="2" fill={f(u, "box")} />
+    {children}
+    <path d="M18 14 L18 50" stroke="#FFFFFF" strokeWidth="1.6" opacity="0.4" strokeLinecap="round" />
+  </>
+);
+
+export const ART: Record<string, Art> = {
   /* ---------- Bakery ---------- */
-  bread: (
+  bread: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M9 40 C9 25 21 18 32 18 C43 18 55 25 55 40 C55 47 51 50 45 50 L19 50 C13 50 9 47 9 40 Z" fill={C.crust} />
-      <path d="M12 38 C13 27 22 22 32 22 C42 22 51 27 52 38" fill="none" stroke={C.crumb} strokeOpacity="0.45" strokeWidth="3" strokeLinecap="round" />
-      {[20, 29, 38].map((x) => (
-        <path key={x} d={`M${x} 27 L${x + 7} 35`} stroke={C.crustDark} strokeWidth="2.6" strokeLinecap="round" />
+      <defs>
+        <Rad id={u("b")} cx={0.42} cy={0.3} r={0.8} s={[[0, "#F2BE7A"], [0.55, "#D18B45"], [1, "#9A5623"]]} />
+        <Lin id={u("cut")} s={[[0, "#FBE3B8"], [1, "#E9B877"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M7 40 C7 24 20 17 32 17 C44 17 57 24 57 40 C57 48 52 51 45 51 L19 51 C12 51 7 48 7 40 Z" fill={f(u, "b")} />
+      {[17, 27, 37].map((x) => (
+        <g key={x}>
+          <path d={`M${x} 26 Q${x + 5} 29 ${x + 9} 36`} stroke="#8A4A1C" strokeWidth="4.2" strokeLinecap="round" fill="none" opacity="0.55" />
+          <path d={`M${x} 26 Q${x + 5} 29 ${x + 9} 36`} stroke={f(u, "cut")} strokeWidth="2.4" strokeLinecap="round" fill="none" />
+        </g>
+      ))}
+      <Shine cx={22} cy={23} rx={8} ry={2.6} rot={-20} o={0.35} />
+      {[[14, 33], [46, 30], [40, 22], [24, 41], [50, 40]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="0.8" fill="#FFF6E5" opacity="0.8" />
       ))}
     </>
   ),
-  rye: (
+  rye: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M9 40 C9 25 21 18 32 18 C43 18 55 25 55 40 C55 47 51 50 45 50 L19 50 C13 50 9 47 9 40 Z" fill="#8A5A36" />
-      {[[18, 32], [25, 26], [32, 30], [39, 25], [46, 32], [22, 40], [30, 38], [38, 40], [45, 42], [28, 45], [37, 46]].map(([x, y], i) => (
-        <ellipse key={i} cx={x} cy={y} rx="1.8" ry="1.1" fill="#F0DFA8" transform={`rotate(${i * 37} ${x} ${y})`} />
+      <defs>
+        <Rad id={u("b")} cx={0.42} cy={0.3} r={0.8} s={[[0, "#A97950"], [0.6, "#7A4D2C"], [1, "#4A2C17"]]} />
+        <Lin id={u("seed")} s={[[0, "#FFF4D6"], [1, "#D9C08A"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M7 40 C7 24 20 17 32 17 C44 17 57 24 57 40 C57 48 52 51 45 51 L19 51 C12 51 7 48 7 40 Z" fill={f(u, "b")} />
+      {[[16, 32], [22, 25], [29, 29], [35, 22], [42, 27], [48, 33], [19, 40], [27, 37], [35, 34], [42, 40], [26, 45], [36, 45], [50, 42], [12, 38]].map(([x, y], i) => (
+        <ellipse key={i} cx={x} cy={y} rx="2" ry="1.15" fill={f(u, "seed")} transform={`rotate(${i * 47} ${x} ${y})`} />
       ))}
+      <Shine cx={22} cy={22} rx={8} ry={2.4} rot={-20} o={0.22} />
     </>
   ),
-  focaccia: (
+  focaccia: (u) => (
     <>
-      <Shadow w={48} />
-      <rect x="8" y="22" width="48" height="28" rx="7" fill="#E3A94A" />
-      <rect x="8" y="22" width="48" height="23" rx="7" fill="#F2C462" />
-      {[[16, 29], [26, 33], [36, 28], [46, 33], [20, 38], [32, 39], [43, 39]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="2.2" fill="#D08C2C" />
+      <defs>
+        <Rad id={u("t")} cx={0.4} cy={0.3} r={0.85} s={[[0, "#FBE09A"], [0.6, "#EDB65A"], [1, "#C98530"]]} />
+        <Rad id={u("d")} cx={0.5} cy={0.6} r={0.6} s={[[0, "#B8721F"], [1, "#E4A64A"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      <rect x="7" y="23" width="50" height="28" rx="8" fill="#B87A2C" />
+      <rect x="7" y="21" width="50" height="26" rx="8" fill={f(u, "t")} />
+      {[[15, 28], [25, 32], [35, 27], [46, 31], [19, 38], [31, 39], [42, 39], [51, 38]].map(([x, y], i) => (
+        <ellipse key={i} cx={x} cy={y} rx="2.6" ry="2" fill={f(u, "d")} />
       ))}
-      {[[22, 28], [40, 34], [30, 31]].map(([x, y], i) => (
-        <path key={i} d={`M${x} ${y} l3 -2`} stroke={C.leafDark} strokeWidth="1.6" strokeLinecap="round" />
+      {[[21, 27, 20], [39, 33, -30], [29, 30, 60], [48, 27, 10], [14, 36, -40]].map(([x, y, r], i) => (
+        <path key={i} d={`M${x} ${y} l4 0`} stroke="#3E6B2A" strokeWidth="1.5" strokeLinecap="round" transform={`rotate(${r} ${x} ${y})`} />
       ))}
+      {[[18, 31], [33, 35], [44, 28], [27, 42], [50, 34]].map(([x, y], i) => (
+        <rect key={i} x={x} y={y} width="1.4" height="1.4" fill="#FFFFFF" opacity="0.9" transform={`rotate(45 ${x} ${y})`} />
+      ))}
+      <Shine cx={20} cy={25} rx={9} ry={2.2} rot={-8} o={0.4} />
     </>
   ),
-  croissant: (
+  croissant: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M7 42 Q12 22 32 21 Q52 22 57 42 Q51 40 47 42 Q43 30 32 30 Q21 30 17 42 Q13 40 7 42 Z" fill="#D9963F" />
-      <path d="M17 42 Q21 30 32 30 Q43 30 47 42 Q40 47 32 47 Q24 47 17 42 Z" fill="#E8AE57" />
-      {["M22 25 Q25 33 22 40", "M32 21 L32 47", "M42 25 Q39 33 42 40"].map((d) => (
-        <path key={d} d={d} fill="none" stroke="#B8732B" strokeWidth="2" strokeLinecap="round" />
+      <defs>
+        <Rad id={u("c")} cx={0.45} cy={0.25} r={0.9} s={[[0, "#FAD08A"], [0.5, "#E39B45"], [1, "#A8581C"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      {[
+        "M6 44 Q8 34 16 32 Q20 38 18 46 Q12 48 6 44 Z",
+        "M14 31 Q20 24 27 25 Q30 34 26 42 Q19 43 16 38 Z",
+        "M25 23 Q32 20 39 23 Q40 33 36 41 Q28 42 26 34 Z",
+        "M37 25 Q44 24 50 31 Q48 38 45 42 Q38 43 37 34 Z",
+        "M48 32 Q56 34 58 44 Q52 48 46 46 Q44 38 48 32 Z",
+      ].map((d, i) => (
+        <path key={i} d={d} fill={f(u, "c")} stroke="#9C5419" strokeWidth="0.8" strokeOpacity="0.5" />
       ))}
+      <Shine cx={31} cy={26} rx={5} ry={1.8} rot={-5} o={0.6} />
+      <Shine cx={20} cy={30} rx={3.5} ry={1.4} rot={-35} o={0.45} />
+      <Shine cx={43} cy={28} rx={3.5} ry={1.4} rot={30} o={0.45} />
     </>
   ),
-  piadina: (
+  piadina: (u) => (
     <>
-      <Shadow w={46} />
-      <ellipse cx="32" cy="42" rx="23" ry="8" fill="#E9C98D" />
-      <ellipse cx="32" cy="37" rx="23" ry="8" fill="#F3DCA8" />
-      <ellipse cx="32" cy="32" rx="23" ry="8" fill="#F8E6BD" />
-      {[[22, 31], [30, 29], [39, 32], [44, 30], [27, 34], [35, 34]].map(([x, y], i) => (
-        <ellipse key={i} cx={x} cy={y} rx="2" ry="1.1" fill="#C98A4B" opacity="0.7" />
+      <defs>
+        <Rad id={u("p")} cx={0.45} cy={0.4} r={0.7} s={[[0, "#FFF3D8"], [0.7, "#F3D9A2"], [1, "#DDB56E"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      {[44, 40, 36, 32].map((y, i) => (
+        <g key={y}>
+          <ellipse cx="32" cy={y + 1.5} rx="24" ry="8" fill="#D2A762" />
+          <ellipse cx="32" cy={y} rx="24" ry="8" fill={f(u, "p")} />
+          {i === 3 && [[20, 30], [27, 28], [35, 31], [42, 29], [47, 32], [24, 34], [33, 35], [40, 34], [16, 33]].map(([x, yy], k) => (
+            <ellipse key={k} cx={x} cy={yy} rx={k % 2 ? 1.8 : 1.2} ry="0.9" fill="#A8692F" opacity="0.65" />
+          ))}
+        </g>
       ))}
     </>
   ),
 
   /* ---------- Deli ---------- */
-  lasagne: (
+  lasagne: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M10 24 L54 24 L50 50 L14 50 Z" fill="#7A4A2E" />
-      <rect x="13" y="22" width="38" height="25" rx="3" fill="#F5D57A" />
-      <rect x="13" y="28" width="38" height="4" fill="#C0392B" />
-      <rect x="13" y="35" width="38" height="3" fill="#F8E7B0" />
-      <rect x="13" y="40" width="38" height="4" fill="#C0392B" />
-      <path d="M13 24 Q20 19 26 24 Q32 19 38 24 Q44 19 51 24 L51 27 L13 27 Z" fill="#E9B44C" />
-      <circle cx="22" cy="23" r="1.5" fill="#B5651D" />
-      <circle cx="40" cy="22.5" r="1.5" fill="#B5651D" />
-      <path d="M44 19 l3 -3 M46 21 l4 -1" stroke={C.leaf} strokeWidth="2" strokeLinecap="round" />
-    </>
-  ),
-  chicken: (
-    <>
-      <ellipse cx="32" cy="46" rx="26" ry="8" fill="#EDE6D6" />
-      <ellipse cx="32" cy="34" rx="18" ry="13" fill="#C77A3A" />
-      <ellipse cx="29" cy="30" rx="10" ry="6" fill="#E09A55" />
-      <path d="M46 36 Q54 34 55 40 Q55 44 50 42" fill="#B86A2E" />
-      <path d="M18 36 Q10 34 9 40 Q9 44 14 42" fill="#B86A2E" />
-      <circle cx="55" cy="41" r="2" fill="#FFF8EE" />
-      <circle cx="9" cy="41" r="2" fill="#FFF8EE" />
-      <path d="M40 22 l2 -3 M43 24 l3 -2" stroke={C.leafDark} strokeWidth="1.6" strokeLinecap="round" />
-    </>
-  ),
-  ricesalad: (
-    <>
-      <Shadow w={44} />
-      <path d="M10 32 L54 32 Q52 52 32 52 Q12 52 10 32 Z" fill="#F1F7EC" stroke="#CFE3C2" strokeWidth="1.5" />
-      <path d="M10 32 L54 32 Q53.6 35 53 37 L11 37 Q10.4 35 10 32 Z" fill={C.leafLight} />
-      <ellipse cx="32" cy="32" rx="22" ry="7" fill="#F5EBC8" />
-      {[[20, 31, "#7CB342"], [26, 29, "#FBC02D"], [33, 32, "#FF8A3D"], [39, 29, "#7CB342"], [44, 32, "#E57373"], [29, 34, "#FBC02D"], [37, 34, "#7CB342"], [24, 34, "#E57373"]].map(([x, y, c], i) => (
-        <circle key={i} cx={x as number} cy={y as number} r="1.9" fill={c as string} />
+      <defs>
+        <Lin id={u("pan")} s={[[0, "#9C6B45"], [1, "#5E3A22"]]} />
+        <Lin id={u("sauce")} s={[[0, "#E2533A"], [1, "#A8271A"]]} />
+        <Rad id={u("top")} cx={0.4} cy={0.3} s={[[0, "#FBE39A"], [0.7, "#EDB851"], [1, "#C98A2F"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M9 25 L55 25 L51 52 L13 52 Z" fill={f(u, "pan")} />
+      <rect x="12" y="24" width="40" height="25" rx="3" fill="#F6E3B3" />
+      <rect x="12" y="29" width="40" height="5" fill={f(u, "sauce")} />
+      <rect x="12" y="37" width="40" height="2.5" fill="#FFF1CC" />
+      <rect x="12" y="41.5" width="40" height="5" fill={f(u, "sauce")} />
+      <path d="M12 26 Q18 19 25 24 Q31 18 38 24 Q45 19 52 25 L52 29 L12 29 Z" fill={f(u, "top")} />
+      {[[19, 23], [31, 22.5], [43, 23.5], [36, 26], [24, 26.5]].map(([x, y], i) => (
+        <ellipse key={i} cx={x} cy={y} rx="2" ry="1.2" fill="#A9612A" opacity="0.75" />
       ))}
+      <path d="M44 20 Q46 15 50 16 Q48 20 44 20 Z M47 21 Q52 19 54 22 Q50 24 47 21 Z" fill="#3F8E3A" />
+      <Shine cx={22} cy={24} rx={5} ry={1.3} rot={-12} o={0.5} />
     </>
   ),
-  hummus: (
+  chicken: (u) => (
     <>
-      <Shadow w={44} />
-      <path d="M10 32 L54 32 Q52 52 32 52 Q12 52 10 32 Z" fill="#F1F7EC" stroke="#CFE3C2" strokeWidth="1.5" />
-      <path d="M11 37 L53 37" stroke={C.leafLight} strokeWidth="3" />
-      <ellipse cx="32" cy="32" rx="22" ry="7" fill="#E3C79A" />
-      <path d="M22 32 Q32 26 42 32 Q32 37 24 33" fill="none" stroke="#C9A570" strokeWidth="2" strokeLinecap="round" />
-      <ellipse cx="32" cy="32" rx="5" ry="2" fill="#C5B03A" opacity="0.8" />
-      {[[26, 29], [38, 30], [35, 34]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.1" fill="#C0392B" />
-      ))}
-    </>
-  ),
-  lentilballs: (
-    <>
-      <Shadow w={44} />
-      <path d="M10 34 L54 34 Q52 52 32 52 Q12 52 10 34 Z" fill="#F1F7EC" stroke="#CFE3C2" strokeWidth="1.5" />
-      <path d="M11 39 L53 39" stroke={C.leafLight} strokeWidth="3" />
-      {[[22, 31], [32, 29], [42, 31], [27, 35], [37, 35]].map(([x, y], i) => (
+      {/* roast chicken seen from slightly above: two breast halves, tucked wings, drumsticks with bones */}
+      <defs>
+        <Rad id={u("skin")} cx={0.4} cy={0.3} r={0.8} s={[[0, "#F9CB87"], [0.45, "#DE8E3E"], [0.85, "#A45A1E"], [1, "#7A3E12"]]} />
+        <Rad id={u("leg")} cx={0.35} cy={0.3} r={0.8} s={[[0, "#F3B66F"], [0.6, "#C9772F"], [1, "#874317"]]} />
+        <Rad id={u("plate")} cx={0.5} cy={0.4} r={0.7} s={[[0, "#FFFFFF"], [1, "#E3DDCD"]]} />
+        <Rad id={u("lem")} cx={0.4} cy={0.4} s={[[0, "#FFF6B0"], [1, "#F2CC2E"]]} />
+      </defs>
+      <ellipse cx="32" cy="47" rx="29" ry="9.5" fill={f(u, "plate")} />
+      <ellipse cx="32" cy="47" rx="29" ry="9.5" fill="none" stroke="#D6CDB8" strokeWidth="0.9" />
+      {/* lemon slices and herbs on the plate */}
+      {[[10, 49], [53, 50]].map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="6" fill="#8B5E3C" />
-          <circle cx={x - 2} cy={y - 2} r="2" fill="#A87850" />
+          <ellipse cx={x} cy={y} rx="4.2" ry="2.4" fill="#E2B21E" />
+          <ellipse cx={x} cy={y - 0.3} rx="3.6" ry="2" fill={f(u, "lem")} />
+          <path d={`M${x - 3} ${y - 0.3} L${x + 3} ${y - 0.3} M${x} ${y - 2} L${x} ${y + 1.4}`} stroke="#FFFFFF" strokeWidth="0.5" opacity="0.8" />
         </g>
       ))}
-      <path d="M46 26 l3 -3 M48 28 l4 -1" stroke={C.leaf} strokeWidth="2" strokeLinecap="round" />
+      <path d="M17 53 l3 -2.5 M20 54 l3.5 -1.5 M44 54 l3 -2 M41 53 l2.5 -2.5" stroke="#3F8E3A" strokeWidth="1.5" strokeLinecap="round" />
+      {/* wings tucked at the sides */}
+      <path d="M14 29 Q7 29 7.5 35 Q10.5 37 15 34 Z" fill={f(u, "leg")} />
+      <path d="M50 29 Q57 29 56.5 35 Q53.5 37 49 34 Z" fill={f(u, "leg")} />
+      {/* body */}
+      <path d="M12 37 Q10 24 22 20 Q32 17 42 20 Q54 24 52 37 Q50 45 32 46 Q14 45 12 37 Z" fill={f(u, "skin")} />
+      {/* breast halves and the ridge in the middle */}
+      <path d="M32 20 Q30 31 32 44" stroke="#8E4A17" strokeWidth="1.3" fill="none" opacity="0.55" strokeLinecap="round" />
+      <path d="M22 23 Q16 30 19 38" stroke="#FFE2B0" strokeWidth="1.2" fill="none" opacity="0.5" strokeLinecap="round" />
+      <Shine cx={25} cy={26} rx={4.5} ry={2.2} rot={-30} o={0.6} />
+      <Shine cx={39} cy={25} rx={3.5} ry={1.8} rot={25} o={0.45} />
+      {/* crispy skin texture */}
+      {[[18, 33], [24, 37], [28, 31], [36, 33], [41, 38], [45, 30], [21, 28], [43, 26], [35, 41], [27, 42]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={i % 3 ? 0.55 : 0.8} fill="#8E4A17" opacity="0.5" />
+      ))}
+      {/* drumsticks pointing forwards, with bone ends */}
+      <path d="M21 38 Q13 37 11 42.5 Q10.5 46.5 14.5 46 Q18.5 45 22.5 42 Z" fill={f(u, "leg")} />
+      <path d="M43 38 Q51 37 53 42.5 Q53.5 46.5 49.5 46 Q45.5 45 41.5 42 Z" fill={f(u, "leg")} />
+      <Shine cx={15} cy={41} rx={2.4} ry={1.1} rot={-25} o={0.5} />
+      <Shine cx={48} cy={41} rx={2.4} ry={1.1} rot={25} o={0.5} />
+      {[[10.6, 45.2], [53.4, 45.2]].map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x - 1.1} cy={y} r="1.6" fill="#FFF8EE" stroke="#E5D9C3" strokeWidth="0.5" />
+          <circle cx={x + 1.1} cy={y + 0.8} r="1.6" fill="#FFF8EE" stroke="#E5D9C3" strokeWidth="0.5" />
+        </g>
+      ))}
+      {/* sprig of rosemary on top */}
+      <path d="M35 21 L44 16" stroke="#4E6B2E" strokeWidth="1" strokeLinecap="round" />
+      {[37, 40, 43].map((x, i) => (
+        <path key={x} d={`M${x} ${20 - i * 1.6} l1 -2.6 M${x} ${20 - i * 1.6} l2.4 1.2`} stroke="#3F6B2A" strokeWidth="1.1" strokeLinecap="round" />
+      ))}
     </>
   ),
-  tofu: (
+  ricesalad: (u) => (
+    <Bowl u={u}>
+      <defs>
+        <Rad id={u("rice")} cx={0.45} cy={0.4} r={0.7} s={[[0, "#FFFBEA"], [1, "#E9DDB6"]]} />
+      </defs>
+      <ellipse cx="32" cy="32" rx="21.5" ry="6.4" fill={f(u, "rice")} />
+      {[[19, 31, "#6FA83B"], [25, 29, "#F6C431"], [31, 32, "#F08A3C"], [37, 29.5, "#6FA83B"], [43, 31.5, "#E86A5A"], [28, 34.5, "#F6C431"], [36, 34, "#6FA83B"], [23, 34, "#E86A5A"], [41, 34.5, "#F6C431"], [33, 28.5, "#C9927A"]].map(([x, y, c], i) => (
+        <g key={i}>
+          <circle cx={x as number} cy={y as number} r="1.8" fill={c as string} />
+          <circle cx={(x as number) - 0.5} cy={(y as number) - 0.6} r="0.55" fill="#FFFFFF" opacity="0.7" />
+        </g>
+      ))}
+      {[[22, 31.5], [30, 30], [39, 32], [26, 33], [34, 33.5], [45, 33]].map(([x, y], i) => (
+        <ellipse key={`r${i}`} cx={x} cy={y} rx="1.1" ry="0.5" fill="#FFFFFF" transform={`rotate(${i * 40} ${x} ${y})`} />
+      ))}
+    </Bowl>
+  ),
+  hummus: (u) => (
+    <Bowl u={u}>
+      <defs>
+        <Rad id={u("h")} cx={0.45} cy={0.4} r={0.7} s={[[0, "#F2DDB5"], [1, "#D2AE76"]]} />
+        <Rad id={u("oil")} cx={0.5} cy={0.5} r={0.6} s={[[0, "#E3D36A"], [1, "#B8A43A", 0.6]]} />
+      </defs>
+      <ellipse cx="32" cy="32" rx="21.5" ry="6.4" fill={f(u, "h")} />
+      <path d="M19 32 Q32 24 45 32 Q32 38 22 33.5" fill="none" stroke="#BE9660" strokeWidth="1.8" strokeLinecap="round" />
+      <ellipse cx="32" cy="31.6" rx="6" ry="2.2" fill={f(u, "oil")} />
+      {[[25, 29.5], [38, 30], [35, 34], [28, 34]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="0.9" fill="#B83A22" />
+      ))}
+      {[[30, 31.5], [33.5, 30.8]].map(([x, y], i) => (
+        <circle key={`c${i}`} cx={x} cy={y} r="1.5" fill="#E8C98E" stroke="#C4A068" strokeWidth="0.5" />
+      ))}
+    </Bowl>
+  ),
+  lentilballs: (u) => (
+    <Bowl u={u}>
+      <defs>
+        <Rad id={u("ball")} cx={0.35} cy={0.3} r={0.75} s={[[0, "#B98A5E"], [0.6, "#875A36"], [1, "#55351E"]]} />
+      </defs>
+      {[[21, 30], [32, 28], [43, 30], [26, 34], [38, 34]].map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="6.2" fill={f(u, "ball")} />
+          {[[-2, -1], [1, 2], [2, -2], [-1, 3]].map(([dx, dy], k) => (
+            <circle key={k} cx={x + dx} cy={y + dy} r="0.7" fill="#3F2512" opacity="0.6" />
+          ))}
+          <Shine cx={x - 2.2} cy={y - 2.4} rx={1.8} ry={1} o={0.45} />
+        </g>
+      ))}
+      <path d="M45 23 Q48 18 52 19 Q50 23 45 23 Z M48 25 Q53 23 55 26 Q51 28 48 25 Z" fill="#3F8E3A" />
+    </Bowl>
+  ),
+  tofu: (u) => (
     <>
-      <Shadow w={44} />
-      <path d="M12 28 L40 22 L54 28 L54 46 L26 52 L12 46 Z" fill="#E6DDC4" />
-      <path d="M12 28 L26 34 L26 52 L12 46 Z" fill="#F4EEDC" />
-      <path d="M12 28 L40 22 L54 28 L26 34 Z" fill="#FFFBEF" />
-      <path d="M30 39 l8 -2 M32 44 l10 -2" stroke="#D9CEB0" strokeWidth="1.6" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("top")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFFFFF"], [1, "#F3ECD6"]]} />
+        <Lin id={u("front")} s={[[0, "#F7F1DF"], [1, "#E2D7B9"]]} />
+        <Lin id={u("side")} s={[[0, "#E8DFC5"], [1, "#CFC29F"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      <path d="M11 27 L39 20 L55 27 L27 34 Z" fill={f(u, "top")} />
+      <path d="M11 27 L27 34 L27 53 L11 46 Z" fill={f(u, "front")} />
+      <path d="M27 34 L55 27 L55 46 L27 53 Z" fill={f(u, "side")} />
+      {[[33, 40], [42, 38], [37, 46], [48, 42], [16, 38], [21, 45]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="0.6" fill="#BFAE85" />
+      ))}
+      <path d="M15 28.5 L38 22.8" stroke="#FFFFFF" strokeWidth="1.4" opacity="0.9" strokeLinecap="round" />
     </>
   ),
 
   /* ---------- Meat ---------- */
-  chickenbreast: (
+  chickenbreast: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M10 38 Q12 24 28 26 Q40 28 38 40 Q34 50 20 48 Q10 46 10 38 Z" fill="#F2B8A2" />
-      <path d="M28 34 Q32 22 46 24 Q56 28 54 38 Q52 48 40 47 Q28 44 28 34 Z" fill="#F6C7B4" />
-      <path d="M34 30 Q42 27 49 31" fill="none" stroke="#FFFFFF" strokeOpacity="0.6" strokeWidth="2.4" strokeLinecap="round" />
-      <path d="M15 34 Q21 30 29 32" fill="none" stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="2.2" strokeLinecap="round" />
-    </>
-  ),
-  turkey: (
-    <>
-      <Shadow w={46} />
-      {[[22, 38], [32, 34], [42, 38]].map(([x, y], i) => (
-        <g key={i}>
-          <ellipse cx={x} cy={y} rx="13" ry="10" fill="#E8A894" />
-          <ellipse cx={x} cy={y} rx="11" ry="8" fill="#F7D3C4" />
-        </g>
+      <defs>
+        <Rad id={u("m")} cx={0.4} cy={0.3} r={0.8} s={[[0, "#FFE1D3"], [0.6, "#F4B49C"], [1, "#D9846A"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M8 39 Q9 24 27 26 Q40 28 39 40 Q35 51 20 49 Q8 47 8 39 Z" fill={f(u, "m")} />
+      <path d="M27 34 Q31 21 47 23 Q58 27 56 38 Q54 49 41 48 Q27 45 27 34 Z" fill={f(u, "m")} />
+      {["M13 36 Q22 31 33 34", "M14 42 Q23 38 33 41", "M32 30 Q42 26 51 30", "M33 37 Q43 33 52 37", "M34 43 Q42 40 50 43"].map((d) => (
+        <path key={d} d={d} fill="none" stroke="#E79B82" strokeWidth="0.9" opacity="0.7" strokeLinecap="round" />
       ))}
-      <path d="M26 33 Q32 30 38 33" fill="none" stroke="#FFFFFF" strokeOpacity="0.6" strokeWidth="2" strokeLinecap="round" />
+      <Shine cx={18} cy={31} rx={6} ry={2} rot={-15} o={0.6} />
+      <Shine cx={39} cy={27} rx={6} ry={1.8} rot={-12} o={0.6} />
     </>
   ),
-  minced: (
+  turkey: (u) => (
     <>
-      <Shadow w={48} />
-      <rect x="8" y="34" width="48" height="16" rx="5" fill="#2F4F6F" />
-      <path d="M12 38 Q16 22 32 22 Q48 22 52 38 Z" fill="#D9576B" />
-      {[[20, 33], [26, 28], [33, 31], [40, 27], [45, 34], [30, 36], [24, 36], [38, 35]].map(([x, y], i) => (
-        <path key={i} d={`M${x} ${y} q2 -2 4 0`} stroke="#B23A4E" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-      ))}
-      <rect x="8" y="38" width="48" height="4" fill="#3E6A8F" />
-    </>
-  ),
-  burger: (
-    <>
-      <Shadow w={44} />
-      <ellipse cx="32" cy="44" rx="20" ry="7" fill="#5E3520" />
-      <ellipse cx="32" cy="41" rx="20" ry="7" fill="#7A4A2E" />
-      <ellipse cx="32" cy="32" rx="20" ry="7" fill="#5E3520" />
-      <ellipse cx="32" cy="29" rx="20" ry="7" fill="#8A5636" />
-      {[24, 31, 38].map((x) => (
-        <path key={x} d={`M${x} 25 l4 7`} stroke="#4A2816" strokeWidth="2" strokeLinecap="round" />
-      ))}
-    </>
-  ),
-  sausage: (
-    <>
-      <Shadow w={44} />
-      <path d="M32 34 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -16 0 a13 13 0 1 1 26 0 a17 15 0 0 1 -6 11" fill="none" stroke="#C2614A" strokeWidth="7" strokeLinecap="round" />
-      <path d="M32 34 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -16 0 a13 13 0 1 1 26 0" fill="none" stroke="#E08A70" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.7" />
-    </>
-  ),
-  steak: (
-    <>
-      <Shadow w={48} />
-      <path d="M10 34 Q10 18 30 18 Q50 18 54 30 Q57 44 42 48 Q28 52 18 48 Q10 44 10 34 Z" fill="#C62828" />
-      <path d="M14 34 Q14 22 30 22 Q46 22 50 31 Q52 42 40 44 Q28 47 20 44 Q14 41 14 34 Z" fill="#E04848" />
-      <path d="M20 30 Q28 26 36 30 Q42 34 46 32" fill="none" stroke="#FFE4E1" strokeWidth="2.2" strokeLinecap="round" />
-      <path d="M22 38 Q30 36 38 40" fill="none" stroke="#FFE4E1" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="44" cy="38" r="4" fill="#FFF8EE" />
-    </>
-  ),
-
-  /* ---------- Fish ---------- */
-  salmon: (
-    <>
-      <Shadow w={48} />
-      <path d="M8 38 Q10 24 30 24 L56 28 Q58 40 50 46 L26 48 Q8 48 8 38 Z" fill="#F28C5B" />
-      <path d="M8 38 Q10 24 30 24 L56 28 L54 32 L30 30 Q14 30 10 40 Z" fill="#F7A57B" />
-      {[18, 27, 36, 45].map((x) => (
-        <path key={x} d={`M${x} 28 Q${x + 4} 37 ${x} 46`} fill="none" stroke="#FFD9C4" strokeWidth="2" strokeLinecap="round" />
-      ))}
-    </>
-  ),
-  bream: (
-    <>
-      <Shadow w={50} />
-      <path d="M8 34 Q22 18 42 26 L54 18 L52 34 L54 50 L42 42 Q22 50 8 34 Z" fill="#B7C4CC" />
-      <path d="M8 34 Q22 22 42 28 L42 32 Q24 28 10 36 Z" fill="#D7E0E5" />
-      <path d="M14 34 Q28 30 42 34" fill="none" stroke="#E2B13C" strokeWidth="2" />
-      <circle cx="15" cy="31" r="2.2" fill="#263238" />
-      <circle cx="14.4" cy="30.4" r="0.7" fill="#FFFFFF" />
-      <path d="M22 26 Q24 34 22 42" fill="none" stroke="#8FA1AC" strokeWidth="1.6" />
-    </>
-  ),
-  cod: (
-    <>
-      <Shadow w={48} />
-      <path d="M8 36 Q8 24 26 24 L54 27 Q58 38 52 45 L26 48 Q8 48 8 36 Z" fill="#EFE8DA" />
-      <path d="M8 36 Q8 24 26 24 L54 27 L53 31 L26 29 Q12 30 9 38 Z" fill="#FBF8F1" />
-      {[20, 30, 40].map((x) => (
-        <path key={x} d={`M${x} 28 Q${x + 4} 37 ${x} 46`} fill="none" stroke="#DDD3BF" strokeWidth="1.8" strokeLinecap="round" />
-      ))}
-    </>
-  ),
-  prawns: (
-    <>
-      <Shadow w={44} />
-      {[[24, 34, 0], [40, 34, 20]].map(([x, y, r], i) => (
+      <defs>
+        <Rad id={u("s")} cx={0.45} cy={0.4} r={0.65} s={[[0, "#FFF0E8"], [0.7, "#F6CDBD"], [1, "#E4A28C"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      {[[19, 39, -12], [32, 35, 0], [45, 39, 12]].map(([x, y, r], i) => (
         <g key={i} transform={`rotate(${r} ${x} ${y})`}>
-          <path d={`M${x - 10} ${y - 4} A11 11 0 1 0 ${x + 9} ${y - 8}`} fill="none" stroke="#F28A6B" strokeWidth="8" strokeLinecap="round" />
-          <path d={`M${x - 10} ${y - 4} A11 11 0 1 0 ${x + 9} ${y - 8}`} fill="none" stroke="#FFC2AE" strokeWidth="2" strokeDasharray="3 4" strokeLinecap="round" />
+          <ellipse cx={x} cy={y + 1} rx="13.5" ry="10.5" fill="#D58D76" />
+          <ellipse cx={x} cy={y} rx="13" ry="10" fill={f(u, "s")} />
+          <path d={`M${x - 7} ${y - 2} Q${x} ${y - 5} ${x + 7} ${y - 2}`} fill="none" stroke="#FFFFFF" strokeWidth="1.6" opacity="0.7" strokeLinecap="round" />
         </g>
       ))}
     </>
   ),
-
-  /* ---------- Fruit and vegetables ---------- */
-  lettuce: (
+  minced: (u) => (
     <>
-      <Shadow w={46} />
-      <circle cx="22" cy="36" r="14" fill={C.leafDark} />
-      <circle cx="42" cy="36" r="14" fill={C.leafDark} />
-      <circle cx="32" cy="28" r="15" fill={C.leaf} />
-      <circle cx="26" cy="38" r="12" fill={C.leafLight} />
-      <circle cx="39" cy="39" r="11" fill="#9CCC65" />
-      <path d="M32 50 L32 22 M32 36 L24 30 M32 40 L41 33" stroke="#DCEDC8" strokeWidth="1.8" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("tray")} s={[[0, "#3A4A5C"], [1, "#1F2A36"]]} />
+        <Rad id={u("meat")} cx={0.45} cy={0.25} r={0.8} s={[[0, "#F08A93"], [0.6, "#D4505F"], [1, "#9E2E3C"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      <path d="M6 36 L58 36 L54 51 L10 51 Z" fill={f(u, "tray")} />
+      <path d="M6 36 L58 36" stroke="#5B6C80" strokeWidth="2" />
+      <path d="M11 38 Q14 21 32 21 Q50 21 53 38 Z" fill={f(u, "meat")} />
+      {Array.from({ length: 22 }, (_, i) => {
+        const x = 15 + ((i * 37) % 34);
+        const y = 25 + ((i * 13) % 12);
+        return <path key={i} d={`M${x} ${y} q1.6 -1.6 3.2 0`} stroke={i % 3 ? "#A93646" : "#F6B4B8"} strokeWidth="1.1" fill="none" strokeLinecap="round" />;
+      })}
+      <Shine cx={24} cy={25} rx={5} ry={1.6} rot={-20} o={0.35} />
     </>
   ),
-  tomatoes: (
+  burger: (u) => (
     <>
-      <Shadow w={44} />
-      {[[22, 38], [40, 38], [31, 28]].map(([x, y], i) => (
-        <g key={i}>
-          <ellipse cx={x} cy={y} rx="10" ry="9" fill={C.red} />
-          <ellipse cx={x - 3} cy={y - 3} rx="3" ry="2" fill="#FFFFFF" opacity="0.45" />
-          <path d={`M${x - 4} ${y - 8} l4 2 l4 -2 l-2 3 l3 1 l-5 0 l-2 3 l-1 -3 l-4 0 l3 -2 z`} fill={C.leafDark} />
+      <defs>
+        <Rad id={u("p")} cx={0.4} cy={0.3} r={0.8} s={[[0, "#9E6A45"], [0.6, "#6E4027"], [1, "#3E2213"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      {[42, 30].map((y) => (
+        <g key={y}>
+          <ellipse cx="32" cy={y + 3} rx="21" ry="7.5" fill="#3A1F10" />
+          <ellipse cx="32" cy={y} rx="21" ry="7.5" fill={f(u, "p")} />
+          {[22, 30, 38].map((x) => (
+            <path key={x} d={`M${x} ${y - 5} l5 9`} stroke="#2A160A" strokeWidth="2.2" strokeLinecap="round" opacity="0.75" />
+          ))}
+          <Shine cx={24} cy={y - 3} rx={5} ry={1.4} rot={-10} o={0.3} />
         </g>
       ))}
     </>
   ),
-  spinach: (
+  sausage: (u) => (
     <>
-      <Shadow w={44} />
-      {[[-30, 22], [0, 32], [30, 42]].map(([r, x], i) => (
-        <g key={i} transform={`rotate(${r} 32 48)`}>
-          <path d="M32 48 Q18 32 32 12 Q46 32 32 48 Z" fill={i === 1 ? C.leaf : C.leafDark} />
-          <path d="M32 46 L32 16" stroke="#A5D6A7" strokeWidth="1.6" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("s")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#E48C6E"], [1, "#A9452D"]]} />
+      </defs>
+      <Shadow u={u} w={46} />
+      <path d="M32 33 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -16 0 a13 13 0 1 1 26 0 a17 15 0 0 1 -5 11" fill="none" stroke="#7E2F1E" strokeWidth="8" strokeLinecap="round" />
+      <path d="M32 33 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -16 0 a13 13 0 1 1 26 0 a17 15 0 0 1 -5 11" fill="none" stroke={f(u, "s")} strokeWidth="6.6" strokeLinecap="round" />
+      <path d="M32 33 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -16 0 a13 13 0 1 1 26 0" fill="none" stroke="#FFD2C0" strokeWidth="1.4" strokeLinecap="round" opacity="0.7" transform="translate(-0.8 -1.2)" />
+    </>
+  ),
+  steak: (u) => (
+    <>
+      <defs>
+        <Lin id={u("board")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#D9A86C"], [1, "#A8743D"]]} />
+        <Rad id={u("fat")} cx={0.45} cy={0.35} r={0.75} s={[[0, "#FFF6E6"], [0.7, "#F2DCBE"], [1, "#D5B48A"]]} />
+        <Rad id={u("m")} cx={0.42} cy={0.38} r={0.72} s={[[0, "#E3424D"], [0.55, "#B61F2B"], [1, "#741019"]]} />
+      </defs>
+      <Shadow u={u} w={56} y={55} />
+      <rect x="4" y="30" width="56" height="24" rx="6" fill={f(u, "board")} />
+      {[35, 41, 47].map((y) => (
+        <path key={y} d={`M8 ${y} Q32 ${y + 1.5} 56 ${y}`} stroke="#9A6532" strokeWidth="0.6" fill="none" opacity="0.6" />
+      ))}
+      {/* ribeye with a thin fat edge, a fat "eye" and natural marbling */}
+      <path d="M9 32 Q8 18 23 15.5 Q33 13 44 16.5 Q57 21.5 56 33 Q55 46 40 48 Q27 50 17 46 Q9 42 9 32 Z" fill={f(u, "fat")} />
+      <path d="M11.8 32 Q11.5 20.5 24 18.3 Q33 16.2 43 19.3 Q53.2 23.5 52.8 33 Q51.5 43.5 39.5 45.3 Q27 47.2 18.5 43.7 Q11.8 40.3 11.8 32 Z" fill={f(u, "m")} />
+      <path d="M33 26.5 Q36.5 24 40 26.5 Q41.5 29 39.6 31.4 Q37 33.4 34 32.2 Q31.6 31 32 28.6 Q32.2 27.4 33 26.5 Z" fill="#EBC2A8" opacity="0.8" />
+      <path d="M34 27.6 Q36.5 26 39 27.4" stroke="#F8E2D2" strokeWidth="0.8" fill="none" opacity="0.7" strokeLinecap="round" />
+      {[
+        "M15 29 Q18.5 27.5 21 29.5 Q23 31 26.5 30",
+        "M16.5 36 Q20 33.6 24 35.2 Q27 36.6 30 35.6 Q32.6 34.8 34.5 36.6",
+        "M21 41.5 Q24.5 39.6 28 41 Q30.5 42 33 40.8",
+        "M41.5 37.5 Q44.6 35.8 47.6 37.4 Q49.4 38.4 50.4 37.2",
+        "M43.5 26.5 Q46.4 25.6 48.6 28.4",
+        "M22 23.5 Q24.6 21.8 27.8 22.8",
+        "M36.5 41.8 Q40 40.4 43.4 42.2",
+        "M26.5 30 Q28.5 32 30.2 31.2",
+        "M41 31.5 Q43.5 33.5 46.5 32.6",
+      ].map((d, i) => (
+        <path key={d} d={d} fill="none" stroke="#F7D9CF" strokeWidth={i % 2 ? 0.7 : 1} strokeLinecap="round" opacity="0.85" />
+      ))}
+      {[[19, 25], [27, 26.5], [45.5, 30.5], [24, 38.5], [38, 38.5], [48.5, 34], [30, 43.5], [17.5, 33], [43, 22.5]].map(([x, y], i) => (
+        <ellipse key={i} cx={x} cy={y} rx={i % 2 ? 0.9 : 1.3} ry={0.5} fill="#F3CEC5" opacity="0.8" transform={`rotate(${i * 23} ${x} ${y})`} />
+      ))}
+      <Shine cx={21} cy={22.5} rx={6} ry={1.5} rot={-20} o={0.3} />
+      <path d="M44 51 L58 44" stroke="#4E6B2E" strokeWidth="1.2" strokeLinecap="round" />
+      {[46, 49, 52, 55].map((x, i) => (
+        <g key={x}>
+          <path d={`M${x} ${50.5 - i * 1.6} l1.5 -3`} stroke="#3F6B2A" strokeWidth="1.3" strokeLinecap="round" />
+          <path d={`M${x} ${50.5 - i * 1.6} l2.6 1.6`} stroke="#3F6B2A" strokeWidth="1.3" strokeLinecap="round" />
         </g>
+      ))}
+      {[[12, 50], [15, 52], [10, 53]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="1" fill="#2B211A" />
       ))}
     </>
   ),
-  courgette: (
+  /* ---------- Fish ---------- */
+  salmon: (u) => (
     <>
-      <Shadow w={50} />
-      <g transform="rotate(-18 32 34)">
-        <rect x="8" y="26" width="46" height="15" rx="7.5" fill={C.leafDark} />
-        {[16, 24, 32, 40].map((x) => (
-          <path key={x} d={`M${x} 28 L${x + 6} 28`} stroke="#81C784" strokeWidth="1.6" strokeLinecap="round" />
-        ))}
-        <rect x="4" y="30" width="7" height="7" rx="2" fill="#558B2F" />
-        <path d="M54 33 L61 27 L60 33 L61 39 Z" fill="#FBC02D" />
+      <defs>
+        <Lin id={u("f")} s={[[0, "#FFB088"], [0.55, "#F2814F"], [1, "#D35F30"]]} />
+        <Lin id={u("skin")} s={[[0, "#B9C2C9"], [1, "#7D8A94"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      <path d="M7 41 Q8 47 26 49 L52 47 Q59 44 58 36 Z" fill={f(u, "skin")} />
+      <path d="M7 39 Q8 24 29 23 L56 27 Q60 39 52 46 L26 48 Q7 48 7 39 Z" fill={f(u, "f")} />
+      {[16, 25, 34, 43, 51].map((x) => (
+        <path key={x} d={`M${x} 26 Q${x + 5} 36 ${x - 1} 47`} fill="none" stroke="#FFE3D3" strokeWidth="1.8" strokeLinecap="round" opacity="0.9" />
+      ))}
+      <Shine cx={24} cy={28} rx={9} ry={2} rot={-6} o={0.45} />
+    </>
+  ),
+  bream: (u) => (
+    <>
+      <defs>
+        <Lin id={u("body")} s={[[0, "#7F95A4"], [0.45, "#C9D5DD"], [0.75, "#EEF3F6"], [1, "#FFFFFF"]]} />
+        <Lin id={u("fin")} s={[[0, "#9FB0BC"], [1, "#6E8291"]]} />
+      </defs>
+      <Shadow u={u} w={54} />
+      <path d="M44 33 L58 20 Q55 34 58 48 Z" fill={f(u, "fin")} />
+      <path d="M28 21 Q34 13 42 18 L38 24 Z" fill={f(u, "fin")} />
+      <path d="M6 34 Q19 17 42 24 Q48 28 48 34 Q48 40 42 44 Q19 51 6 34 Z" fill={f(u, "body")} />
+      {Array.from({ length: 12 }, (_, i) => {
+        const x = 18 + (i % 4) * 6;
+        const y = 29 + Math.floor(i / 4) * 5;
+        return <path key={i} d={`M${x} ${y} q2.5 2 0 4`} fill="none" stroke="#8EA1AE" strokeWidth="0.7" opacity="0.6" />;
+      })}
+      <path d="M12 33 Q27 29 46 33" fill="none" stroke="#E1B547" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18 27 Q21 34 18 41" fill="none" stroke="#6E8291" strokeWidth="1.2" />
+      <circle cx="12.5" cy="31" r="2.4" fill="#1E2A30" />
+      <circle cx="11.8" cy="30.3" r="0.8" fill="#FFFFFF" />
+      <Shine cx={26} cy={25} rx={9} ry={1.6} rot={-8} o={0.6} />
+    </>
+  ),
+  cod: (u) => (
+    <>
+      <defs>
+        <Lin id={u("f")} s={[[0, "#FFFFFF"], [0.6, "#F3EEE2"], [1, "#DCD2BD"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      <path d="M7 38 Q7 23 27 23 L55 26 Q60 38 53 46 L27 49 Q7 49 7 38 Z" fill={f(u, "f")} />
+      {[17, 26, 35, 44].map((x) => (
+        <path key={x} d={`M${x} 26 Q${x + 5} 37 ${x} 47`} fill="none" stroke="#D8CDB4" strokeWidth="1.4" strokeLinecap="round" />
+      ))}
+      <path d="M10 41 Q30 46 54 42" fill="none" stroke="#C9C1AE" strokeWidth="1" opacity="0.7" />
+      <Shine cx={24} cy={28} rx={9} ry={2} rot={-6} o={0.7} />
+    </>
+  ),
+  prawns: (u) => {
+    /* a peeled, cooked prawn: one tapering "C" body with shell bands and the tail fan attached */
+    type P = [number, number];
+    const bz = (a: P, b: P, c: P, d: P, t: number): P => {
+      const m = 1 - t;
+      return [m * m * m * a[0] + 3 * m * m * t * b[0] + 3 * m * t * t * c[0] + t * t * t * d[0], m * m * m * a[1] + 3 * m * m * t * b[1] + 3 * m * t * t * c[1] + t * t * t * d[1]];
+    };
+    const O: [P, P, P, P] = [[3, -12], [-15, -12], [-16, 11], [4, 11]];
+    const I: [P, P, P, P] = [[3, 5], [-8, 5], [-8.5, -5], [3, -5]];
+    const prawn = (x: number, y: number, s: number, r: number, key: string) => (
+      <g key={key} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+        <path d="M3 5 C 8 6 12 8 14 13 C 10 13 8 12 6 11 C 8 15 7 17 5 18 C 3 15 3 12 4 11 Z" fill={f(u, "tail")} transform="translate(3.5 8) scale(0.58) translate(-3.5 -8) rotate(-18 3.5 8)" />
+        <path d="M3 -12 C -15 -12 -16 11 4 11 L3 5 C -8 5 -8.5 -5 3 -5 Z" fill="#B9452B" transform="translate(0.6 0.8)" />
+        <path d="M3 -12 C -15 -12 -16 11 4 11 L3 5 C -8 5 -8.5 -5 3 -5 Z" fill={f(u, "body")} />
+        {[0.12, 0.27, 0.42, 0.57, 0.72, 0.86].map((t) => {
+          const o = bz(...O, t);
+          const i = bz(...I, 1 - t);
+          return <path key={t} d={`M${o[0]} ${o[1]} Q${(o[0] + i[0]) / 2 - 1} ${(o[1] + i[1]) / 2} ${i[0]} ${i[1]}`} stroke="#FFF3EC" strokeWidth="1.3" fill="none" strokeLinecap="round" opacity="0.9" />;
+        })}
+        <path d="M3 -11 C -12 -11 -13.5 9 3 10" stroke="#C4512F" strokeWidth="0.9" fill="none" opacity="0.6" />
+        <ellipse cx="3.3" cy="-8.5" rx="1.6" ry="3.4" fill="#FFE0D2" />
+        <path d="M-6 -6 C -9 -2 -9 2 -7 5" stroke="#FFFFFF" strokeWidth="1.8" fill="none" strokeLinecap="round" opacity="0.55" />
       </g>
+    );
+    return (
+      <>
+        <defs>
+          <Lin id={u("body")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFC9B2"], [0.45, "#F7865C"], [1, "#D4542F"]]} />
+          <Lin id={u("tail")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#F26A40"], [1, "#A9361C"]]} />
+          <Rad id={u("plate")} cx={0.5} cy={0.4} r={0.7} s={[[0, "#FFFFFF"], [1, "#DCE6EE"]]} />
+          <Rad id={u("lem")} cx={0.4} cy={0.4} s={[[0, "#FFF6B0"], [1, "#F6D23A"]]} />
+        </defs>
+        <ellipse cx="32" cy="47" rx="28" ry="8.5" fill={f(u, "plate")} />
+        <ellipse cx="32" cy="47" rx="28" ry="8.5" fill="none" stroke="#C9D5DF" strokeWidth="0.9" />
+        <path d="M45 48.5 A9 9 0 0 1 60.5 43.5 Z" fill="#E9B91F" />
+        <path d="M46.3 47.8 A7.6 7.6 0 0 1 59.2 43.8 Z" fill={f(u, "lem")} />
+        <path d="M46.3 47.8 L50 42.7 M46.3 47.8 L54.5 42 M46.3 47.8 L58 43.2" stroke="#FFFFFF" strokeWidth="0.7" opacity="0.85" />
+        {prawn(22, 31, 1.25, -8, "a")}
+        {prawn(40, 32, 1.05, 14, "b")}
+      </>
+    );
+  },
+  /* ---------- Fruit and vegetables ---------- */
+  lettuce: (u) => (
+    <>
+      <defs>
+        <Rad id={u("d")} cx={0.4} cy={0.3} s={[[0, "#5DAE4C"], [1, "#2A6E26"]]} />
+        <Rad id={u("l")} cx={0.4} cy={0.3} s={[[0, "#D6EFA2"], [0.6, "#8BC34A"], [1, "#4E8F2C"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M8 40 Q6 24 20 22 Q22 14 32 15 Q42 14 44 22 Q58 24 56 40 Q54 52 32 52 Q10 52 8 40 Z" fill={f(u, "d")} />
+      <path d="M13 41 Q11 28 23 27 Q26 20 33 21 Q41 21 43 28 Q53 30 51 42 Q48 50 32 50 Q15 50 13 41 Z" fill={f(u, "l")} />
+      <path d="M18 43 Q18 34 27 33 Q30 28 35 29 Q42 30 43 36 Q47 40 44 46 Q38 50 30 49 Q19 48 18 43 Z" fill="#B8DE7B" opacity="0.9" />
+      {["M32 50 L32 22", "M32 38 L22 30", "M32 42 L44 33", "M32 46 L19 40", "M32 34 L41 26"].map((d) => (
+        <path key={d} d={d} stroke="#EEF8D8" strokeWidth="1.3" strokeLinecap="round" opacity="0.9" />
+      ))}
+      <Shine cx={24} cy={27} rx={5} ry={1.8} o={0.35} />
     </>
   ),
-  apples: (
+  tomatoes: (u) => (
     <>
-      <Shadow w={44} />
-      {[[23, 36], [41, 36]].map(([x, y], i) => (
-        <g key={i}>
-          <path d={`M${x} ${y - 9} Q${x - 13} ${y - 14} ${x - 12} ${y + 2} Q${x - 9} ${y + 14} ${x} ${y + 11} Q${x + 9} ${y + 14} ${x + 12} ${y + 2} Q${x + 13} ${y - 14} ${x} ${y - 9} Z`} fill={i ? "#C62828" : "#E53935"} />
-          <ellipse cx={x - 5} cy={y - 3} rx="2.5" ry="4" fill="#FFFFFF" opacity="0.35" />
-          <path d={`M${x} ${y - 9} L${x + 1} ${y - 15}`} stroke="#6D4C41" strokeWidth="2" strokeLinecap="round" />
-          <path d={`M${x + 1} ${y - 13} Q${x + 7} ${y - 17} ${x + 9} ${y - 12} Q${x + 4} ${y - 10} ${x + 1} ${y - 13} Z`} fill={C.leaf} />
+      <defs>
+        <Rad id={u("t")} cx={0.35} cy={0.3} r={0.75} s={[[0, "#FF8A75"], [0.45, "#E53935"], [1, "#8E1414"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      {[[21, 39, 10], [42, 39, -10], [31, 28, 0]].map(([x, y, r], i) => (
+        <g key={i} transform={`rotate(${r} ${x} ${y})`}>
+          <ellipse cx={x} cy={y} rx="11" ry="9.5" fill={f(u, "t")} />
+          <Shine cx={x - 4} cy={y - 3.5} rx={3} ry={1.8} o={0.7} />
+          <path d={`M${x} ${y - 9} l-4 -1.5 l2.5 2.8 l-4.5 1 l4.6 0.6 l-1.6 3 l3 -2.3 l3 2.3 l-1.6 -3 l4.6 -0.6 l-4.5 -1 l2.5 -2.8 z`} fill="#2F6B22" />
+          <path d={`M${x} ${y - 9} l0.5 -3`} stroke="#2F6B22" strokeWidth="1.4" strokeLinecap="round" />
         </g>
       ))}
     </>
   ),
-  bananas: (
+  spinach: (u) => (
     <>
-      <Shadow w={46} />
-      {[0, 8, 16].map((dy, i) => (
-        <g key={i}>
-          <path d={`M10 ${22 + dy} Q30 ${44 + dy} 54 ${26 + dy} Q54 ${32 + dy} 50 ${34 + dy} Q30 ${50 + dy} 10 ${28 + dy} Z`} fill={i === 1 ? "#F9D648" : "#FBE07A"} />
+      <defs>
+        <Lin id={u("a")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#5DB04E"], [1, "#1F5A1E"]]} />
+        <Lin id={u("b")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#7CC25E"], [1, "#2B6E27"]]} />
+      </defs>
+      <Shadow u={u} w={46} />
+      {[[-34, "a"], [34, "a"], [-10, "b"], [12, "b"]].map(([r, g], i) => (
+        <g key={i} transform={`rotate(${r} 32 50)`}>
+          <path d="M32 50 Q16 33 32 11 Q48 33 32 50 Z" fill={f(u, g as string)} />
+          <path d="M32 48 L32 15" stroke="#B9E3A3" strokeWidth="1.3" strokeLinecap="round" />
+          {[22, 29, 36].map((y) => (
+            <path key={y} d={`M32 ${y + 4} l-6 -5 M32 ${y + 4} l6 -5`} stroke="#A8D990" strokeWidth="0.8" strokeLinecap="round" opacity="0.8" />
+          ))}
+          <Shine cx={28} cy={24} rx={1.6} ry={5} rot={10} o={0.25} />
         </g>
       ))}
-      <path d="M8 22 L12 21 L12 46 L8 45 Z" fill="#7A5A2E" />
-      <path d="M52 27 l3 -1 M52 35 l3 -1 M52 43 l3 -1" stroke="#5D4037" strokeWidth="2.4" strokeLinecap="round" />
     </>
   ),
-  berries: (
+  courgette: (u) => {
+    /* courgette, not cucumber: thick ridged woody stem, smooth skin with pale lengthwise streaks,
+       slightly wider at the end with a small brown blossom scar, creamy flesh with small seeds */
+    const zuc = (x: number, y: number, r: number, s: number, key: string) => (
+      <g key={key} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+        <path d="M-22 -5 Q-22 -6 -20 -6 L16 -6.6 Q23.5 -6.4 23.5 0 Q23.5 6.4 16 6.6 L-20 6 Q-22 6 -22 5 Z" fill={f(u, "skin")} />
+        {/* pale streaks and flecks along the length */}
+        {[-4.4, -2.2, 0, 2.2, 4.4].map((dy, i) => (
+          <path key={dy} d={`M-19 ${dy * 0.9} Q2 ${dy} 20 ${dy * 1.02}`} stroke="#C7E3A4" strokeWidth={i % 2 ? 0.9 : 0.6} fill="none" opacity={i % 2 ? 0.45 : 0.3} strokeLinecap="round" />
+        ))}
+        {[[-12, -3], [-3, 2.6], [6, -1.2], [13, 3.4], [-15, 1.6], [2, -3.6], [10, -4.2], [-7, 0.6], [17, -0.8]].map(([fx, fy], i) => (
+          <ellipse key={i} cx={fx} cy={fy} rx={i % 2 ? 1.6 : 2.4} ry="0.35" fill="#DCEFC4" opacity="0.5" />
+        ))}
+        <path d="M-18 -4.6 Q2 -5.4 18 -4.6" stroke="#FFFFFF" strokeWidth="1.3" fill="none" opacity="0.35" strokeLinecap="round" />
+        {/* blossom scar */}
+        <ellipse cx="22.6" cy="0" rx="1" ry="1.6" fill="#8A6A3A" />
+        {/* woody, ridged, flared stem */}
+        <path d="M-21.5 -5.4 Q-24 -3.6 -25.5 -2.6 L-29 -1.9 L-29 1.9 L-25.5 2.6 Q-24 3.6 -21.5 5.4 Z" fill={f(u, "stem")} />
+        {[-3.4, -1.2, 1.2, 3.4].map((dy) => (
+          <path key={dy} d={`M-22 ${dy * 1.35} L-28.6 ${dy * 0.5}`} stroke="#5E6A2A" strokeWidth="0.6" />
+        ))}
+        <path d="M-29 -1.9 L-29 1.9" stroke="#4E5622" strokeWidth="1.1" strokeLinecap="round" />
+      </g>
+    );
+    return (
+      <>
+        <defs>
+          <Lin id={u("skin")} s={[[0, "#2D6A25"], [0.3, "#5E9B3E"], [0.55, "#3B7A2C"], [1, "#1D4A17"]]} />
+          <Lin id={u("stem")} s={[[0, "#A9B46A"], [0.5, "#7D8B3E"], [1, "#56622A"]]} />
+          <Rad id={u("flesh")} cx={0.45} cy={0.45} r={0.65} s={[[0, "#FFFDEB"], [0.7, "#F2F0CC"], [1, "#DCE3A6"]]} />
+        </defs>
+        <Shadow u={u} w={56} y={53} />
+        {zuc(33, 30, -14, 0.88, "back")}
+        {zuc(31, 41, -3, 0.82, "front")}
+        {/* cut slice: creamy flesh, small seeds, thin green rim */}
+        <g transform="translate(52 47)">
+          <ellipse cx="0" cy="1" rx="7.6" ry="5.8" fill="#2D6A25" />
+          <ellipse cx="0" cy="0" rx="7.2" ry="5.4" fill="#4E8B36" />
+          <ellipse cx="0" cy="0" rx="6.4" ry="4.8" fill={f(u, "flesh")} />
+          {[20, 80, 140, 200, 260, 320].map((a) => (
+            <ellipse key={a} cx={2.4 * Math.cos((a * Math.PI) / 180)} cy={1.8 * Math.sin((a * Math.PI) / 180)} rx="0.7" ry="0.38" fill="#E3E6B8" transform={`rotate(${a} ${2.4 * Math.cos((a * Math.PI) / 180)} ${1.8 * Math.sin((a * Math.PI) / 180)})`} />
+          ))}
+        </g>
+      </>
+    );
+  },
+  apples: (u) => (
     <>
-      <Shadow w={44} />
-      <path d="M12 34 L52 34 L48 50 L16 50 Z" fill="#E7C08A" />
-      <path d="M14 40 L50 40 M15 45 L49 45" stroke="#C99A5B" strokeWidth="1.6" />
-      {[[20, 31, "#3949AB"], [27, 28, "#E91E63"], [34, 31, "#3949AB"], [41, 28, "#E91E63"], [46, 32, "#3949AB"], [30, 34, "#C2185B"], [38, 34, "#3949AB"], [23, 35, "#E91E63"]].map(([x, y, c], i) => (
+      <defs>
+        <Rad id={u("a")} cx={0.32} cy={0.3} r={0.8} s={[[0, "#FF8A80"], [0.35, "#E53935"], [0.8, "#B71C1C"], [1, "#7F0E0E"]]} />
+        <Rad id={u("b")} cx={0.32} cy={0.3} r={0.8} s={[[0, "#FFD180"], [0.25, "#F06A3A"], [0.7, "#C62828"], [1, "#801010"]]} />
+        <Lin id={u("lf")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#7CC25E"], [1, "#2E7D32"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      {[[22, 37, "a"], [42, 37, "b"]].map(([x, y, g], i) => {
+        const X = x as number;
+        const Y = y as number;
+        return (
+          <g key={i}>
+            <path d={`M${X} ${Y - 9} Q${X - 14} ${Y - 15} ${X - 12.5} ${Y + 2} Q${X - 9.5} ${Y + 15} ${X} ${Y + 11.5} Q${X + 9.5} ${Y + 15} ${X + 12.5} ${Y + 2} Q${X + 14} ${Y - 15} ${X} ${Y - 9} Z`} fill={f(u, g as string)} />
+            <Shine cx={X - 5.5} cy={Y - 2} rx={2.4} ry={4.5} rot={15} o={0.45} />
+            <path d={`M${X} ${Y - 8} L${X + 1.2} ${Y - 15}`} stroke="#5D4037" strokeWidth="2" strokeLinecap="round" />
+            <path d={`M${X + 1} ${Y - 13} Q${X + 7} ${Y - 18} ${X + 10} ${Y - 12} Q${X + 4.5} ${Y - 9.5} ${X + 1} ${Y - 13} Z`} fill={f(u, "lf")} />
+          </g>
+        );
+      })}
+    </>
+  ),
+  bananas: (u) => (
+    <>
+      <defs>
+        <Lin id={u("b")} s={[[0, "#FFF2A6"], [0.4, "#F9D648"], [1, "#D9A81E"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      {[18, 10, 2].map((dy, i) => (
         <g key={i}>
-          <circle cx={x as number} cy={y as number} r="4.2" fill={c as string} />
-          <circle cx={(x as number) - 1.3} cy={(y as number) - 1.3} r="1.1" fill="#FFFFFF" opacity="0.5" />
+          <path d={`M10 ${20 + dy} Q30 ${42 + dy} 55 ${24 + dy} Q56 ${30 + dy} 51 ${33 + dy} Q30 ${49 + dy} 10 ${27 + dy} Z`} fill={f(u, "b")} stroke="#C99A16" strokeWidth="0.6" />
+          <path d={`M14 ${24 + dy} Q31 ${41 + dy} 51 ${28 + dy}`} fill="none" stroke="#FFFBE0" strokeWidth="1.2" opacity="0.8" />
+          <path d={`M52 ${25 + dy} l3.5 -1`} stroke="#4E3420" strokeWidth="2.6" strokeLinecap="round" />
         </g>
       ))}
-      <path d="M40 22 Q44 18 48 22 Q44 24 40 22 Z" fill={C.leaf} />
+      <path d="M7 20 L12 19 L12 47 L7 46 Z" fill="#7A5A2E" />
+      <path d="M6 18 l7 -2 l0 4 l-7 2 z" fill="#5C421F" />
     </>
   ),
-  vegmix: (
+  berries: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M41 23 Q30 21 30 33 Q31 46 42 46 Q53 46 54 33 Q54 21 41 23 Z" fill="#E53935" />
-      <path d="M41 23 L42 16" stroke="#6D4C41" strokeWidth="2" strokeLinecap="round" />
-      <path d="M42 18 Q48 14 50 19 Q46 21 42 18 Z" fill={C.leaf} />
-      <ellipse cx="22" cy="38" rx="12" ry="11" fill="#EF5350" />
-      <path d="M17 28 l5 3 l5 -3 l-2 4 l4 1 l-6 1 l-1 4 l-2 -4 l-5 0 l3 -2 z" fill={C.leafDark} />
-      <ellipse cx="18" cy="35" rx="3" ry="2" fill="#FFFFFF" opacity="0.45" />
+      <defs>
+        <Lin id={u("bk")} s={[[0, "#EBC992"], [1, "#B88A4E"]]} />
+        <Rad id={u("blue")} cx={0.35} cy={0.3} r={0.75} s={[[0, "#8C9EE6"], [0.5, "#3F4FA8"], [1, "#1F2660"]]} />
+        <Rad id={u("rasp")} cx={0.35} cy={0.3} r={0.75} s={[[0, "#FF8FB1"], [0.5, "#E0245E"], [1, "#8C0F34"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      <path d="M10 34 L54 34 L49 52 L15 52 Z" fill={f(u, "bk")} />
+      {[39, 44, 49].map((y) => (
+        <path key={y} d={`M${12 + (y - 34) * 0.3} ${y} L${52 - (y - 34) * 0.3} ${y}`} stroke="#9C7038" strokeWidth="0.9" />
+      ))}
+      {[[19, 31], [33, 30], [46, 31], [26, 34], [40, 34]].map(([x, y], i) => (
+        <g key={`b${i}`}>
+          <circle cx={x} cy={y} r="4.4" fill={f(u, "blue")} />
+          <circle cx={x} cy={y - 3.4} r="1" fill="#1A1F4A" />
+          <circle cx={x - 1.4} cy={y - 1.2} r="1" fill="#FFFFFF" opacity="0.4" />
+        </g>
+      ))}
+      {[[26, 27], [39, 26]].map(([x, y], i) => (
+        <g key={`r${i}`}>
+          {[[-2, -2], [0, -2.6], [2, -2], [-2.6, 0], [0, 0], [2.6, 0], [-2, 2], [0, 2.6], [2, 2]].map(([dx, dy], k) => (
+            <circle key={k} cx={x + dx} cy={y + dy} r="1.7" fill={f(u, "rasp")} />
+          ))}
+        </g>
+      ))}
+      <path d="M44 20 Q48 15 52 19 Q48 22 44 20 Z" fill="#3F8E3A" />
+    </>
+  ),
+  vegmix: (u) => (
+    <>
+      <defs>
+        <Rad id={u("ap")} cx={0.32} cy={0.3} r={0.8} s={[[0, "#FF8A80"], [0.4, "#E53935"], [1, "#801010"]]} />
+        <Rad id={u("tm")} cx={0.35} cy={0.3} r={0.75} s={[[0, "#FF9A85"], [0.45, "#EF4B3F"], [1, "#961818"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M42 22 Q30 19 30 33 Q31 47 42 46.5 Q53 47 54 33 Q54 19 42 22 Z" fill={f(u, "ap")} />
+      <Shine cx={36} cy={29} rx={2.2} ry={4.5} rot={15} o={0.45} />
+      <path d="M42 22 L43 15" stroke="#5D4037" strokeWidth="2" strokeLinecap="round" />
+      <path d="M43 17 Q49 13 51 18 Q47 20 43 17 Z" fill="#3F8E3A" />
+      <ellipse cx="22" cy="38" rx="13" ry="11.5" fill={f(u, "tm")} />
+      <Shine cx={17} cy={34} rx={3.2} ry={2} o={0.65} />
+      <path d="M22 27.5 l-4.5 -1.6 l2.8 3 l-5 1.1 l5 0.6 l-1.8 3.3 l3.5 -2.5 l3.5 2.5 l-1.8 -3.3 l5 -0.6 l-5 -1.1 l2.8 -3 z" fill="#2F6B22" />
     </>
   ),
 
   /* ---------- Dairy and cheese ---------- */
-  mozzarella: (
+  mozzarella: (u) => (
     <>
-      <Shadow w={40} />
-      <circle cx="32" cy="34" r="17" fill="#FAFAF5" />
-      <path d="M17 38 Q32 52 47 38 Q45 50 32 51 Q19 50 17 38 Z" fill="#ECECE2" />
-      <ellipse cx="26" cy="27" rx="5" ry="3" fill="#FFFFFF" />
-      <path d="M44 18 Q48 14 51 18 Q48 21 44 18 Z" fill={C.leaf} />
+      <defs>
+        <Rad id={u("m")} cx={0.38} cy={0.32} r={0.8} s={[[0, "#FFFFFF"], [0.6, "#F6F5EE"], [1, "#D9D6C8"]]} />
+        <Rad id={u("dish")} cx={0.5} cy={0.4} s={[[0, "#E8F2F8"], [1, "#B8D0DE"]]} />
+      </defs>
+      <ellipse cx="32" cy="47" rx="25" ry="7.5" fill={f(u, "dish")} />
+      <ellipse cx="32" cy="45.5" rx="21" ry="5" fill="#DCEBF2" opacity="0.8" />
+      <circle cx="32" cy="33" r="16" fill={f(u, "m")} />
+      <path d="M32 17 Q36 19 35 22" stroke="#E6E3D6" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Shine cx={25} cy={26} rx={5} ry={3} rot={-30} o={0.9} />
+      <path d="M45 17 Q49 12 53 16 Q49 20 45 17 Z" fill="#3F8E3A" />
+      <path d="M47 21 Q52 19 54 23 Q50 25 47 21 Z" fill="#5BA84A" />
     </>
   ),
-  yogurt: <Tub body="#F7FAFD" band="#5C8DD6" lid="#DCE7F5" top="#F2F6FB" />,
-  ricotta: (
+  yogurt: (u) => <Tub u={u} band="#4F86D1" top="#EEF3F9" />,
+  ricotta: (u) => (
     <Tub
-      body="#F7FAFD"
-      band={C.leafLight}
-      lid="#EAF6E5"
-      top="#FFFFFF"
-      fill={<path d="M20 23 Q32 13 44 23" fill="#FFFDF7" stroke="#EDE7D6" strokeWidth="1.5" />}
-    />
-  ),
-  cottage: (
-    <Tub
-      body="#F7FAFD"
-      band="#7EC4CF"
-      lid="#E0F2F4"
-      top="#FFFFFF"
+      u={u}
+      band="#7CB342"
+      top="#F7F9F3"
       fill={
         <>
-          {[[24, 22], [30, 20], [36, 21], [41, 23], [27, 25], [34, 24]].map(([x, y], i) => (
-            <circle key={i} cx={x} cy={y} r="2.4" fill="#FAF7EE" stroke="#E6E0CF" strokeWidth="0.8" />
+          <path d="M18 22.5 Q32 11 46 22.5" fill="#FFFEF8" stroke="#E8E2D0" strokeWidth="1" />
+          {[22, 27, 32, 37, 42].map((x) => (
+            <path key={x} d={`M${x} 21 Q${x + 1.5} ${17 + Math.abs(32 - x) * 0.3} ${x + 3} 21`} fill="none" stroke="#E4DDCA" strokeWidth="0.8" />
           ))}
         </>
       }
     />
   ),
-  milk: (
+  cottage: (u) => (
+    <Tub
+      u={u}
+      band="#6FC0CC"
+      top="#F4FAFB"
+      fill={
+        <>
+          {[[23, 21.5], [28, 20], [33, 20.5], [38, 20], [42, 22], [26, 23.5], [31, 23], [36, 23.5]].map(([x, y], i) => (
+            <g key={i}>
+              <circle cx={x} cy={y} r="2.4" fill="#FCFAF2" stroke="#E2DCC9" strokeWidth="0.7" />
+              <circle cx={x - 0.7} cy={y - 0.7} r="0.7" fill="#FFFFFF" />
+            </g>
+          ))}
+        </>
+      }
+    />
+  ),
+  milk: (u) => (
     <>
-      <Shadow w={28} />
-      <path d="M24 12 L40 12 L40 18 Q46 22 46 30 L46 50 Q46 54 42 54 L22 54 Q18 54 18 50 L18 30 Q18 22 24 18 Z" fill="#FFFFFF" stroke="#E3E8EE" strokeWidth="1.5" />
-      <rect x="24" y="8" width="16" height="6" rx="2" fill="#3F7FD0" />
-      <rect x="18" y="32" width="28" height="12" fill={C.leafLight} />
-      <path d="M26 38 q6 -5 12 0" stroke="#FFFFFF" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M22 24 L22 50" stroke="#E8EEF5" strokeWidth="3" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("g")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#E6ECF1"], [0.25, "#FFFFFF"], [0.6, "#F7F9FA"], [1, "#C9D3DC"]]} />
+        <Lin id={u("cap")} s={[[0, "#5B97E0"], [1, "#2A62AE"]]} />
+      </defs>
+      <Shadow u={u} w={30} />
+      <path d="M24 13 L40 13 L40 19 Q47 23 47 31 L47 51 Q47 55 43 55 L21 55 Q17 55 17 51 L17 31 Q17 23 24 19 Z" fill={f(u, "g")} stroke="#D3DBE3" strokeWidth="0.8" />
+      <rect x="23.5" y="7" width="17" height="7" rx="2" fill={f(u, "cap")} />
+      <rect x="17" y="32" width="30" height="13" fill="#7CB342" />
+      <rect x="17" y="32" width="30" height="13" fill="#FFFFFF" opacity="0.1" />
+      <path d="M25 39 q7 -6 14 0" stroke="#FFFFFF" strokeWidth="2" fill="none" strokeLinecap="round" />
+      <path d="M21 24 L21 51" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
     </>
   ),
-  parmesan: (
+  parmesan: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M10 44 L54 44 L54 50 L10 50 Z" fill="#C9A44B" />
-      <path d="M10 44 L44 18 L54 26 L54 44 Z" fill="#F4D27A" />
-      <path d="M44 18 L54 26 L54 30 L44 22 Z" fill="#C9A44B" />
-      {[[30, 38], [40, 34], [46, 40], [36, 42]].map(([x, y], i) => (
-        <path key={i} d={`M${x} ${y} l2 -1`} stroke="#E0B95A" strokeWidth="1.6" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("p")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFE7A3"], [0.6, "#F2CD6C"], [1, "#D9A83F"]]} />
+        <Lin id={u("r")} s={[[0, "#D2A14A"], [1, "#9C7024"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M8 44 L56 44 L56 51 L8 51 Z" fill={f(u, "r")} />
+      <path d="M8 44 L45 17 L56 25 L56 44 Z" fill={f(u, "p")} />
+      <path d="M45 17 L56 25 L56 30 L45 22 Z" fill={f(u, "r")} />
+      {Array.from({ length: 20 }, (_, i) => (
+        <circle key={i} cx={22 + ((i * 11) % 30)} cy={31 + ((i * 7) % 12)} r={i % 3 ? 0.6 : 0.9} fill={i % 2 ? "#FFF6D4" : "#D7A848"} opacity="0.9" />
       ))}
+      <path d="M12 43 L44 20" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.6" strokeLinecap="round" />
     </>
   ),
-  cheese: (
+  cheese: (u) => (
     <>
-      <Shadow w={48} />
-      <path d="M8 30 L40 16 L56 26 L56 46 L24 52 L8 46 Z" fill="#F7C948" />
-      <path d="M8 30 L24 36 L24 52 L8 46 Z" fill="#F1B92C" />
-      <path d="M8 30 L40 16 L56 26 L24 36 Z" fill="#FBDB72" />
-      {[[34, 42, 3.4], [46, 38, 2.6], [16, 40, 2.4], [42, 47, 1.8], [30, 25, 2.2]].map(([x, y, r], i) => (
-        <circle key={i} cx={x} cy={y} r={r} fill="#E5A51F" />
+      <defs>
+        <Lin id={u("top")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#FFE98F"], [1, "#F7C83A"]]} />
+        <Lin id={u("side")} s={[[0, "#F7C640"], [1, "#DDA218"]]} />
+        <Rad id={u("hole")} cx={0.4} cy={0.35} s={[[0, "#C98A0F"], [1, "#EEB52E"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      <path d="M7 30 L40 15 L57 25 L24 37 Z" fill={f(u, "top")} />
+      <path d="M7 30 L24 37 L24 53 L7 46 Z" fill={f(u, "side")} />
+      <path d="M24 37 L57 25 L57 46 L24 53 Z" fill="#F4BD2C" />
+      {[[35, 42, 3.6], [47, 37, 2.6], [15, 40, 2.4], [42, 48, 1.8], [30, 26, 2.2], [52, 44, 1.6], [19, 47, 1.4]].map(([x, y, r], i) => (
+        <ellipse key={i} cx={x} cy={y} rx={r} ry={r * 0.85} fill={f(u, "hole")} />
       ))}
+      <path d="M10 30 L39 17" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.7" strokeLinecap="round" />
     </>
   ),
-  eggs: (
+  eggs: (u) => (
     <>
-      <Shadow w={46} />
-      <path d="M8 40 L56 40 L52 52 L12 52 Z" fill="#B7A483" />
-      {[[18, 34], [32, 31], [46, 34]].map(([x, y], i) => (
+      <defs>
+        <Rad id={u("e")} cx={0.35} cy={0.3} r={0.8} s={[[0, "#FFF8EC"], [0.6, "#EBCB9E"], [1, "#C79A62"]]} />
+        <Lin id={u("box")} s={[[0, "#C9B898"], [1, "#9C8A69"]]} />
+      </defs>
+      <Shadow u={u} w={52} />
+      {[[18, 33], [32, 30], [46, 33]].map(([x, y], i) => (
         <g key={i}>
-          <ellipse cx={x} cy={y} rx="8" ry="10" fill="#F3E3C7" />
-          <ellipse cx={x - 2.5} cy={y - 3} rx="2" ry="3" fill="#FFFFFF" opacity="0.6" />
+          <ellipse cx={x} cy={y} rx="8.2" ry="10.4" fill={f(u, "e")} />
+          <Shine cx={x - 2.8} cy={y - 4} rx={1.6} ry={3} rot={10} o={0.7} />
         </g>
       ))}
-      <path d="M8 40 L56 40" stroke="#9C8A69" strokeWidth="2" />
+      <path d="M6 40 L58 40 L53 53 L11 53 Z" fill={f(u, "box")} />
+      {[19, 32, 45].map((x) => (
+        <path key={x} d={`M${x - 6} 40 Q${x} 46 ${x + 6} 40`} fill="#B4A281" />
+      ))}
     </>
   ),
 
   /* ---------- Shelf products ---------- */
-  pasta: (
-    <Bag color="#F7EDDA" band="#C0392B">
-      {[[24, 28], [32, 26], [40, 29], [27, 36], [36, 36], [24, 44], [33, 45], [41, 42]].map(([x, y], i) => (
-        <rect key={i} x={x - 4} y={y - 2} width="8" height="4" rx="1.2" fill="#E2B259" transform={`rotate(${i * 40} ${x} ${y})`} />
+  pasta: (u) => (
+    <Pouch u={u} c1="#FBF3E2" c2="#E5D5B4" band="#C0392B">
+      <defs>
+        <Lin id={u("pn")} s={[[0, "#F5CE7A"], [1, "#C98F34"]]} />
+      </defs>
+      <rect x="21" y="23" width="22" height="25" rx="5" fill="#FFFFFF" opacity="0.55" />
+      {[[26, 28, 30], [34, 27, -20], [39, 32, 40], [27, 36, -40], [35, 37, 20], [26, 43, 10], [34, 44, -30], [40, 41, 60]].map(([x, y, r], i) => (
+        <g key={i} transform={`rotate(${r} ${x} ${y})`}>
+          <rect x={x - 4.5} y={y - 1.8} width="9" height="3.6" rx="0.8" fill={f(u, "pn")} />
+          <path d={`M${x - 3} ${y - 1.8} l-1 3.6 M${x} ${y - 1.8} l-1 3.6 M${x + 3} ${y - 1.8} l-1 3.6`} stroke="#B07A27" strokeWidth="0.5" />
+        </g>
       ))}
-    </Bag>
+    </Pouch>
   ),
-  oats: (
-    <Bag color="#E9D7B0" band={C.leafLight}>
-      <ellipse cx="32" cy="36" rx="9" ry="6" fill="#F6ECD3" />
-      {[[29, 35], [33, 33], [36, 37], [31, 38]].map(([x, y], i) => (
-        <ellipse key={i} cx={x} cy={y} rx="2.4" ry="1.5" fill="#D8BE86" />
-      ))}
-    </Bag>
-  ),
-  chickpeas: <Jar lid="#C0392B" content="#F6E7C1" dots="#E2C27D" />,
-  sauce: (
+  oats: (u) => (
     <>
-      <Jar lid="#2E7D32" content="#D84332" dots="#E8604D" />
-      <path d="M36 28 Q40 24 44 28 Q40 30 36 28 Z" fill="#66BB6A" />
+      <defs>
+        <Rad id={u("o")} cx={0.4} cy={0.3} s={[[0, "#FFF4DA"], [1, "#D9BE86"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      <path d="M10 46 Q14 26 32 24 Q50 26 54 46 Q32 52 10 46 Z" fill="#E7D2A4" />
+      {Array.from({ length: 26 }, (_, i) => {
+        const x = 15 + ((i * 29) % 34);
+        const y = 30 + ((i * 11) % 16);
+        return <ellipse key={i} cx={x} cy={y} rx="3" ry="1.9" fill={f(u, "o")} stroke="#C7A86C" strokeWidth="0.4" transform={`rotate(${i * 41} ${x} ${y})`} />;
+      })}
+      <Shine cx={26} cy={29} rx={5} ry={1.4} rot={-15} o={0.4} />
     </>
   ),
-  coffee: (
-    <Bag color="#4E342E" band="#8D6E63">
-      <ellipse cx="32" cy="36" rx="6" ry="8" fill="#A1887F" />
-      <path d="M32 29 Q29 36 32 43" stroke="#4E342E" strokeWidth="1.6" fill="none" />
-    </Bag>
-  ),
-  water: (
+  chickpeas: (u) => (
     <>
-      <Shadow w={40} />
+      <defs>
+        <Rad id={u("c")} cx={0.35} cy={0.3} s={[[0, "#FFF0C9"], [0.7, "#E5C27E"], [1, "#B8914E"]]} />
+      </defs>
+      <Jar
+        u={u}
+        lid="#C0392B"
+        inside={
+          <>
+            <rect x="20" y="25" width="24" height="28" rx="6" fill="#F3E2B8" />
+            {[[25, 30], [32, 29], [39, 31], [27, 36], [35, 36], [24, 42], [31, 43], [39, 42], [27, 48], [35, 49], [41, 47]].map(([x, y], i) => (
+              <circle key={i} cx={x} cy={y} r="3.2" fill={f(u, "c")} />
+            ))}
+          </>
+        }
+      />
+    </>
+  ),
+  sauce: (u) => (
+    <>
+      <defs>
+        <Lin id={u("s")} s={[[0, "#E5513C"], [1, "#9E1F14"]]} />
+      </defs>
+      <Jar
+        u={u}
+        lid="#2E7D32"
+        inside={
+          <>
+            <rect x="20" y="24" width="24" height="29" rx="6" fill={f(u, "s")} />
+            {[[25, 30], [36, 33], [29, 41], [39, 45], [24, 47]].map(([x, y], i) => (
+              <circle key={i} cx={x} cy={y} r="1.3" fill="#F48A6E" opacity="0.8" />
+            ))}
+            <path d="M33 27 Q38 22 43 26 Q38 29 33 27 Z" fill="#5BA84A" />
+          </>
+        }
+      />
+    </>
+  ),
+  coffee: (u) => (
+    <>
+      <defs>
+        <Rad id={u("bean")} cx={0.35} cy={0.3} s={[[0, "#A06A45"], [1, "#3E2213"]]} />
+      </defs>
+      <Pouch u={u} c1="#5D4037" c2="#3B2620" band="#A1887F">
+        <circle cx="32" cy="36" r="8" fill="#F3E6D8" opacity="0.15" />
+        <ellipse cx="32" cy="36" rx="5.5" ry="7.5" fill={f(u, "bean")} />
+        <path d="M32 29 Q29 36 32 43" stroke="#2A160B" strokeWidth="1.4" fill="none" />
+      </Pouch>
+      {[[48, 50, 30], [14, 51, -20]].map(([x, y, r], i) => (
+        <g key={i} transform={`rotate(${r} ${x} ${y})`}>
+          <ellipse cx={x} cy={y} rx="3.4" ry="4.6" fill={f(u, "bean")} />
+          <path d={`M${x} ${y - 4} Q${x - 1.5} ${y} ${x} ${y + 4}`} stroke="#2A160B" strokeWidth="1" fill="none" />
+        </g>
+      ))}
+    </>
+  ),
+  water: (u) => (
+    <>
+      <defs>
+        <Lin id={u("w")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#9FD0F0"], [0.3, "#E6F5FD"], [0.7, "#C4E5F8"], [1, "#7FB9E0"]]} />
+      </defs>
+      <Shadow u={u} w={44} />
       {[22, 42].map((x) => (
         <g key={x}>
-          <path d={`M${x - 3} 10 L${x + 3} 10 L${x + 3} 15 Q${x + 9} 19 ${x + 9} 27 L${x + 9} 52 Q${x + 9} 55 ${x + 6} 55 L${x - 6} 55 Q${x - 9} 55 ${x - 9} 52 L${x - 9} 27 Q${x - 9} 19 ${x - 3} 15 Z`} fill="#CFE8F7" />
-          <rect x={x - 4} y="7" width="8" height="5" rx="1.5" fill="#1E88E5" />
-          <rect x={x - 9} y="32" width="18" height="10" fill="#4FA3E0" />
+          <path d={`M${x - 3} 10 L${x + 3} 10 L${x + 3} 15 Q${x + 9} 19 ${x + 9} 27 L${x + 9} 52 Q${x + 9} 55 ${x + 6} 55 L${x - 6} 55 Q${x - 9} 55 ${x - 9} 52 L${x - 9} 27 Q${x - 9} 19 ${x - 3} 15 Z`} fill={f(u, "w")} opacity="0.95" />
+          <rect x={x - 4} y="6.5" width="8" height="5" rx="1.5" fill="#1E6FC2" />
+          <rect x={x - 9} y="32" width="18" height="10" fill="#3D93D6" />
+          <path d={`M${x - 9} 46 L${x + 9} 46 M${x - 9} 49 L${x + 9} 49`} stroke="#FFFFFF" strokeWidth="0.8" opacity="0.6" />
+          <path d={`M${x - 5} 20 L${x - 5} 51`} stroke="#FFFFFF" strokeWidth="2" opacity="0.8" strokeLinecap="round" />
         </g>
       ))}
     </>
   ),
-  biscuits: (
+  biscuits: (u) => (
     <>
-      <Shadow w={42} />
-      {[44, 38, 32].map((y, i) => (
+      <defs>
+        <Rad id={u("b")} cx={0.4} cy={0.35} s={[[0, "#F0BE7C"], [1, "#B87A3E"]]} />
+      </defs>
+      <Shadow u={u} w={46} />
+      {[45, 38, 31].map((y, i) => (
         <g key={i}>
-          <ellipse cx="32" cy={y + 3} rx="18" ry="6" fill="#B87A3E" />
-          <ellipse cx="32" cy={y} rx="18" ry="6" fill="#D49A57" />
+          <ellipse cx="32" cy={y + 3} rx="19" ry="6.5" fill="#8C5426" />
+          <ellipse cx="32" cy={y} rx="19" ry="6.5" fill={f(u, "b")} />
         </g>
       ))}
-      {[[25, 31], [32, 29], [39, 31], [32, 33]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.2" fill="#9C6430" />
+      {[[24, 30], [32, 28], [40, 30], [28, 33], [36, 33], [32, 31]].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r="0.9" fill="#7A4318" />
       ))}
+      <Shine cx={25} cy={28.5} rx={4} ry={1} rot={-8} o={0.4} />
     </>
   ),
-  bar: (
+  bar: (u) => (
     <>
-      <Shadow w={46} />
+      <defs>
+        <Lin id={u("w")} s={[[0, "#46407A"], [0.5, "#2E2A4F"], [1, "#1A1730"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
       <g transform="rotate(-20 32 34)">
-        <rect x="8" y="26" width="48" height="16" rx="3" fill="#2E2A4F" />
-        <rect x="18" y="26" width="18" height="16" fill="#FF8A3D" />
-        <path d="M8 26 l-3 3 l3 3 l-3 3 l3 3 l-3 3 l3 3 M56 26 l3 3 l-3 3 l3 3 l-3 3 l3 3 l-3 3" stroke="#2E2A4F" strokeWidth="1.6" fill="none" />
+        <rect x="8" y="25" width="48" height="17" rx="3" fill={f(u, "w")} />
+        <rect x="18" y="25" width="18" height="17" fill="#FF8A3D" />
+        <path d="M8 25 l-3 3 l3 3 l-3 3 l3 3 l-3 3 l3 2 M56 25 l3 3 l-3 3 l3 3 l-3 3 l3 3 l-3 2" stroke="#1A1730" strokeWidth="1.6" fill="none" />
         <path d="M40 31 l10 0 M40 36 l7 0" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+        <path d="M10 27.5 L54 27.5" stroke="#FFFFFF" strokeWidth="1.4" opacity="0.4" />
       </g>
     </>
   ),
-  cereal: (
-    <Box color="#E85D3A" side="#B8432A">
-      <ellipse cx="30" cy="38" rx="9" ry="4" fill="#FFFFFF" />
-      <path d="M21 38 Q30 50 39 38 Z" fill="#FFFFFF" />
-      {[[26, 36], [30, 35], [34, 37]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.8" fill={i === 1 ? "#C2185B" : "#E0A94C"} />
-      ))}
-      <rect x="20" y="17" width="20" height="6" rx="2" fill="#FFF8EE" />
-    </Box>
-  ),
-  vegburger: (
+  cereal: (u) => {
+    /* box at the back, a bowl of wholegrain flakes with red berries and milk in front */
+    const flakes: [number, number, number, number][] = [
+      [17, 33, 20, 1], [22, 31, -30, 0.9], [27, 33, 50, 1.1], [32, 30.5, 10, 1], [37, 32.5, -40, 1], [42, 31, 30, 0.9], [47, 33, -10, 1],
+      [20, 35.5, 70, 0.9], [25, 36, -15, 1], [30, 34.5, 35, 1.1], [35, 35.5, -60, 0.9], [40, 35, 15, 1], [45, 35.5, 55, 0.9], [29, 29, -50, 0.8], [39, 29, 70, 0.8],
+    ];
+    return (
+      <>
+        <defs>
+          <Lin id={u("box")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#F37B4C"], [1, "#C2462A"]]} />
+          <Rad id={u("fl")} cx={0.35} cy={0.3} s={[[0, "#F7D58C"], [0.6, "#DDA04A"], [1, "#A8682A"]]} />
+          <Rad id={u("rasp")} cx={0.35} cy={0.3} s={[[0, "#FF8FB1"], [0.5, "#E0245E"], [1, "#8C0F34"]]} />
+          <Lin id={u("bowl")} s={[[0, "#FFFFFF"], [0.6, "#EEF2F5"], [1, "#C8D3DC"]]} />
+        </defs>
+        <Shadow u={u} w={56} y={55} />
+        {/* box */}
+        <path d="M38 6 L54 6 L58 9 L58 40 L42 40 L38 37 Z" fill="#A23A22" />
+        <rect x="38" y="6" width="16" height="34" rx="1.5" fill={f(u, "box")} />
+        <rect x="40" y="9" width="12" height="5" rx="1.5" fill="#FFF8EE" />
+        <ellipse cx="46" cy="24" rx="5" ry="4" fill="#F7D58C" opacity="0.9" />
+        <path d="M40 8 L40 37" stroke="#FFFFFF" strokeWidth="1" opacity="0.4" />
+        {/* bowl */}
+        <path d="M9 34 Q11 53 32 53 Q53 53 55 34 Z" fill={f(u, "bowl")} />
+        <path d="M15 43 Q22 50 32 50.5" stroke="#FFFFFF" strokeWidth="2.2" fill="none" opacity="0.85" strokeLinecap="round" />
+        <ellipse cx="32" cy="34" rx="23" ry="6.5" fill="#F7F3EA" />
+        <ellipse cx="32" cy="34.4" rx="21" ry="5.2" fill="#FFFFFF" />
+        {flakes.map(([x, y, r, s], i) => (
+          <g key={i} transform={`translate(${x} ${y}) rotate(${r}) scale(${s})`}>
+            <path d="M-3.4 -1.6 Q-1 -3.2 2.6 -2.4 Q4 0 2.8 2 Q0 3.2 -3 2 Q-4.2 0 -3.4 -1.6 Z" fill={f(u, "fl")} stroke="#9C5F22" strokeWidth="0.35" />
+            <path d="M-1.8 -1.2 Q0 -1.8 1.6 -1" stroke="#FFF1CC" strokeWidth="0.6" fill="none" opacity="0.8" />
+          </g>
+        ))}
+        {[[24, 30], [36, 29], [44, 32.5]].map(([x, y], i) => (
+          <g key={`r${i}`}>
+            {[[-1.4, -1.4], [0, -1.9], [1.4, -1.4], [-1.9, 0], [0, 0], [1.9, 0], [-1.4, 1.4], [0, 1.9], [1.4, 1.4]].map(([dx, dy], k) => (
+              <circle key={k} cx={x + dx} cy={y + dy} r="1.25" fill={f(u, "rasp")} />
+            ))}
+          </g>
+        ))}
+        {[[31, 33.5], [20, 32]].map(([x, y], i) => (
+          <g key={`b${i}`}>
+            <circle cx={x} cy={y} r="1.9" fill="#3F4FA8" />
+            <circle cx={x - 0.6} cy={y - 0.6} r="0.6" fill="#FFFFFF" opacity="0.45" />
+          </g>
+        ))}
+        <path d="M48 24 Q51 19 55 21 Q52 25 48 24 Z" fill="#3F8E3A" />
+      </>
+    );
+  },
+  vegburger: (u) => (
     <>
-      <Shadow w={44} />
-      <ellipse cx="32" cy="40" rx="20" ry="8" fill="#6E8B3D" />
-      <ellipse cx="32" cy="36" rx="20" ry="8" fill="#8BAA4E" />
-      {[[24, 35], [31, 33], [38, 36], [28, 38], [40, 32]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="2" fill="#C5E1A5" />
+      <defs>
+        <Rad id={u("p")} cx={0.4} cy={0.3} s={[[0, "#A9C06A"], [0.7, "#7E9B45"], [1, "#556B2C"]]} />
+      </defs>
+      <Shadow u={u} w={48} />
+      <ellipse cx="32" cy="41" rx="21" ry="8" fill="#4E6328" />
+      <ellipse cx="32" cy="37" rx="21" ry="8" fill={f(u, "p")} />
+      {[[23, 36], [30, 34], [38, 37], [27, 39], [41, 33], [34, 39.5]].map(([x, y], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r="1.9" fill="#BDE08F" />
+          <circle cx={x - 0.6} cy={y - 0.6} r="0.6" fill="#FFFFFF" opacity="0.7" />
+        </g>
       ))}
-      <path d="M44 22 Q50 16 54 22 Q50 26 44 22 Z" fill={C.leaf} />
+      <path d="M45 22 Q51 15 55 21 Q51 26 45 22 Z" fill="#3F8E3A" />
     </>
   ),
-  oatdrink: (
+  oatdrink: (u) => (
     <>
-      <Shadow w={30} />
-      <path d="M20 18 L32 10 L44 18 L44 54 L20 54 Z" fill="#F3E3C0" />
-      <path d="M32 10 L44 18 L44 54 L38 54 L38 18 Z" fill="#E2CDA0" />
-      <path d="M20 18 L32 10 L38 14 L26 22 Z" fill="#FFF3D6" />
-      <rect x="22" y="30" width="16" height="12" rx="2" fill={C.leafLight} />
-      <path d="M26 36 l8 0" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("f")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#F9EBCB"], [1, "#E8D3A6"]]} />
+      </defs>
+      <Shadow u={u} w={32} />
+      <path d="M32 9 L45 17 L45 55 L38 55 L38 17 Z" fill="#D9C08E" />
+      <path d="M19 17 L32 9 L38 13 L25 21 Z" fill="#FFF5DC" />
+      <rect x="19" y="17" width="19" height="38" fill={f(u, "f")} />
+      <rect x="21" y="30" width="15" height="12" rx="2" fill="#7CB342" />
+      <path d="M25 36 l7 0" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+      <path d="M21 19 L21 52" stroke="#FFFFFF" strokeWidth="1.6" opacity="0.6" strokeLinecap="round" />
     </>
   ),
-  rusks: (
+  rusks: (u) => (
     <>
-      <Shadow w={46} />
+      <defs>
+        <Lin id={u("r")} x1={0} y1={0} x2={1} y2={1} s={[[0, "#F6D08F"], [1, "#D49A4C"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
       {[0, 1, 2].map((i) => (
         <g key={i} transform={`translate(${i * 5 - 5} ${i * -4})`}>
-          <rect x="12" y="30" width="36" height="20" rx="4" fill="#C98A4B" />
-          <rect x="14" y="32" width="32" height="16" rx="3" fill="#E9B872" />
+          <rect x="11" y="30" width="38" height="21" rx="4" fill="#B57636" />
+          <rect x="13" y="32" width="34" height="17" rx="3" fill={f(u, "r")} />
         </g>
       ))}
-      {[[20, 31], [28, 34], [36, 31], [24, 37], [33, 38]].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="0.9" fill="#B37738" />
+      {Array.from({ length: 12 }, (_, i) => (
+        <circle key={i} cx={20 + ((i * 7) % 26)} cy={25 + ((i * 3) % 10)} r="0.8" fill="#A9692B" />
       ))}
     </>
   ),
-  snackcakes: (
+  snackcakes: (u) => (
     <>
-      <Shadow w={46} />
-      {[[20, 36], [44, 36], [32, 28]].map(([x, y], i) => (
+      <defs>
+        <Lin id={u("c")} s={[[0, "#F0BE73"], [1, "#C98A3F"]]} />
+        <Lin id={u("ch")} s={[[0, "#8D5A3B"], [1, "#4E2D19"]]} />
+      </defs>
+      <Shadow u={u} w={50} />
+      {[[19, 37], [45, 37], [32, 28]].map(([x, y], i) => (
         <g key={i}>
-          <rect x={x - 10} y={y - 6} width="20" height="14" rx="4" fill="#D9A45B" />
-          <rect x={x - 10} y={y - 6} width="20" height="5" rx="2.5" fill="#7A4A2E" />
+          <rect x={x - 11} y={y - 6} width="22" height="15" rx="4" fill={f(u, "c")} />
+          <rect x={x - 11} y={y - 6} width="22" height="5.5" rx="2.6" fill={f(u, "ch")} />
+          <Shine cx={x - 5} cy={y - 4.5} rx={3} ry={0.8} rot={0} o={0.4} />
         </g>
       ))}
     </>
   ),
-  dishsoap: (
+  dishsoap: (u) => (
     <>
-      <Shadow w={30} />
-      <rect x="21" y="18" width="22" height="36" rx="7" fill="#66BB6A" />
-      <rect x="27" y="9" width="10" height="10" rx="2" fill="#2E7D32" />
-      <rect x="24" y="30" width="16" height="12" rx="3" fill="#FFFFFF" />
-      <circle cx="47" cy="22" r="4" fill="#E3F2FD" />
-      <circle cx="51" cy="14" r="2.5" fill="#E3F2FD" />
-      <path d="M25 22 L25 48" stroke="#A5D6A7" strokeWidth="2.5" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("b")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#4CAF50"], [0.3, "#8BD48F"], [1, "#2E7D32"]]} />
+      </defs>
+      <Shadow u={u} w={32} />
+      <rect x="20" y="18" width="24" height="37" rx="8" fill={f(u, "b")} />
+      <rect x="26.5" y="9" width="11" height="10" rx="2" fill="#1F5E22" />
+      <rect x="23" y="30" width="18" height="12" rx="3" fill="#FFFFFF" opacity="0.92" />
+      {[[48, 21, 4], [52, 13, 2.6], [45, 12, 1.6]].map(([x, y, r], i) => (
+        <circle key={i} cx={x} cy={y} r={r} fill="#E3F2FD" stroke="#B3D7F2" strokeWidth="0.6" />
+      ))}
+      <path d="M24 22 L24 50" stroke="#FFFFFF" strokeWidth="2.2" opacity="0.5" strokeLinecap="round" />
     </>
   ),
-  icelolly: (
+  icelolly: (u) => (
     <>
-      <Shadow w={24} />
-      <rect x="30" y="40" width="4" height="14" rx="2" fill="#D7B377" />
-      <rect x="22" y="10" width="20" height="34" rx="9" fill="#FF8A3D" />
-      <rect x="22" y="10" width="20" height="12" rx="9" fill="#E53935" />
-      <rect x="22" y="22" width="20" height="10" fill="#FBC02D" />
+      <defs>
+        <Lin id={u("i")} s={[[0, "#E53935"], [0.4, "#FF8A3D"], [0.7, "#FBC02D"], [1, "#F9A825"]]} />
+      </defs>
+      <Shadow u={u} w={26} />
+      <rect x="30" y="40" width="4" height="15" rx="2" fill="#D7B377" />
+      <rect x="21" y="9" width="22" height="36" rx="10" fill={f(u, "i")} />
+      <path d="M26 14 L26 38" stroke="#FFFFFF" strokeWidth="2.4" opacity="0.5" strokeLinecap="round" />
     </>
   ),
 };
@@ -691,8 +1212,23 @@ const ART_FOR: Record<string, string> = {
   latticini: "cheese",
 };
 
+/** Unique id prefix per picture, so gradients of different pictures never clash */
+function useU(): U {
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  return (n: string) => `fa${id}-${n}`;
+}
+
+const Blur = ({ u }: { u: U }) => (
+  <defs>
+    <filter id={u("blur")} x="-20%" y="-200%" width="140%" height="500%">
+      <feGaussianBlur stdDeviation="1.6" />
+    </filter>
+  </defs>
+);
+
 /** Food illustration for a product id, department id or drawing name */
 export function FoodArt({ id, size = 64, label, className = "" }: { id: string; size?: number; label?: string; className?: string }) {
+  const u = useU();
   const art = ART[ART_FOR[id] ?? id] ?? ART.bread;
   return (
     <svg
@@ -704,7 +1240,8 @@ export function FoodArt({ id, size = 64, label, className = "" }: { id: string; 
       aria-label={label}
       aria-hidden={label ? undefined : true}
     >
-      {art}
+      <Blur u={u} />
+      {art(u)}
     </svg>
   );
 }
@@ -720,19 +1257,35 @@ export function ProductArt({ id, size = 72, label }: { id: string; size?: number
 
 /** Large illustrations for empty states and the greeting */
 export function BasketHero({ size = 150 }: { size?: number }) {
+  const u = useU();
+  const a = (n: string) => (k: string) => u(`${n}-${k}`);
   return (
     <svg viewBox="0 0 160 130" width={size} height={size * 0.81} aria-hidden="true">
-      <ellipse cx="80" cy="120" rx="58" ry="6" fill={C.shadow} />
+      <defs>
+        <Lin id={u("bk")} s={[[0, "#9CCC65"], [1, "#5E9A2E"]]} />
+        <Lin id={u("rim")} s={[[0, "#AED581"], [1, "#7CB342"]]} />
+        <Lin id={u("car")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#FFA45C"], [1, "#E8722A"]]} />
+        <filter id={u("blur")} x="-20%" y="-200%" width="140%" height="500%">
+          <feGaussianBlur stdDeviation="2" />
+        </filter>
+      </defs>
+      <ellipse cx="80" cy="120" rx="58" ry="6" fill="#3B2A1A" opacity="0.18" filter={`url(#${u("blur")})`} />
       {[[30, 30, -30], [126, 36, 30], [40, 14, -12], [118, 16, 12]].map(([x, y, r], i) => (
         <path key={i} d={`M${x} ${y} l${i % 2 ? 6 : -6} -8`} stroke="#7CB342" strokeWidth="4" strokeLinecap="round" transform={`rotate(${r} ${x} ${y})`} />
       ))}
-      <g transform="translate(36 22) scale(0.9)">{ART.lettuce}</g>
-      <g transform="translate(58 30) scale(0.75)">{ART.tomatoes}</g>
-      <path d="M96 62 L124 22" stroke="#FF8A3D" strokeWidth="13" strokeLinecap="round" />
-      <path d="M120 24 l6 -10 M124 26 l10 -6 M118 22 l0 -12" stroke={C.leafDark} strokeWidth="3.5" strokeLinecap="round" />
-      <path d="M104 50 l6 4 M110 41 l6 4" stroke="#E0702A" strokeWidth="2" strokeLinecap="round" />
-      <path d="M24 64 L136 64 L124 116 L36 116 Z" fill="#7CB342" />
-      <path d="M20 58 L140 58 Q144 58 143 63 L142 68 L18 68 L17 63 Q16 58 20 58 Z" fill="#8BC34A" />
+      <g transform="translate(36 22) scale(0.9)">
+        <Blur u={a("l")} />
+        {ART.lettuce(a("l"))}
+      </g>
+      <g transform="translate(58 30) scale(0.75)">
+        <Blur u={a("t")} />
+        {ART.tomatoes(a("t"))}
+      </g>
+      <path d="M96 62 L124 22" stroke={`url(#${u("car")})`} strokeWidth="13" strokeLinecap="round" />
+      <path d="M120 24 l6 -10 M124 26 l10 -6 M118 22 l0 -12" stroke="#2E7D32" strokeWidth="3.5" strokeLinecap="round" />
+      <path d="M104 50 l6 4 M110 41 l6 4" stroke="#C85F1E" strokeWidth="2" strokeLinecap="round" />
+      <path d="M24 64 L136 64 L124 116 L36 116 Z" fill={`url(#${u("bk")})`} />
+      <path d="M20 58 L140 58 Q144 58 143 63 L142 68 L18 68 L17 63 Q16 58 20 58 Z" fill={`url(#${u("rim")})`} />
       {[52, 72, 92].map((x) => (
         <rect key={x} x={x} y="80" width="14" height="20" rx="5" fill="#EAF6E5" />
       ))}
@@ -741,15 +1294,27 @@ export function BasketHero({ size = 150 }: { size?: number }) {
 }
 
 export function GroceryBag({ size = 110 }: { size?: number }) {
+  const u = useU();
+  const a = (n: string) => (k: string) => u(`${n}-${k}`);
   return (
     <svg viewBox="0 0 120 110" width={size} height={size * 0.92} aria-hidden="true">
-      <g transform="translate(18 0) scale(0.8)">{ART.lettuce}</g>
-      <path d="M78 46 L100 12" stroke="#FF8A3D" strokeWidth="9" strokeLinecap="round" />
-      <path d="M98 14 l5 -8 M101 16 l8 -5" stroke={C.leafDark} strokeWidth="3" strokeLinecap="round" />
-      <g transform="translate(44 6) scale(0.7)">{ART.tomatoes}</g>
-      <path d="M22 44 L98 44 L92 104 L28 104 Z" fill="#D9A86C" />
-      <path d="M22 44 L98 44 L97 52 L23 52 Z" fill="#C4925A" />
-      <path d="M40 64 Q60 74 80 64" stroke="#B57F45" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <defs>
+        <Lin id={u("bag")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#C99556"], [0.4, "#E3B57A"], [1, "#B9844A"]]} />
+        <Lin id={u("car")} x1={0} y1={0} x2={1} y2={0} s={[[0, "#FFA45C"], [1, "#E8722A"]]} />
+      </defs>
+      <g transform="translate(18 0) scale(0.8)">
+        <Blur u={a("l")} />
+        {ART.lettuce(a("l"))}
+      </g>
+      <path d="M78 46 L100 12" stroke={`url(#${u("car")})`} strokeWidth="9" strokeLinecap="round" />
+      <path d="M98 14 l5 -8 M101 16 l8 -5" stroke="#2E7D32" strokeWidth="3" strokeLinecap="round" />
+      <g transform="translate(44 6) scale(0.7)">
+        <Blur u={a("t")} />
+        {ART.tomatoes(a("t"))}
+      </g>
+      <path d="M22 44 L98 44 L92 104 L28 104 Z" fill={`url(#${u("bag")})`} />
+      <path d="M22 44 L98 44 L97 52 L23 52 Z" fill="#B07C42" />
+      <path d="M40 64 Q60 74 80 64" stroke="#9E6C35" strokeWidth="3" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
