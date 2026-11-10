@@ -5,18 +5,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Greens from the "Bag" logo
+        // FOODPULSE palette (design Nov 2026): Verde Bosco #1B5E20 = brand-600,
+        // Verde Fresh #7CB342 = brand-400, Verde Chiaro #EAF6E5 = brand-50
         brand: {
-          50: "#EEF7F0",
-          100: "#D7EEDD",
-          200: "#AFDCBB",
-          300: "#7EC493",
-          400: "#4FA96B",
-          500: "#2F8F52",
-          600: "#1F7A43",
-          700: "#186338",
-          800: "#134E2D",
-          900: "#0E3A22",
+          50: "#EAF6E5",
+          100: "#D9EDCF",
+          200: "#BCDDA9",
+          300: "#9CCC65",
+          400: "#7CB342",
+          500: "#2E7D32",
+          600: "#1B5E20",
+          700: "#164D1A",
+          800: "#123F15",
+          900: "#0D2E10",
         },
         // Natural neutrals with a hint of green
         ink: {
@@ -33,13 +34,18 @@ const config: Config = {
         },
         leaf: "#C8E86B",
         sand: "#F3EFE4",
+        // Crema background and Arancione accent
+        cream: "#FFF8EE",
+        accent: { light: "#FFE9D8", DEFAULT: "#FF8A3D", dark: "#E8722A" },
+        // sponsored products
+        plum: { 50: "#F5F0FC", 100: "#EAE0F8", 500: "#8E5BD6", 600: "#7442BF" },
       },
       fontFamily: {
-        sans: ["Figtree", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-        display: ["Archivo", "Figtree", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Poppins", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        display: ["Poppins", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(21,25,20,0.04), 0 2px 10px rgba(21,25,20,0.05)",
+        card: "0 1px 2px rgba(27,94,32,0.04), 0 4px 16px rgba(27,94,32,0.06)",
         float: "0 -6px 26px rgba(21,25,20,0.10)",
       },
       keyframes: {

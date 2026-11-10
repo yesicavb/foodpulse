@@ -2,6 +2,7 @@
 
 import { Sparkles, Store as StoreIcon } from "lucide-react";
 import { EmptyState, Sheet } from "@/components/ui/Controls";
+import { GroceryBag } from "@/components/ui/FoodArt";
 import { LogoMark } from "@/components/ui/Logo";
 import { useApp } from "@/store/AppStore";
 import { FreshCatalog } from "./FreshCatalog";
@@ -17,9 +18,17 @@ export function SmartBasketScreen() {
 
   return (
     <div className="space-y-6">
-      <div className="animate-rise">
-        <p className="text-[14px] text-ink-500">Ciao{firstName ? ` ${firstName}` : ""},</p>
-        <h1 className="text-[24px] font-extrabold leading-tight tracking-tight text-ink-900">ecco la tua spesa della settimana</h1>
+      <div className="flex animate-rise items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] text-ink-700">
+            Ciao{firstName ? <> {firstName}</> : null},
+          </p>
+          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900">
+            ecco la tua spesa della settimana{" "}
+            <span aria-hidden="true">👋</span>
+          </h1>
+        </div>
+        <GroceryBag size={104} />
       </div>
 
       <StorePicker />

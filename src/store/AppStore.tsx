@@ -108,6 +108,8 @@ interface Ctx {
   resetDemo: () => void;
   logout: () => void;
   updateProfile: (patch: Partial<Profile>) => void;
+  /** heart on a product card: saves or removes a product from the favourites */
+  toggleFavorite: (id: string) => void;
   setOnboarded: () => void;
   setStore: (id: string) => void;
   setAdvance: (days: number) => void;
@@ -348,6 +350,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [account, saveNow]);
 
   const updateProfile = useCallback((patch: Partial<Profile>) => update((d) => ({ ...d, profile: { ...d.profile, ...patch } })), [update]);
+  const toggleFavorite = useCallback(
+    (id: string) => {
+      const saved = data?.profile.favoriteProducts ?? [];
+      const on = !saved.includes(id);
+      update((d) => {
+        const list = d.profile.favoriteProducts ?? [];
+        return { ...d, profile: { ...d.profile, favoriteProducts: on ? [...list, id] : list.filter((x) => x !== id) } };
+      });
+      notify(on ? "Aggiunto ai preferiti" : "Rimosso dai preferiti");
+    },
+    [data, update, notify]
+  );
   const setOnboarded = useCallback(() => update((d) => ({ ...d, onboarded: true })), [update]);
 
   const setStore = useCallback(
@@ -525,6 +539,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetDemo,
       logout,
       updateProfile,
+      toggleFavorite,
       setOnboarded,
       setStore,
       setAdvance,
@@ -543,7 +558,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

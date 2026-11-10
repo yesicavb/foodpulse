@@ -41,9 +41,9 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FOODPULSE</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#1F7A43">
+<meta name="theme-color" content="#1B5E20">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=Figtree:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
 <style>${css}</style>
 </head>
 <body>

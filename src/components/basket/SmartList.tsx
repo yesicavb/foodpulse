@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Info, ListPlus, Plus, RefreshCw, ShoppingCart, Sparkles, X } from "lucide-react";
+import { Check, Info, ListPlus, RefreshCw, ShoppingCart, Sparkles, X } from "lucide-react";
 import { useMemo } from "react";
-import { QtyStepper, SectionTitle } from "@/components/ui/Controls";
-import { ProductThumb } from "@/components/ui/ProductThumb";
+import { FavoriteButton, QtyStepper, SectionTitle } from "@/components/ui/Controls";
+import { ProductArt } from "@/components/ui/FoodArt";
 import { CATEGORIES, INTEREST_LABEL } from "@/data/config";
 import { freshById, shelfById } from "@/data/products";
 import { money } from "@/lib/format";
@@ -38,12 +38,12 @@ export function SmartList() {
         subtitle="Abbiamo preparato una lista per te sulla base dei tuoi acquisti e delle tue preferenze."
       />
 
-      <div className="flex flex-wrap gap-1.5 text-[12px]">
-        <span className="badge bg-white text-ink-700 ring-1 ring-ink-200">{hh === 1 ? "Per 1 persona" : `Per ${hh} persone`}</span>
-        <span className="badge bg-white text-ink-700 ring-1 ring-ink-200">Budget {money(weeklyBudgetOf(p)).replace(",00", "")}/sett.</span>
-        {p.diet && <span className="badge bg-white text-ink-700 ring-1 ring-ink-200 capitalize">{p.diet}</span>}
+      <div className="flex flex-wrap gap-2">
+        <span className="chip min-h-[34px] cursor-default">{hh === 1 ? "Per 1 persona" : `Per ${hh} persone`}</span>
+        <span className="chip min-h-[34px] cursor-default">Budget {money(weeklyBudgetOf(p)).replace(",00", "")}/sett.</span>
+        {p.diet && <span className="chip min-h-[34px] cursor-default capitalize">{p.diet}</span>}
         {p.interests.slice(0, 2).map((i) => (
-          <span key={i} className="badge bg-white text-ink-700 ring-1 ring-ink-200">
+          <span key={i} className="chip min-h-[34px] cursor-default">
             {INTEREST_LABEL[i]}
           </span>
         ))}
@@ -76,50 +76,54 @@ export function SmartList() {
             const cat = CATEGORIES[prod.category];
             const added = inCart.has(s.id);
             return (
-              <article key={s.id} className="card animate-rise p-3">
+              <article key={s.id} className="card animate-rise p-3.5">
                 <div className="flex gap-3">
-                  <ProductThumb icon={prod.icon} tile={cat.tile} text={cat.text} size={64} label={prod.name} />
+                  <ProductArt id={prod.id} size={84} label={prod.name} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="badge bg-brand-600 text-white">Prenotabile −{pi.pct}%</span>
-                        <h3 className="mt-1 text-[15px] font-bold leading-tight text-ink-900">{prod.name}</h3>
-                        <p className="text-[12px] text-ink-500">{prod.unit} · {cat.label}</p>
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="badge mt-1 bg-brand-400 px-2.5 py-1 text-white">Prenotabile −{pi.pct}%</span>
+                      <div className="-mr-1.5 -mt-1 flex">
+                        <button type="button" onClick={() => dismissSuggestion(s.id)} aria-label={`Elimina ${prod.name} dalla lista`} className="grid h-9 w-9 place-items-center rounded-full text-ink-400 hover:bg-ink-100">
+                          <X size={16} />
+                        </button>
+                        <FavoriteButton id={prod.id} />
                       </div>
-                      <button type="button" onClick={() => dismissSuggestion(s.id)} aria-label={`Elimina ${prod.name} dalla lista`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-100">
-                        <X size={16} />
-                      </button>
                     </div>
-                    <p className="mt-1.5 flex items-center gap-1 text-[12px] font-semibold text-brand-700">
-                      <Sparkles size={12} className="shrink-0" /> {s.reason}
+                    <h3 className="mt-1 text-[15.5px] font-bold leading-tight text-ink-900">{prod.name}</h3>
+                    <p className="text-[12.5px] text-ink-500">{prod.unit} · {cat.label}</p>
+                    <p className="mt-1 flex items-center gap-1 text-[11.5px] font-medium text-brand-500">
+                      <Sparkles size={12} className="shrink-0" aria-hidden="true" /> {s.reason}
                     </p>
                   </div>
                 </div>
                 {/* wraps onto two lines on narrow phones (360 px) instead of overflowing the screen */}
-                <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-ink-100 pt-2.5">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
                   <div className="min-w-0 leading-tight">
-                    <span className="text-[16px] font-extrabold tabular-nums text-ink-900">{money(pi.final * qty)}</span>
-                    <span className="ml-1.5 text-[12px] tabular-nums text-ink-400 line-through">{money(pi.price * qty)}</span>
+                    <span className="text-[19px] font-bold tabular-nums text-ink-900">{money(pi.final * qty)}</span>
+                    <span className="ml-1.5 text-[13px] tabular-nums text-ink-400 line-through">{money(pi.price * qty)}</span>
                     <span className="block text-[11px] text-ink-500">Quantità suggerita: {s.qty}</span>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    {!added && <QtyStepper value={qty} min={1} onChange={(n) => setSuggestionQty(s.id, n)} label={prod.name} />}
                     {added ? (
-                      <button type="button" onClick={() => setTab("cart")} className="btn-sm btn bg-brand-50 text-brand-800">
+                      <button type="button" onClick={() => setTab("cart")} className="btn btn-sm rounded-full bg-brand-50 text-brand-600">
                         <Check size={15} /> Nel carrello
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          addToCart(s.id, qty);
-                          notify(`${prod.name} aggiunto al carrello`);
-                        }}
-                        className="btn-primary btn-sm"
-                        aria-label={`Aggiungi ${prod.name} al carrello`}
-                      >
-                        <Plus size={15} /> Aggiungi
-                      </button>
+                      <>
+                        <QtyStepper value={qty} min={1} onChange={(n) => setSuggestionQty(s.id, n)} label={prod.name} />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            addToCart(s.id, qty);
+                            notify(`${prod.name} aggiunto al carrello`);
+                          }}
+                          className="grid h-10 w-10 place-items-center rounded-full bg-brand-600 text-white shadow-card transition hover:bg-brand-700 active:scale-95"
+                          aria-label={`Aggiungi ${prod.name} al carrello`}
+                          title="Aggiungi"
+                        >
+                          <ShoppingCart size={18} />
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -130,9 +134,9 @@ export function SmartList() {
           if (!prod) return null;
           const added = inList.has(s.id);
           return (
-            <article key={s.id} className="card animate-rise border-dashed p-3">
+            <article key={s.id} className="card animate-rise border-dashed border-ink-200 bg-cream/60 p-3.5">
               <div className="flex gap-3">
-                <ProductThumb icon={prod.icon} tile="bg-sand" text="text-ink-600" size={64} label={prod.name} />
+                <ProductArt id={prod.id} size={72} label={prod.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -149,7 +153,7 @@ export function SmartList() {
                   </p>
                 </div>
               </div>
-              <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-ink-100 pt-2.5">
+              <div className="mt-3 flex items-center justify-between gap-2">
                 <span className="text-[14px] font-bold tabular-nums text-ink-800">
                   {money(shelfPrice(prod, store))} <span className="text-[11px] font-medium text-ink-500">prezzo a scaffale</span>
                 </span>

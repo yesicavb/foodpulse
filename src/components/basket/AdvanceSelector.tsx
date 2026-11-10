@@ -26,9 +26,9 @@ export function AdvanceSelector({ compact = false }: { compact?: boolean }) {
               role="radio"
               aria-checked={on}
               onClick={() => setAdvance(t.days)}
-              className={`rounded-xl border-2 px-1 py-2 text-center transition ${on ? "border-brand-600 bg-brand-50" : "border-ink-100 bg-white hover:border-ink-200"}`}
+              className={`rounded-2xl border-2 px-1 py-2.5 text-center transition ${on ? "border-brand-400 bg-brand-50" : "border-brand-50 bg-white hover:border-brand-100"}`}
             >
-              <span className={`block text-[19px] font-extrabold tabular-nums ${on ? "text-brand-700" : "text-ink-800"}`}>−{t.pct}%</span>
+              <span className={`block text-[19px] font-bold tabular-nums ${on ? "text-brand-600" : "text-ink-800"}`}>−{t.pct}%</span>
               <span className="block text-[12px] font-bold text-ink-700">{t.label}</span>
               <span suppressHydrationWarning className="block text-[11px] capitalize text-ink-500">
                 {formatDayShort(pickupDateFor(t.days))}

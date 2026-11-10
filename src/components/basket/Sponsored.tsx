@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Info, ListPlus, MapPin, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, Check, Info, ListPlus, MapPin, ShieldCheck, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
-import { SectionTitle, Sheet } from "@/components/ui/Controls";
-import { ProductIcon } from "@/components/ui/ProductThumb";
+import { FavoriteButton, SectionTitle, Sheet } from "@/components/ui/Controls";
+import { FoodArt } from "@/components/ui/FoodArt";
 import { rankAds, type RankedAd } from "@/lib/ads";
 import { useApp } from "@/store/AppStore";
 
@@ -17,7 +17,7 @@ export function Sponsored() {
 
   return (
     <section aria-labelledby="sponsored-title" className="space-y-3">
-      <SectionTitle eyebrow="Dal tuo supermercato" title="Scopri altri prodotti per te" subtitle="Prodotti che potrebbero interessarti, disponibili nel tuo supermercato." />
+      <SectionTitle title="Scopri altri prodotti per te" subtitle="Prodotti che potrebbero interessarti, disponibili nel tuo supermercato." />
 
       {!ranked.personalized && (
         <button
@@ -36,22 +36,32 @@ export function Sponsored() {
         </button>
       )}
 
-      <div className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
+      <div className="grid gap-3">
         {ranked.items.map((ad) => {
           const c = ad.campaign;
           return (
-            <article key={c.id} className="flex w-[232px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-amber-200 bg-white">
-              <div className="relative grid h-28 place-items-center bg-amber-50 text-amber-800">
-                <ProductIcon icon={c.icon} size={44} />
-                <span className="badge absolute left-2.5 top-2.5 bg-ink-900 text-white">SPONSORIZZATO</span>
-                {c.promo && <span className="badge absolute bottom-2.5 left-2.5 bg-white text-amber-800 ring-1 ring-amber-200"><Tag size={10} /> {c.promo}</span>}
+            <article key={c.id} className="flex gap-3 rounded-3xl border border-plum-100 bg-plum-50 p-3.5">
+              <div className="grid h-[88px] w-[80px] shrink-0 place-items-center rounded-2xl bg-white">
+                <FoodArt id={c.id} size={70} label={c.product} />
               </div>
-              <div className="flex flex-1 flex-col p-3">
-                <p className="text-[11.5px] font-bold uppercase tracking-wide text-ink-500">{c.brand}</p>
-                <h3 className="text-[14.5px] font-bold leading-tight text-ink-900">{c.product}</h3>
-                <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-ink-500">{c.desc}</p>
-                <button type="button" className="btn-secondary btn-sm mt-3" onClick={() => setOpen(ad)}>
-                  Scopri il prodotto
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-1">
+                  <span className="badge mt-1 bg-plum-500 px-2.5 py-1 text-white">SPONSORIZZATO</span>
+                  <FavoriteButton id={c.id} className="-mr-1.5 -mt-1" />
+                </div>
+                <p className="mt-1 text-[14.5px] font-bold leading-tight text-ink-900">
+                  {c.brand}
+                  <sup className="text-[9px]">®</sup>
+                </p>
+                <h3 className="text-[14px] font-semibold leading-tight text-ink-900">{c.product}</h3>
+                <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-ink-600">{c.desc}</p>
+                {c.promo && (
+                  <p className="mt-1 flex items-center gap-1 text-[11.5px] font-semibold text-accent-dark">
+                    <Tag size={11} aria-hidden="true" /> {c.promo}
+                  </p>
+                )}
+                <button type="button" className="btn btn-sm mt-2 rounded-full border border-brand-200 bg-white px-3.5 text-brand-600 hover:bg-brand-50" onClick={() => setOpen(ad)}>
+                  Scopri il prodotto <ArrowRight size={15} />
                 </button>
               </div>
             </article>
@@ -88,9 +98,9 @@ export function Sponsored() {
       >
         {open && (
           <div className="space-y-4">
-            <div className="relative grid h-40 place-items-center rounded-2xl bg-amber-50 text-amber-800">
-              <ProductIcon icon={open.campaign.icon} size={64} />
-              <span className="badge absolute left-3 top-3 bg-ink-900 text-white">SPONSORIZZATO</span>
+            <div className="relative grid h-40 place-items-center rounded-3xl bg-plum-50">
+              <FoodArt id={open.campaign.id} size={92} />
+              <span className="badge absolute left-3 top-3 bg-plum-500 px-2.5 py-1 text-white">SPONSORIZZATO</span>
             </div>
             <div>
               <p className="text-[12px] font-bold uppercase tracking-wide text-ink-500">{open.campaign.brand} · {open.campaign.packCategory}</p>

@@ -1,7 +1,7 @@
 "use client";
 
 import { locale } from "@/i18n/lang";
-import { Check, ChevronRight, Lock, MapPin, Search, Store as StoreIcon, Truck } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Lock, MapPin, Search, Store as StoreIcon, Truck } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Sheet } from "@/components/ui/Controls";
 import { CATEGORIES } from "@/data/config";
@@ -45,23 +45,27 @@ export function StorePicker() {
   }, [q]);
 
   return (
-    <section aria-labelledby="store-title" className="overflow-hidden rounded-3xl bg-brand-800 text-white">
+    <section aria-labelledby="store-title" className="overflow-hidden rounded-3xl bg-brand-600 text-white shadow-card">
       <div className="p-4">
-        <p id="store-title" className="text-[12px] font-extrabold uppercase tracking-[0.08em] text-leaf">
+        <p id="store-title" className="max-w-[24ch] text-[13px] font-bold uppercase leading-snug tracking-[0.04em] text-brand-300">
           In quale supermercato vuoi fare la spesa?
         </p>
         {store ? (
-          <button type="button" onClick={() => setOpen(true)} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white/10 p-3 text-left transition hover:bg-white/15">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white text-brand-700">
-              <StoreIcon size={20} />
+          <button type="button" onClick={() => setOpen(true)} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left text-ink-900 transition hover:bg-brand-50">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-600">
+              <StoreIcon size={22} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[16px] font-bold leading-snug">{store.name}</span>
-              <span className="mt-0.5 flex items-start gap-1 text-[12.5px] leading-snug text-white/75">
-                <MapPin size={12} className="mt-0.5 shrink-0" /> {store.address}, {store.city} · {store.distanceKm.toLocaleString(locale())} km
+              <span className="block text-[15px] font-bold leading-snug">{store.name}</span>
+              <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-500">
+                {store.address}, {store.city}
+              </span>
+              <span className="flex items-center gap-1 text-[12.5px] text-ink-500">
+                <MapPin size={12} className="shrink-0" aria-hidden="true" /> {store.distanceKm.toLocaleString(locale())} km
               </span>
             </span>
-            <span className="shrink-0 rounded-full bg-leaf px-3 py-1.5 text-[12px] font-bold text-brand-900">Cambia</span>
+            <ChevronDown size={20} className="shrink-0 text-ink-700" aria-hidden="true" />
+            <span className="sr-only">Cambia</span>
           </button>
         ) : (
           <button type="button" onClick={() => setOpen(true)} className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl bg-white p-4 text-left text-brand-900">

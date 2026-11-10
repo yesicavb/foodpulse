@@ -1,30 +1,31 @@
 "use client";
 
-import { Minus, Plus, Star, Trash2, X } from "lucide-react";
+import { Heart, Minus, Plus, Star, Trash2, X } from "lucide-react";
+import { useApp } from "@/store/AppStore";
 import { useEffect, type ReactNode } from "react";
 
 export function QtyStepper({ value, onChange, min = 0, max = 20, label }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string }) {
   const removes = value - 1 < Math.max(min, 1) && min === 0;
   return (
-    <div className="inline-flex items-center rounded-full border border-ink-200 bg-white" role="group" aria-label={`Quantità ${label}`}>
+    <div className="inline-flex items-center rounded-full border border-brand-100 bg-white" role="group" aria-label={`Quantità ${label}`}>
       <button
         type="button"
         aria-label={removes ? `Rimuovi ${label}` : `Diminuisci ${label}`}
         disabled={value <= min && min > 0}
         onClick={() => onChange(value - 1)}
-        className="grid h-9 w-9 place-items-center rounded-full text-ink-600 transition hover:bg-ink-50 disabled:opacity-30"
+        className="grid h-9 w-9 place-items-center rounded-full text-ink-800 transition hover:bg-brand-50 disabled:opacity-30"
       >
-        {removes ? <Trash2 size={15} /> : <Minus size={15} />}
+        {removes ? <Trash2 size={15} /> : <Minus size={16} strokeWidth={2.4} />}
       </button>
-      <span className="w-6 text-center text-sm font-bold tabular-nums text-ink-900">{value}</span>
+      <span className="w-6 text-center text-[15px] font-bold tabular-nums text-ink-900">{value}</span>
       <button
         type="button"
         aria-label={`Aumenta ${label}`}
         disabled={value >= max}
         onClick={() => onChange(value + 1)}
-        className="grid h-9 w-9 place-items-center rounded-full text-ink-600 transition hover:bg-ink-50 disabled:opacity-30"
+        className="grid h-9 w-9 place-items-center rounded-full text-brand-500 transition hover:bg-brand-50 disabled:opacity-30"
       >
-        <Plus size={15} />
+        <Plus size={18} strokeWidth={2.8} />
       </button>
     </div>
   );
@@ -116,8 +117,8 @@ export function SectionTitle({ eyebrow, title, subtitle, action }: { eyebrow?: s
   return (
     <div className="flex items-end justify-between gap-3">
       <div className="min-w-0">
-        {eyebrow && <p className="eyebrow text-brand-700">{eyebrow}</p>}
-        <h2 className="mt-0.5 text-[19px] font-extrabold leading-tight tracking-tight text-ink-900">{title}</h2>
+        {eyebrow && <p className="eyebrow text-brand-500">{eyebrow}</p>}
+        <h2 className="mt-0.5 text-[20px] font-bold leading-tight tracking-tight text-ink-900">{title}</h2>
         {subtitle && <p className="mt-1 text-[13.5px] leading-snug text-ink-500">{subtitle}</p>}
       </div>
       {action}
@@ -128,10 +129,27 @@ export function SectionTitle({ eyebrow, title, subtitle, action }: { eyebrow?: s
 export function EmptyState({ icon, title, text, action }: { icon: ReactNode; title: string; text: string; action?: ReactNode }) {
   return (
     <div className="card flex flex-col items-center px-6 py-10 text-center">
-      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">{icon}</span>
+      <span className="grid h-14 w-14 place-items-center rounded-full bg-brand-50 text-brand-600">{icon}</span>
       <h2 className="mt-4 text-base font-bold text-ink-900">{title}</h2>
       <p className="mt-1 max-w-[30ch] text-sm text-ink-500">{text}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
+  );
+}
+
+/** Heart button on product cards: saves the product in the profile's favourites */
+export function FavoriteButton({ id, className = "" }: { id: string; className?: string }) {
+  const { data, toggleFavorite } = useApp();
+  const on = (data?.profile.favoriteProducts ?? []).includes(id);
+  return (
+    <button
+      type="button"
+      onClick={() => toggleFavorite(id)}
+      aria-pressed={on}
+      aria-label={on ? "Rimuovi dai preferiti" : "Aggiungi ai preferiti"}
+      className={`grid h-9 w-9 shrink-0 place-items-center rounded-full transition hover:bg-brand-50 ${on ? "text-accent" : "text-ink-700"} ${className}`}
+    >
+      <Heart size={20} strokeWidth={2} fill={on ? "currentColor" : "none"} />
+    </button>
   );
 }

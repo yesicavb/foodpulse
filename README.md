@@ -53,6 +53,22 @@ Supabase's built-in email service only sends a few emails per hour and is meant 
 
 `npm run build:standalone` reads the same variables from the environment at build time; without them, the single-file version runs browser-only.
 
+## Design
+
+Look and feel follow the team's design (Nov 2026): Poppins font, cream background and the palette below, set in `tailwind.config.ts`.
+
+| Colour | Hex | Tailwind name |
+|---|---|---|
+| Verde Bosco | `#1B5E20` | `brand-600` (buttons, dark cards) |
+| Verde Fresh | `#7CB342` | `brand-400` (discount pills) |
+| Verde Chiaro | `#EAF6E5` | `brand-50` (active tab, soft backgrounds) |
+| Crema | `#FFF8EE` | `cream` (page background) |
+| Arancione Accento | `#FF8A3D` | `accent` (banner, favourites, badges) |
+
+**Food illustrations** are drawn in code in `src/components/ui/FoodArt.tsx` (no photos, no brand artwork). To give a new product a picture, add its id to `ART_FOR` in that file and point it at an existing drawing (or add a new one).
+
+**Favourites:** the heart on product cards saves a product in the profile (`favoriteProducts`), shown under Food preferences; the Smart Basket ranks saved products higher.
+
 ## Languages (Italian / English)
 
 The **IT | EN** switch in the header (and on the welcome and login screens) changes the whole app, including products, stores and messages. The choice is remembered per device.
