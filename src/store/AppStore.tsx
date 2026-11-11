@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { POINTS } from "@/data/config";
 import { storeById } from "@/data/stores";
+import { setAccountType, track } from "@/lib/analytics";
 import { addDays } from "@/lib/format";
 import { hashPassword } from "@/lib/hash";
 import { applyPoints } from "@/lib/loyalty";
@@ -249,9 +250,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setTab = useCallback((t: Tab) => {
     setTabState(t);
+    track("tab_view", { tab: t });
     if (t === "profile") setProfileView("home");
     if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   }, []);
+
+  // tells Google Analytics (if accepted) whether events come from the demo or a real account
+  useEffect(() => setAccountType(account ? (account.demo ? "demo" : "registered") : undefined), [account]);
 
   /** Updates the logged-in user's data */
   const update = useCallback((fn: (d: UserData) => UserData) => {
@@ -274,6 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return { ok: true, info: `Ti abbiamo inviato un'email a ${e}. Apri il link per confermare l'account, poi accedi.` };
       }
       const err = await attachCloudUser(r.user);
+      if (!err) track("sign_up");
       return err ? { ok: false, error: err } : { ok: true };
     }
     if (state?.accounts.some((a) => a.email === e)) return { ok: false, error: "Esiste già un account con questa email. Accedi oppure usa un'altra email." };
@@ -283,6 +289,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { ...base, accounts: [...base.accounts, acc], data: { ...base.data, [acc.id]: newUserData(firstName.trim(), lastName.trim()) }, session: acc.id };
     });
     setTabState("basket");
+    track("sign_up");
     return { ok: true };
   }, [state, attachCloudUser]);
 
@@ -292,6 +299,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data: r, error } = await supabase.auth.signInWithPassword({ email: e, password });
       if (error || !r.user) return { ok: false, error: cloudError(error?.message ?? "") };
       const err = await attachCloudUser(r.user);
+      if (!err) track("login");
       return err ? { ok: false, error: err } : { ok: true };
     }
     const acc = state?.accounts.find((a) => a.email === e && !a.demo);
@@ -299,6 +307,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (acc.passHash !== (await hashPassword(e, password))) return { ok: false, error: "Password non corretta. Riprova o recuperala." };
     setState((s) => (s ? { ...s, session: acc.id } : s));
     setTabState("basket");
+    track("login");
     return { ok: true };
   }, [state, attachCloudUser]);
 
@@ -317,6 +326,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startDemo = useCallback(() => {
+    track("demo_start");
     setState((s) => {
       const base = s ?? emptyState();
       let acc = base.accounts.find((a) => a.demo);
@@ -384,14 +394,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [update]
   );
   const addToCart = useCallback(
-    (productId: string, qty = 1) =>
+    (productId: string, qty = 1) => {
+      track("add_to_cart", { product_id: productId, quantity: qty });
       update((d) => {
         const ex = d.cart.find((l) => l.productId === productId);
         return {
           ...d,
           cart: ex ? d.cart.map((l) => (l.productId === productId ? { ...l, qty: Math.min(20, l.qty + qty) } : l)) : [...d.cart, { productId, qty }],
         };
-      }),
+      });
+    },
     [update]
   );
 
@@ -435,13 +447,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setQrOrderId(order.id);
+      track("pre_order", {
+        advance_days: order.advance,
+        discount_pct: order.subtotal ? Math.round((100 * order.discount) / order.subtotal) : 0,
+        items: order.lines.reduce((a, l) => a + l.qty, 0),
+        value: order.total,
+        currency: "EUR",
+        pickup_method: order.method,
+        store_id: order.storeId,
+      });
       return order;
     },
     [data, store, update]
   );
 
   const completeOrder = useCallback(
-    (id: string) =>
+    (id: string) => {
+      const done = data?.orders.find((x) => x.id === id && x.status === "attivo");
+      if (done) track("order_completed", { advance_days: done.advance, value: done.total, currency: "EUR" });
       update((d) => {
         const o = d.orders.find((x) => x.id === id);
         if (!o || o.status !== "attivo") return d;
@@ -454,8 +477,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           orders: d.orders.map((x) => (x.id === id ? { ...x, status: "completato", completedAt: new Date().toISOString() } : x)),
           pendingFeedback: o.feedbackDone ? d.pendingFeedback : id,
         };
-      }),
-    [update]
+      });
+    },
+    [data, update]
   );
 
   const cancelOrder = useCallback(
@@ -475,7 +499,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const submitFeedback = useCallback(
-    (orderId: string, ratings: Record<string, number>, comment: string) =>
+    (orderId: string, ratings: Record<string, number>, comment: string) => {
+      if (ratings.overall) track("order_rating", { rating: ratings.overall });
       update((d) => {
         if (d.feedbacks.some((f) => f.orderId === orderId)) return { ...d, pendingFeedback: null };
         let next: UserData = {
@@ -486,7 +511,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         next = applyPoints(next, POINTS.feedback, `Feedback ordine ${orderId}`);
         return next;
-      }),
+      });
+    },
     [update]
   );
   const dismissFeedback = useCallback(() => update((d) => ({ ...d, pendingFeedback: null })), [update]);
@@ -508,6 +534,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       // points only for the first feedback of the account, so they can't be collected repeatedly
       const points = (data?.appFeedbacks ?? []).some((f) => f.points > 0) ? 0 : POINTS.appFeedback;
+      track("app_feedback", { visual_rating: answers.visual_rating });
       const entry: AppFeedback = { id: `fb-${Date.now().toString(36)}`, date: new Date().toISOString(), answers, points };
       update((d) => {
         const next: UserData = { ...d, appFeedbacks: [entry, ...(d.appFeedbacks ?? [])] };

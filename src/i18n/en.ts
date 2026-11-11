@@ -4,6 +4,12 @@
  * A text that is missing here simply stays in Italian, so the app never breaks.
  */
 export const EN: Record<string, string> = {
+  "Ci aiuti a migliorare FOODPULSE?": "Will you help us improve FOODPULSE?",
+  "Con il tuo consenso usiamo Google Analytics per contare in forma anonima come viene usata l'app (per esempio quante prenotazioni vengono confermate). Non condividiamo mai nome, email o indirizzo. Puoi cambiare idea in Profilo › Notifiche e privacy.": "With your consent we use Google Analytics to count anonymously how the app is used (for example how many bookings are confirmed). We never share your name, email or address. You can change your mind in Profile › Notifications and privacy.",
+  "Rifiuta": "Decline",
+  "Accetta": "Accept",
+  "Statistiche anonime di utilizzo": "Anonymous usage statistics",
+  "Google Analytics conta in forma anonima come viene usata l'app, per migliorarla. Nessun nome, email o indirizzo viene condiviso. Vale per questo dispositivo.": "Google Analytics anonymously counts how the app is used, so we can improve it. No name, email or address is shared. Applies to this device.",
   "Aiutaci a migliorare FOODPULSE": "Help us improve FOODPULSE",
   "Lasciaci la tua recensione: bastano due minuti e ogni risposta conta.": "Leave us your review: it only takes two minutes and every answer counts.",
   // ---- Products (data/products.ts) ----

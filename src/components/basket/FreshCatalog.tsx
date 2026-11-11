@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Clock, Percent, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { track } from "@/lib/analytics";
 import { FavoriteButton, QtyStepper, SectionTitle } from "@/components/ui/Controls";
 import { FoodArt, ProductArt } from "@/components/ui/FoodArt";
 import { ADVANCE_TIERS, CATEGORIES, CATEGORY_ORDER } from "@/data/config";
@@ -38,7 +39,7 @@ export function FreshCatalog() {
       <label htmlFor="fresh-search" className="relative block">
         <span className="sr-only">Cerca tra i freschi</span>
         <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-400" aria-hidden="true" />
-        <input id="fresh-search" className="input rounded-full border-brand-100 pl-11" placeholder="Cerca pane, salmone, mozzarella…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input id="fresh-search" className="input rounded-full border-brand-100 pl-11" placeholder="Cerca pane, salmone, mozzarella…" value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => q.trim() && track("view_fresh", { category: "search" })} />
       </label>
 
       {!showList && (
@@ -47,7 +48,10 @@ export function FreshCatalog() {
             <button
               key={c}
               type="button"
-              onClick={() => setCat(c)}
+              onClick={() => {
+                setCat(c);
+                track("view_fresh", { category: c });
+              }}
               className={`group flex min-h-[124px] flex-col justify-between rounded-3xl p-3 text-left transition hover:brightness-[0.98] active:scale-[0.98] ${CATEGORIES[c].tile}`}
             >
               <FoodArt id={c} size={74} className="mx-auto transition group-hover:scale-105" />

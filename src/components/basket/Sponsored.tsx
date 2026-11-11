@@ -2,6 +2,7 @@
 
 import { ArrowRight, Check, Info, ListPlus, MapPin, ShieldCheck, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
+import { track } from "@/lib/analytics";
 import { FavoriteButton, SectionTitle, Sheet } from "@/components/ui/Controls";
 import { FoodArt } from "@/components/ui/FoodArt";
 import { rankAds, type RankedAd } from "@/lib/ads";
@@ -60,7 +61,10 @@ export function Sponsored() {
                     <Tag size={11} aria-hidden="true" /> {c.promo}
                   </p>
                 )}
-                <button type="button" className="btn btn-sm mt-2 rounded-full border border-brand-200 bg-white px-3.5 text-brand-600 hover:bg-brand-50" onClick={() => setOpen(ad)}>
+                <button type="button" className="btn btn-sm mt-2 rounded-full border border-brand-200 bg-white px-3.5 text-brand-600 hover:bg-brand-50" onClick={() => {
+                    setOpen(ad);
+                    track("sponsored_click", { campaign_id: ad.campaign.id });
+                  }}>
                   Scopri il prodotto <ArrowRight size={15} />
                 </button>
               </div>
