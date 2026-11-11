@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Clock, Percent, Plus, Search } from "lucide-
 import { useMemo, useState } from "react";
 import { FavoriteButton, QtyStepper, SectionTitle } from "@/components/ui/Controls";
 import { FoodArt, ProductArt } from "@/components/ui/FoodArt";
-import { CATEGORIES, CATEGORY_ORDER, MAX_DISCOUNT_PCT } from "@/data/config";
+import { ADVANCE_TIERS, CATEGORIES, CATEGORY_ORDER } from "@/data/config";
 import { formatDayShort, money } from "@/lib/format";
 import { availableFresh, priceInfo, stockFor } from "@/lib/pricing";
 import type { CategoryId } from "@/lib/types";
@@ -131,7 +131,8 @@ export function FreshCatalog() {
 
       <div className="relative overflow-hidden rounded-3xl bg-accent p-4 text-white shadow-card">
         <p className="max-w-[16ch] text-[18px] font-semibold leading-snug">
-          Prenota in anticipo e risparmia fino al {MAX_DISCOUNT_PCT}%
+          {/* the highest discount for booking ahead (5 days), without store promotions */}
+          Prenota in anticipo e risparmia fino al {Math.max(...ADVANCE_TIERS.map((t) => t.pct))}%
         </p>
         <span className="absolute right-4 top-1/2 grid h-14 w-14 -translate-y-1/2 rotate-12 place-items-center rounded-2xl bg-white text-accent shadow-card" aria-hidden="true">
           <Percent size={28} strokeWidth={2.6} />
