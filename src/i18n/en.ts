@@ -4,6 +4,8 @@
  * A text that is missing here simply stays in Italian, so the app never breaks.
  */
 export const EN: Record<string, string> = {
+  "Aiutaci a migliorare FOODPULSE": "Help us improve FOODPULSE",
+  "Lasciaci la tua recensione: bastano due minuti e ogni risposta conta.": "Leave us your review: it only takes two minutes and every answer counts.",
   // ---- Products (data/products.ts) ----
   "Pane integrale": "Wholemeal bread",
   "Lievitazione naturale, sfornato al mattino": "Naturally leavened, baked every morning",

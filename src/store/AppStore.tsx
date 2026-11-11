@@ -111,6 +111,8 @@ interface Ctx {
   /** heart on a product card: saves or removes a product from the favourites */
   toggleFavorite: (id: string) => void;
   setOnboarded: () => void;
+  /** first visit to the Feedback tab: hides the orange dot on the tab */
+  markFeedbackSeen: () => void;
   setStore: (id: string) => void;
   setAdvance: (days: number) => void;
   addToCart: (productId: string, qty?: number) => void;
@@ -363,6 +365,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [data, update, notify]
   );
   const setOnboarded = useCallback(() => update((d) => ({ ...d, onboarded: true })), [update]);
+  const markFeedbackSeen = useCallback(() => update((d) => (d.feedbackTabSeen ? d : { ...d, feedbackTabSeen: true })), [update]);
 
   const setStore = useCallback(
     (id: string) => update((d) => ({ ...d, storeId: id, basket: { ...d.basket, dismissed: [], qty: {} } })),
@@ -541,6 +544,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateProfile,
       toggleFavorite,
       setOnboarded,
+      markFeedbackSeen,
       setStore,
       setAdvance,
       addToCart,
@@ -558,7 +562,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
