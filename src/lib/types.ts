@@ -301,6 +301,8 @@ export interface UserData {
   onboarded: boolean;
   /** feedback about the app sent from the Feedback tab (optional: older saved data has none) */
   appFeedbacks?: AppFeedback[];
+  /** the user has opened the Feedback tab at least once (hides the orange dot) */
+  feedbackTabSeen?: boolean;
 }
 
 export interface Account {

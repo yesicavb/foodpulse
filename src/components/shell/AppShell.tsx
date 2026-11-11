@@ -17,6 +17,8 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { tab, setTab, data, store, toast, setProfileView } = useApp();
+  /** orange dot on Feedback until the user opens it once (accounts that already sent feedback never see it) */
+  const feedbackDot = !!data && !data.feedbackTabSeen && !(data.appFeedbacks?.length);
   const p = data?.profile;
   const hasName = !!(p?.firstName || p?.lastName);
   const onProfile = tab === "profile";
@@ -73,6 +75,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 >
                   <Icon size={22} strokeWidth={active ? 2.3 : 1.9} aria-hidden="true" />
                   <span className="text-center">{label}</span>
+                  {id === "feedback" && feedbackDot && !active && (
+                    <span className="absolute right-[28%] top-1.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white">
+                      <span className="sr-only">Nuovo</span>
+                    </span>
+                  )}
                   {badge > 0 && (
                     <span className="absolute right-[20%] top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-extrabold tabular-nums text-white">
                       {badge}

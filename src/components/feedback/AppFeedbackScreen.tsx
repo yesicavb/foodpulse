@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckCircle2, Gift, Loader2, Send } from "lucide-react";
-import { useState, type FormEvent } from "react";
-import { SectionTitle, Stars } from "@/components/ui/Controls";
+import { CheckCircle2, Gift, Loader2, MessageSquareHeart, Send } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Stars } from "@/components/ui/Controls";
 import { POINTS } from "@/data/config";
 import { APP_FEEDBACK_QUESTIONS as Q } from "@/data/options";
 import { formatDate } from "@/lib/format";
@@ -17,11 +17,17 @@ const EMPTY: AppFeedbackAnswers = { visual_rating: 0, preorder: "", profile_bann
  * separate from the post-pickup survey of each order.
  */
 export function AppFeedbackScreen() {
-  const { data, sendAppFeedback } = useApp();
+  const { data, sendAppFeedback, markFeedbackSeen } = useApp();
   const [answers, setAnswers] = useState<AppFeedbackAnswers>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [earned, setEarned] = useState<number | null>(null);
+
+  // opening the tab removes the orange dot from the bottom bar
+  const seen = data?.feedbackTabSeen;
+  useEffect(() => {
+    if (data && !seen) markFeedbackSeen();
+  }, [data, seen, markFeedbackSeen]);
 
   if (!data) return null;
   const history = data.appFeedbacks ?? [];
@@ -68,7 +74,14 @@ export function AppFeedbackScreen() {
 
   return (
     <div className="space-y-4">
-      <SectionTitle eyebrow="Feedback" title="Com'è la tua esperienza con FOODPULSE?" subtitle="Bastano un paio di minuti. Le tue risposte ci aiutano a migliorare l'app." />
+      <div className="relative overflow-hidden rounded-3xl bg-accent p-4 pr-24 text-white shadow-card">
+        <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-white/85">Feedback</p>
+        <h1 className="mt-1 text-[19px] font-semibold leading-snug">Aiutaci a migliorare FOODPULSE</h1>
+        <p className="mt-1 text-[13.5px] leading-snug text-white/90">Lasciaci la tua recensione: bastano due minuti e ogni risposta conta.</p>
+        <span className="absolute right-4 top-1/2 grid h-14 w-14 -translate-y-1/2 rotate-12 place-items-center rounded-2xl bg-white text-accent shadow-card" aria-hidden="true">
+          <MessageSquareHeart size={28} strokeWidth={2.4} />
+        </span>
+      </div>
 
       {pointsAvailable ? (
         <p className="flex items-center gap-2 rounded-xl bg-brand-50 px-3.5 py-2.5 text-[13.5px] font-semibold text-brand-800">
