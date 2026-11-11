@@ -89,7 +89,7 @@ Saved data (profile choices, feedback answers in Supabase) always stays in Itali
 
 There is no separate Home screen: after logging in, the **Smart Basket** opens. The profile is the round button with your initials at the top right, next to the IT | EN switch. The bottom bar has 4 sections, always visible and freely accessible:
 
-1. **Smart Basket**: A) choose the supermarket · B) your smart shopping list · C) add more fresh products · D) discover more products for you (sponsored)
+1. **Smart Basket**: A) choose your city, then one of its supermarkets (20 Italian cities, 4 real stores each) · B) your smart shopping list · C) add more fresh products · D) discover more products for you (sponsored)
 2. **My cart** (Il mio carrello): booking, discounts, a "pick up in store" list, choice of pickup method
 3. **My QR code** (Il mio QR Code): active bookings with QR code, pickup simulation, cancellation
 4. **Feedback**: five questions about the app (see `APP_FEEDBACK_QUESTIONS` in `src/data/options.ts`)
@@ -125,7 +125,7 @@ All parameters are in `src/data/config.ts`; supermarkets, products and campaigns
 |---|---|---|
 | Sign-up and login | Supabase Auth when configured (confirmation email, password reset); otherwise accounts saved in the browser | own email provider (SMTP) for reliable delivery |
 | User data | Supabase: one JSON row per user, with Row Level Security; otherwise the device's localStorage | separate tables for orders, points and stock, with points and stock checked on the server |
-| Supermarkets, prices, availability | demo data. Esselunga, Coop, Conad and Despar are used for illustration only, **with no official integration** | integration with the ERP/catalogue and stock levels of participating chains |
+| Supermarkets, prices, availability | 80 real stores in 20 Italian cities (real chain, address and distance from the centre, from PromoQui listings, Nov 2026); hours, prices, stock and services are simulated. Chain names are used for illustration only, **with no official integration** | integration with the ERP/catalogue and stock levels of participating chains |
 | Smart Basket | rules based on history and profile | real history from loyalty cards (with consent), possibly a recommendation model |
 | Sponsored products | fictional campaigns and brands | a retail media platform, contracts with brands, impression measurement |
 | Payment | not included (simulated) | a payment gateway, or payment at pickup depending on the store |

@@ -18,6 +18,7 @@
  *   app_feedback                   Feedback tab sent (visual_rating 1-5)
  *   sponsored_click                opened a sponsored product
  *   tab_view                       opened a tab of the bottom bar
+ *   store_select                   chose a supermarket (city, chain)
  */
 
 export const GA_ID = "G-BQ2BDPLSTZ";
