@@ -161,7 +161,6 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
                   <button key={p.id} type="button" role="radio" aria-checked={on} onClick={() => setLockerId(p.id)} className={`rounded-2xl border-2 bg-white p-3 text-left ${on ? "border-brand-600" : "border-ink-100"}`}>
                     <span className="flex items-center justify-between gap-2">
                       <span className="text-[14px] font-bold text-ink-900">{p.name}</span>
-                      <span className="text-[12px] font-bold tabular-nums text-ink-500">{p.distanceKm.toLocaleString(locale())} km</span>
                     </span>
                     <span className="mt-0.5 flex items-center gap-1 text-[12.5px] text-ink-500">
                       <MapPin size={12} /> {p.address}

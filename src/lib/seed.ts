@@ -1,5 +1,5 @@
 import { POINTS } from "@/data/config";
-import { STORES } from "@/data/stores";
+import { storeById } from "@/data/stores";
 import { addDays, startOfToday } from "./format";
 import { applyPoints } from "./loyalty";
 import { buildOrder } from "./orders";
@@ -55,8 +55,8 @@ function demoProfile(): Profile {
 
 export function demoUserData(): UserData {
   const today = startOfToday();
-  const ess = STORES[0];
-  const coop = STORES[1];
+  const ess = storeById("st-ess-piave")!;
+  const coop = storeById("st-milano-coop-umbria")!;
   let d: UserData = {
     ...newUserData("Giulia", "Rossi"),
     profile: demoProfile(),

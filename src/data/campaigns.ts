@@ -1,4 +1,5 @@
 import type { Campaign } from "@/lib/types";
+import { ALL_STORE_IDS, storesOfChains } from "@/data/stores";
 
 /**
  * SIMULATED retail media campaigns. Brands and products are fictional.
@@ -6,7 +7,7 @@ import type { Campaign } from "@/lib/types";
  * stores, bid (€ per 1,000 impressions), priority and period.
  * FOODPULSE does the matching with the customer (see src/lib/ads.ts).
  */
-const ALL = ["st-ess-piave", "st-coop-lodi", "st-conad-solari", "st-despar-isola"];
+const ALL = ALL_STORE_IDS;
 
 export const CAMPAIGNS: Campaign[] = [
   {
@@ -19,7 +20,7 @@ export const CAMPAIGNS: Campaign[] = [
     icon: "dumbbell",
     targets: ["fitness", "bodybuilding", "sport"],
     signals: [],
-    stores: ["st-ess-piave", "st-coop-lodi", "st-conad-solari"],
+    stores: storesOfChains(["Esselunga", "Coop", "Conad"]),
     bidEur: 9,
     priority: 5,
     validFrom: "2026-09-01",
@@ -70,7 +71,7 @@ export const CAMPAIGNS: Campaign[] = [
     icon: "leaf",
     targets: ["vegetale", "sano"],
     signals: ["tofu", "hummus", "polpette-lenticchie"],
-    stores: ["st-ess-piave", "st-coop-lodi", "st-despar-isola"],
+    stores: storesOfChains(["Esselunga", "Coop", "Despar"]),
     bidEur: 8,
     priority: 4,
     validFrom: "2026-09-15",
@@ -138,7 +139,7 @@ export const CAMPAIGNS: Campaign[] = [
     signals: [],
     household: true,
     notFor: ["vegana"],
-    stores: ["st-ess-piave", "st-coop-lodi", "st-conad-solari", "st-despar-isola"],
+    stores: ALL,
     bidEur: 7,
     priority: 4,
     validFrom: "2026-09-01",
