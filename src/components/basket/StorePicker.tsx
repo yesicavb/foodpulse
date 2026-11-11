@@ -69,9 +69,6 @@ export function StorePicker() {
               <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-500">
                 {store.address}, {store.city}
               </span>
-              <span className="flex items-center gap-1 text-[12.5px] text-ink-500">
-                <MapPin size={12} className="shrink-0" aria-hidden="true" /> {store.distanceKm.toLocaleString(locale())} km dal centro
-              </span>
             </span>
             <ChevronDown size={20} className="shrink-0 text-ink-700" aria-hidden="true" />
             <span className="sr-only">Cambia</span>
@@ -148,7 +145,6 @@ export function StorePicker() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
                         <span className="text-[15px] font-bold text-ink-900">{s.name}</span>
-                        <span className="shrink-0 text-[12px] font-bold tabular-nums text-ink-500">{s.distanceKm.toLocaleString(locale())} km</span>
                       </span>
                       <span className="mt-0.5 block text-[13px] text-ink-500">
                         {s.address}, {s.city} · {s.hours}
@@ -169,7 +165,7 @@ export function StorePicker() {
           </>
         )}
         <p className="mt-4 text-[11.5px] leading-snug text-ink-500">
-          Indirizzi reali dei punti vendita; distanze indicative dal centro città. Nomi delle catene usati a scopo illustrativo, senza integrazioni ufficiali. Orari, prezzi, disponibilità e servizi sono simulati.
+          Indirizzi reali dei punti vendita. Nomi delle catene usati a scopo illustrativo, senza integrazioni ufficiali. Orari, prezzi, disponibilità e servizi sono simulati.
         </p>
       </Sheet>
     </section>

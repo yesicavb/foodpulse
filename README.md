@@ -125,7 +125,7 @@ All parameters are in `src/data/config.ts`; supermarkets, products and campaigns
 |---|---|---|
 | Sign-up and login | Supabase Auth when configured (confirmation email, password reset); otherwise accounts saved in the browser | own email provider (SMTP) for reliable delivery |
 | User data | Supabase: one JSON row per user, with Row Level Security; otherwise the device's localStorage | separate tables for orders, points and stock, with points and stock checked on the server |
-| Supermarkets, prices, availability | 80 real stores in 20 Italian cities (real chain, address and distance from the centre, from PromoQui listings, Nov 2026); hours, prices, stock and services are simulated. Chain names are used for illustration only, **with no official integration** | integration with the ERP/catalogue and stock levels of participating chains |
+| Supermarkets, prices, availability | 80 real stores in 20 Italian cities (real chain and address, from PromoQui listings, Nov 2026); hours, prices, stock and services are simulated. Chain names are used for illustration only, **with no official integration** | integration with the ERP/catalogue and stock levels of participating chains |
 | Smart Basket | rules based on history and profile | real history from loyalty cards (with consent), possibly a recommendation model |
 | Sponsored products | fictional campaigns and brands | a retail media platform, contracts with brands, impression measurement |
 | Payment | not included (simulated) | a payment gateway, or payment at pickup depending on the store |
