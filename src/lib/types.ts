@@ -64,6 +64,8 @@ export interface ShelfProduct {
   id: string;
   name: string;
   desc: string;
+  /** Pack size, shown under the name (the name itself stays short) */
+  unit?: string;
   aisle: string;
   basePrice: number;
   tags: Tag[];

@@ -1,10 +1,17 @@
+"use client";
+
 /**
- * Food illustrations drawn for FOODPULSE (no photos, no brand artwork), in a soft
+ * Product pictures. Fresh and shelf products and the departments show a real photo
+ * (free Unsplash photos, see src/data/photos.ts); if a photo can't load (offline, blocked),
+ * or the product has none (sponsored products), the illustration below is shown instead.
+ *
+ * Food illustrations drawn for FOODPULSE (no brand artwork), in a soft
  * realistic style: gradients for volume, highlights for shine, small details for texture.
  * One drawing per product, department and empty state, on a 64 × 64 grid.
  * To give a new product a picture, add its id to ART_FOR below (or reuse a similar drawing).
  */
-import { useId, type ReactElement, type ReactNode } from "react";
+import { useId, useState, type ReactElement, type ReactNode } from "react";
+import { PHOTOS, photoUrl } from "@/data/photos";
 
 /** Each drawing gets `u(name)`, which makes gradient ids unique per picture on the page */
 type U = (name: string) => string;
@@ -1227,7 +1234,30 @@ const Blur = ({ u }: { u: U }) => (
 );
 
 /** Food illustration for a product id, department id or drawing name */
+/** Real photo for this id, or the illustration if there is none or it fails to load */
 export function FoodArt({ id, size = 64, label, className = "" }: { id: string; size?: number; label?: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  const photo = PHOTOS[id];
+  if (photo && !failed) {
+    return (
+      <img
+        src={photoUrl(photo, size)}
+        width={size}
+        height={size}
+        alt={label ?? ""}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+        className={`shrink-0 rounded-2xl bg-cream object-cover ${className}`}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+  return <Illustration id={id} size={size} label={label} className={className} />;
+}
+
+/** The drawn illustration only */
+export function Illustration({ id, size = 64, label, className = "" }: { id: string; size?: number; label?: string; className?: string }) {
   const u = useU();
   const art = ART[ART_FOR[id] ?? id] ?? ART.bread;
   return (
@@ -1248,9 +1278,26 @@ export function FoodArt({ id, size = 64, label, className = "" }: { id: string; 
 
 /** Product picture on a soft round backdrop, as on the product cards */
 export function ProductArt({ id, size = 72, label }: { id: string; size?: number; label: string }) {
+  const [failed, setFailed] = useState(false);
+  const photo = PHOTOS[id];
+  if (photo && !failed) {
+    return (
+      <img
+        src={photoUrl(photo, size)}
+        width={size}
+        height={size}
+        alt={label}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+        className="shrink-0 rounded-2xl bg-cream object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <div className="relative grid shrink-0 place-items-center rounded-2xl bg-cream" style={{ width: size, height: size }}>
-      <FoodArt id={id} size={Math.round(size * 0.9)} label={label} />
+      <Illustration id={id} size={Math.round(size * 0.9)} label={label} />
     </div>
   );
 }

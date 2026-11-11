@@ -65,7 +65,7 @@ Look and feel follow the team's design (Nov 2026): Poppins font, cream backgroun
 | Crema | `#FFF8EE` | `cream` (page background) |
 | Arancione Accento | `#FF8A3D` | `accent` (banner, favourites, badges) |
 
-**Food illustrations** are drawn in code in `src/components/ui/FoodArt.tsx` (no photos, no brand artwork). To give a new product a picture, add its id to `ART_FOR` in that file and point it at an existing drawing (or add a new one).
+**Food pictures:** fresh and shelf products and the department tiles use real photos from Unsplash, listed in `src/data/photos.ts` (photo id, photographer, link). They are free under the [Unsplash License](https://unsplash.com/license): commercial use is allowed and no permission or credit is needed. Only free photos were chosen (no Unsplash+), without logos, brands or people. Sponsored products keep drawn illustrations, because their brands are fictional. If a photo can't load, the drawn illustration from `src/components/ui/FoodArt.tsx` is shown instead. To give a new product a picture, add a free Unsplash photo to `photos.ts`, and/or point its id at a drawing in `ART_FOR` in `FoodArt.tsx`.
 
 **Favourites:** the heart on product cards saves a product in the profile (`favoriteProducts`), shown under Food preferences; the Smart Basket ranks saved products higher.
 

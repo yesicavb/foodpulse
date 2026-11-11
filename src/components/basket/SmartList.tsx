@@ -142,7 +142,10 @@ export function SmartList() {
                     <div className="min-w-0">
                       <span className="badge bg-ink-100 text-ink-700">Da scaffale · non prenotabile</span>
                       <h3 className="mt-1 text-[15px] font-bold leading-tight text-ink-900">{prod.name}</h3>
-                      <p className="text-[12px] text-ink-500">{prod.aisle}</p>
+                      <p className="text-[12px] text-ink-500">
+                        {prod.unit && <span>{prod.unit} · </span>}
+                        <span>{prod.aisle}</span>
+                      </p>
                     </div>
                     <button type="button" onClick={() => dismissSuggestion(s.id)} aria-label={`Elimina ${prod.name} dalla lista`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-100">
                       <X size={16} />
