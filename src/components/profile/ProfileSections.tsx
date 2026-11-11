@@ -1,7 +1,8 @@
 "use client";
 
 import { CheckCircle2, ShieldAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getConsent, setConsent } from "@/lib/analytics";
 import { ChipGroup, FavoriteButton, Toggle } from "@/components/ui/Controls";
 import { FoodArt } from "@/components/ui/FoodArt";
 import { CAMPAIGNS } from "@/data/campaigns";
@@ -271,10 +272,28 @@ export function NotificationsSection() {
             description="Prodotti sponsorizzati scelti in base a interessi e acquisti. I brand non ricevono i tuoi dati. Senza consenso vedi solo promozioni generiche."
           />
           <Toggle checked={n.marketing} onChange={setN("marketing")} label="Comunicazioni commerciali" description="Newsletter e offerte via email." />
+          <AnalyticsToggle />
         </div>
       </Block>
       <Saved />
     </div>
+  );
+}
+
+/** Consent for Google Analytics: kept in this browser, same choice as the cookie banner */
+function AnalyticsToggle() {
+  const [on, setOn] = useState(false);
+  useEffect(() => setOn(getConsent() === "granted"), []);
+  return (
+    <Toggle
+      checked={on}
+      onChange={(v) => {
+        setConsent(v ? "granted" : "denied");
+        setOn(v);
+      }}
+      label="Statistiche anonime di utilizzo"
+      description="Google Analytics conta in forma anonima come viene usata l'app, per migliorarla. Nessun nome, email o indirizzo viene condiviso. Vale per questo dispositivo."
+    />
   );
 }
 

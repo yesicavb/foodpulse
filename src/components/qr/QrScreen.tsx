@@ -1,7 +1,8 @@
 "use client";
 
 import { CheckCircle2, History, QrCode, ScanLine, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 import { EmptyState, SectionTitle } from "@/components/ui/Controls";
 import { formatDayShort } from "@/lib/format";
 import { useApp } from "@/store/AppStore";
@@ -11,6 +12,11 @@ export function QrScreen() {
   const { data, qrOrderId, setQrOrderId, completeOrder, cancelOrder, setTab, setProfileView, notify } = useApp();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [validating, setValidating] = useState(false);
+  // one qr_view per booking shown (the QR code is what the customer shows in the shop)
+  const shownId = data?.orders.find((o) => o.status === "attivo" && (o.id === qrOrderId || !qrOrderId))?.id;
+  useEffect(() => {
+    if (shownId) track("qr_view");
+  }, [shownId]);
   if (!data) return null;
   const active = data.orders.filter((o) => o.status === "attivo");
   const current = active.find((o) => o.id === qrOrderId) ?? active[0] ?? null;

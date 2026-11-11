@@ -8,6 +8,7 @@ import { FeedbackSheet } from "@/components/feedback/FeedbackSheet";
 import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { QrScreen } from "@/components/qr/QrScreen";
 import { AppShell } from "@/components/shell/AppShell";
+import { CookieBanner } from "@/components/shell/CookieBanner";
 import { LogoMark } from "@/components/ui/Logo";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { AppProvider, useApp } from "@/store/AppStore";
@@ -41,6 +42,7 @@ export function FoodPulseApp() {
     <AppProvider>
       <LanguageProvider>
         <Gate />
+        <CookieBanner />
       </LanguageProvider>
     </AppProvider>
   );
