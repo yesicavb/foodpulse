@@ -47,6 +47,7 @@ jobs:
         run: |
           mkdir -p _site
           cp standalone/foodpulse.html _site/index.html
+          cp -r site/. _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
