@@ -209,3 +209,17 @@ select created_at::date            as day,
 from app_feedback
 group by day
 order by day;
+
+
+-- 17. Comments written after a pickup, newest first  (results table; export as CSV to read them all)
+--     These come from the short survey after a completed order (not from the Feedback tab),
+--     so they are stored inside each account's data instead of the app_feedback table.
+select (f->>'date')::date                 as date,
+       coalesce(u.email, 'unknown')       as who,
+       f->'ratings'                       as ratings_1_to_5,
+       f->>'comment'                      as comment
+from user_data d
+cross join lateral jsonb_array_elements(coalesce(d.data->'feedbacks', '[]'::jsonb)) f
+left join auth.users u on u.id = d.user_id
+where coalesce(trim(f->>'comment'), '') <> ''
+order by date desc;
