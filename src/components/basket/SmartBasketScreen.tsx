@@ -1,7 +1,7 @@
 "use client";
 
-import { Sparkles, Store as StoreIcon } from "lucide-react";
-import { EmptyState, Sheet } from "@/components/ui/Controls";
+import { Sparkles } from "lucide-react";
+import { Sheet } from "@/components/ui/Controls";
 import { GroceryBag } from "@/components/ui/FoodArt";
 import { LogoMark } from "@/components/ui/Logo";
 import { useApp } from "@/store/AppStore";
@@ -39,13 +39,7 @@ export function SmartBasketScreen() {
           <FreshCatalog />
           <Sponsored />
         </>
-      ) : (
-        <EmptyState
-          icon={<StoreIcon size={26} />}
-          title="Scegli prima il supermercato"
-          text="Prodotti, prezzi, sconti e modalità di ritiro cambiano da un punto vendita all'altro."
-        />
-      )}
+      ) : null}
 
       <Sheet open={!data.onboarded} onClose={setOnboarded} title="Benvenuto in FOODPULSE">
         <div className="space-y-4 text-center">

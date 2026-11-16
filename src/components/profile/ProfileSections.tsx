@@ -31,11 +31,23 @@ function Single({ options, value, onChange, label }: { options: string[]; value:
   return <ChipGroup options={opts(options)} value={value ? [value] : []} onToggle={(v) => onChange(v === value ? "" : v)} label={label} />;
 }
 
+/** Confirm button at the bottom of every profile section (changes are kept as you type; this confirms and returns to the profile) */
 export function Saved() {
+  const { notify, setProfileView } = useApp();
   return (
-    <p className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold text-brand-700">
-      <CheckCircle2 size={14} /> Le modifiche vengono salvate automaticamente e aggiornano lo Smart Basket
-    </p>
+    <div className="sticky bottom-3 z-10 pt-2">
+      <button
+        type="button"
+        className="btn-primary h-12 w-full shadow-card"
+        onClick={() => {
+          notify("Dati salvati ✓ Lo Smart Basket è aggiornato");
+          setProfileView("home");
+          window.scrollTo({ top: 0 });
+        }}
+      >
+        <CheckCircle2 size={18} aria-hidden="true" /> Salva
+      </button>
+    </div>
   );
 }
 
