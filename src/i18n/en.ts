@@ -436,6 +436,12 @@ export const EN: Record<string, string> = {
   "Cerca una città": "Search for a city",
   "Città": "Cities",
   "Cambia città": "Change city",
+  "Salva": "Save",
+  "Continua con Google": "Continue with Google",
+  "oppure con email": "or with email",
+  "L'accesso con Google non è ancora attivo. Usa email e password.": "Google sign-in isn't active yet. Use email and password.",
+  "L'accesso con Google funziona solo nella versione online dell'app.": "Google sign-in only works in the online version of the app.",
+  "Dati salvati ✓ Lo Smart Basket è aggiornato": "Saved ✓ Your Smart Basket is updated",
   "La tua città non c'è ancora. Scegli quella più vicina: stiamo aggiungendo nuove città.": "Your city isn't here yet. Pick the closest one: we're adding more cities.",
   // ---- Cart and checkout (components/cart) ----
   "Nessun supermercato": "No supermarket",
@@ -600,7 +606,6 @@ export const EN: Record<string, string> = {
   "FOODPULSE · prototipo dimostrativo. Dati salvati solo su questo dispositivo.": "FOODPULSE · demo prototype. Data saved on this device only.",
 
   // ---- Profile sections (components/profile/ProfileSections.tsx) ----
-  "Le modifiche vengono salvate automaticamente e aggiornano lo Smart Basket": "Changes are saved automatically and update the Smart Basket",
   "Chi sei": "About you",
   "Fascia d'età": "Age range",
   "Indirizzo (per la consegna a domicilio)": "Address (for home delivery)",
