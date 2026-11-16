@@ -42,8 +42,12 @@ async function loadCloudData(user: User): Promise<UserData> {
   const { data: row, error } = await supabase.from(USER_DATA_TABLE).select("data").eq("user_id", user.id).maybeSingle();
   if (error) throw error;
   if (row?.data) return row.data as UserData;
-  const meta = (user.user_metadata ?? {}) as { first_name?: string; last_name?: string };
-  const fresh = newUserData(meta.first_name ?? "", meta.last_name ?? "");
+  // email sign-up stores first/last name; Google gives full_name (and sometimes given/family name)
+  const meta = (user.user_metadata ?? {}) as { first_name?: string; last_name?: string; full_name?: string; name?: string; given_name?: string; family_name?: string };
+  const full = (meta.full_name ?? meta.name ?? "").trim();
+  const first = meta.first_name ?? meta.given_name ?? full.split(/\s+/)[0] ?? "";
+  const last = meta.last_name ?? meta.family_name ?? full.split(/\s+/).slice(1).join(" ");
+  const fresh = newUserData(first, last);
   const { error: insertError } = await supabase.from(USER_DATA_TABLE).insert({ user_id: user.id, data: fresh });
   if (insertError) throw insertError;
   return fresh;
@@ -105,6 +109,8 @@ interface Ctx {
   notify: (msg: string) => void;
   register: (f: { firstName: string; lastName: string; email: string; password: string }) => Promise<Result>;
   login: (email: string, password: string) => Promise<Result>;
+  /** "Continua con Google": leaves the page for Google and comes back logged in */
+  loginWithGoogle: () => Promise<Result>;
   startDemo: () => void;
   resetDemo: () => void;
   logout: () => void;
@@ -190,6 +196,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (cancelled) return;
           lastCloudData.current = d;
           setState(withCloudUser(local, user, d));
+          // back from Google: count it like a normal login
+          try {
+            if (window.sessionStorage.getItem("foodpulse-google")) {
+              window.sessionStorage.removeItem("foodpulse-google");
+              track("login", { method: "google" });
+            }
+          } catch {
+            /* analytics only */
+          }
           return;
         } catch {
           if (!cancelled) notify("Non riusciamo a caricare il tuo account. Riprova più tardi.");
@@ -310,6 +325,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     track("login");
     return { ok: true };
   }, [state, attachCloudUser]);
+
+  const loginWithGoogle: Ctx["loginWithGoogle"] = useCallback(async () => {
+    if (!supabase) return { ok: false, error: "L'accesso con Google funziona solo nella versione online dell'app." };
+    try {
+      window.sessionStorage.setItem("foodpulse-google", "1");
+    } catch {
+      /* analytics only */
+    }
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirectUrl() } });
+    if (error) return { ok: false, error: /not enabled|unsupported provider/i.test(error.message) ? "L'accesso con Google non è ancora attivo. Usa email e password." : cloudError(error.message) };
+    return { ok: true };
+  }, []);
 
   const requestPasswordReset: Ctx["requestPasswordReset"] = useCallback(async (email) => {
     if (!supabase) return { ok: true };
@@ -565,6 +592,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       notify,
       register,
       login,
+      loginWithGoogle,
       startDemo,
       resetDemo,
       logout,
@@ -589,7 +617,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

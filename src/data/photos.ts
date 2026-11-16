@@ -2,7 +2,8 @@
  * Real food photos, all free under the Unsplash License
  * (https://unsplash.com/license: commercial use allowed, no permission or credit required).
  * Key = product id or department id. `src` is the Unsplash image id, `page` the photo page on unsplash.com.
- * Sponsored products have no photo: they keep their illustration (fictional brands).
+ * Sponsored products (key = campaign id) show a photo of the product type, chosen by the team on 16 Nov 2026;
+ * the brands are fictional, so the photos show no packaging.
  */
 export interface Photo {
   src: string;
@@ -57,6 +58,18 @@ export const PHOTOS: Record<string, Photo> = {
   "pesce": { src: "1563557908-b7787229f123", by: "camila igisk", page: "a-bunch-of-fish-that-are-on-some-ice-yFU8qIDo9s4" },
   "ortofrutta": { src: "1579113800032-c38bd7635818", by: "Marisol Benitez", page: "pile-of-vegetables-QvkAQTNj4zk" },
   "latticini": { src: "1683314573422-649a3c6ad784", by: "David Foodphototasty", page: "a-couple-of-pieces-of-cheese-sitting-on-top-of-a-wooden-cutting-board-JJcT6VJWDlg" },
+  // sponsored products
+  "cmp-profit-bar": { src: "1602540739366-704c77812897", by: "Jason Leung", page: "3ftFEjJo7u0" },
+  "cmp-alpi-yogurt": { src: "1722607571891-7ab5396a1b83", by: "Monika Grabkowska", page: "g3F-FOlf51M" },
+  "cmp-granaria-cereali": { src: "1521898037802-23b4ac1d1878", by: "Annie Spratt", page: "ZdsEF0Uvg9A" },
+  "cmp-verdevivo-burger": { src: "1542554762515-82be5d8f0bfa", by: "Hamburguesa Casera", page: "5poC5yyVUNY" },
+  "cmp-verdevivo-avena": { src: "1516371722954-1e17330ef40b", by: "Trent Erwin", page: "-Rwjvuz6pXA" },
+  "cmp-legume-pasta": { src: "1619175378369-d95749c45425", by: "Ryunosuke Kikuno", page: "z4FE1nsK_4Y" },
+  "cmp-granaria-fette": { src: "1468577760773-139c2f1c335f", by: "Jonathan Pielmayer", page: "c69HK1HKHYs" },
+  "cmp-dolcecasa-merende": { src: "1475855841503-917d97ca77b4", by: "Jennifer Pallian", page: "4yTCqUHG1II" },
+  "cmp-puroeco": { src: "1675113015601-84528beaa932", by: "Eugenia Pan'kiv", page: "yWU4U4cgLi4" },
+  "cmp-ortorosso-sugo": { src: "1788599760377-fb4008792b0a", by: "Zoshua Colah", page: "ogzTpp9c7I4" },
+  "cmp-scaduta": { src: "1517093157656-b9eccef91cb1", by: "Lindsay Moe", page: "sKM8RK2C-YI" },
 };
 
 /** Image URL at a given display size (2x for sharp screens, cropped square) */
