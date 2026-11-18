@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Eye, EyeOff, Leaf, Loader2, ShoppingBasket, Sparkles } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Leaf, Loader2, ShoppingBasket, Sparkles, Store as StoreIcon } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { LogoMark, Wordmark } from "@/components/ui/Logo";
 import { useApp } from "@/store/AppStore";
@@ -67,7 +67,7 @@ export function AuthScreen() {
 }
 
 function Welcome({ go }: { go: (v: View) => void }) {
-  const { startDemo } = useApp();
+  const { startDemo, startStoreDemo } = useApp();
   return (
     <div className="gutter flex min-h-screen flex-col pb-[max(24px,env(safe-area-inset-bottom))] pt-[max(16px,env(safe-area-inset-top))]">
       <div className="flex justify-end">
@@ -105,6 +105,9 @@ function Welcome({ go }: { go: (v: View) => void }) {
         </button>
         <button type="button" className="btn-ghost h-12 text-[15px]" onClick={startDemo}>
           Prova la demo senza registrarti
+        </button>
+        <button type="button" className="btn-ghost h-10 text-[13.5px] text-ink-600" onClick={startStoreDemo}>
+          <StoreIcon size={16} aria-hidden="true" /> Prova la demo supermercato
         </button>
         <p className="mt-1 text-center text-[11.5px] leading-snug text-ink-500">
           Prototipo dimostrativo: supermercati, prezzi e campagne sono simulati.
@@ -201,6 +204,8 @@ function Login({ go }: { go: (v: View) => void }) {
 function Register({ go }: { go: (v: View) => void }) {
   const { register } = useApp();
   const [f, setF] = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "" });
+  const [isStore, setIsStore] = useState(false);
+  const [storeCode, setStoreCode] = useState("");
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -216,7 +221,11 @@ function Register({ go }: { go: (v: View) => void }) {
     if (!terms) return setError("Per creare l'account accetta le condizioni d'uso e l'informativa privacy.");
     setBusy(true);
     setError(null);
-    const r = await register(f);
+    if (isStore && !storeCode.trim()) {
+      setBusy(false);
+      return setError("Inserisci il codice negozio che hai ricevuto dal team FoodPulse.");
+    }
+    const r = await register({ ...f, storeCode: isStore ? storeCode : undefined });
     setBusy(false);
     if (!r.ok) setError(r.error);
     else if (r.info) setInfo(r.info);
@@ -262,6 +271,31 @@ function Register({ go }: { go: (v: View) => void }) {
           <label htmlFor="reg-confirm" className="field-label">Conferma password</label>
           <PasswordInput id="reg-confirm" value={f.confirm} onChange={set("confirm")} autoComplete="new-password" />
         </div>
+        {supabase &&
+          (isStore ? (
+            <div className="rounded-2xl border-2 border-brand-200 bg-brand-50 p-3">
+              <label htmlFor="reg-store-code" className="field-label">Codice negozio</label>
+              <input
+                id="reg-store-code"
+                className="input font-mono uppercase tracking-wider"
+                placeholder="ESS-MI-XXXXXX"
+                autoComplete="off"
+                autoCapitalize="characters"
+                value={storeCode}
+                onChange={(e) => setStoreCode(e.target.value.toUpperCase())}
+              />
+              <p className="mt-1.5 text-[12px] leading-snug text-brand-800">
+                Il codice collega l&apos;account al tuo punto vendita: dopo l&apos;accesso vedrai gli ordini dei clienti e potrai scansionare i QR.
+              </p>
+              <button type="button" className="mt-1 text-[12.5px] font-semibold text-ink-500 underline underline-offset-2" onClick={() => setIsStore(false)}>
+                Sono un cliente
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="justify-self-start text-[13.5px] font-semibold text-brand-700 underline underline-offset-2" onClick={() => setIsStore(true)}>
+              Sei un supermercato? Inserisci il codice negozio
+            </button>
+          ))}
         <label htmlFor="reg-terms" className="flex items-start gap-3 rounded-xl bg-ink-50 p-3 text-[13.5px] leading-snug text-ink-700">
           <input id="reg-terms" type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-brand-600" />
           <span>

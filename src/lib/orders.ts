@@ -13,6 +13,7 @@ export interface OrderInput {
   lockerType?: LockerType;
   deliveryAddress?: string;
   voucher?: Voucher | null;
+  notes?: string;
   createdAt?: Date;
 }
 
@@ -69,6 +70,7 @@ export function buildOrder(input: OrderInput): Order {
     kgFood: t.kg,
     points: pointsFor(total, input.advance),
     status: "attivo",
+    notes: input.notes?.trim() || undefined,
     feedbackDone: false,
   };
 }

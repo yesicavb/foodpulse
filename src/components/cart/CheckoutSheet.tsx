@@ -26,6 +26,7 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
   const [lockerType, setLockerType] = useState<LockerType>("refrigerato");
   const [address, setAddress] = useState("");
   const [voucherId, setVoucherId] = useState("");
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
       lockerType: method === "locker" ? lockerType : undefined,
       deliveryAddress: method === "delivery" ? address.trim() : undefined,
       voucherId: voucherId || undefined,
+      notes,
     });
     if (!order) return setError("Non è stato possibile creare la prenotazione. Controlla il carrello e riprova.");
     onClose();
@@ -233,6 +235,18 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
             </div>
           </fieldset>
         )}
+
+        <div>
+          <label htmlFor="co-notes" className="field-label">Note per il supermercato (facoltativo)</label>
+          <textarea
+            id="co-notes"
+            className="input min-h-[72px] resize-y"
+            maxLength={500}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Es. pollo tagliato a fette, banane non troppo mature"
+          />
+        </div>
 
         <section className="card space-y-1.5 p-4 text-[14px]">
           <div className="flex justify-between text-ink-600"><span>Prezzo originale</span><span className="tabular-nums">{money(t.subtotal)}</span></div>

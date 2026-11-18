@@ -1,7 +1,8 @@
 "use client";
 
-import { CheckCircle2, History, QrCode, ScanLine, XCircle } from "lucide-react";
+import { CheckCircle2, ChefHat, History, PackageCheck, QrCode, ScanLine, Store as StoreIcon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import { sendToStore, statusesAtStore, type DeskStatus } from "@/lib/desk";
 import { track } from "@/lib/analytics";
 import { EmptyState, SectionTitle } from "@/components/ui/Controls";
 import { formatDayShort } from "@/lib/format";
@@ -9,7 +10,38 @@ import { useApp } from "@/store/AppStore";
 import { OrderTicket } from "./OrderTicket";
 
 export function QrScreen() {
-  const { data, qrOrderId, setQrOrderId, completeOrder, cancelOrder, setTab, setProfileView, notify } = useApp();
+  const { data, account, qrOrderId, setQrOrderId, completeOrder, cancelOrder, setTab, setProfileView, notify } = useApp();
+  const cloud = !!account?.cloud;
+  const [atStore, setAtStore] = useState<Record<string, DeskStatus>>({});
+  const activeIds = (data?.orders ?? []).filter((o) => o.status === "attivo").map((o) => o.id).join(",");
+
+  // what the supermarket is doing with each booking (checked every 10 seconds while this tab is open)
+  useEffect(() => {
+    if (!activeIds || !data) return;
+    let alive = true;
+    const ids = activeIds.split(",");
+    const who = `${data.profile.firstName ?? ""} ${data.profile.lastName ?? ""}`.trim() || "Cliente";
+    const check = async () => {
+      const st = await statusesAtStore(ids, cloud);
+      if (!alive) return;
+      setAtStore(st);
+      for (const id of ids) {
+        const o = data.orders.find((x) => x.id === id);
+        if (!o) continue;
+        if (st[id] === "completato") {
+          completeOrder(id);
+          notify("Ritiro confermato dal supermercato");
+        } else if (!st[id]) void sendToStore(o, who, cloud); // older booking the store never received
+      }
+    };
+    void check();
+    const t = setInterval(check, 10000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIds, cloud]);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [validating, setValidating] = useState(false);
   // one qr_view per booking shown (the QR code is what the customer shows in the shop)
@@ -79,12 +111,20 @@ export function QrScreen() {
 
       <OrderTicket order={current} />
 
+      <StoreProgress status={atStore[current.id]} />
+
       <div className="card space-y-2 p-4">
+        {cloud ? (
+          <p className="flex items-start gap-2 text-[13px] leading-snug text-ink-600">
+            <ScanLine size={17} className="mt-0.5 shrink-0 text-brand-600" /> Al ritiro il supermercato scansiona il tuo QR: l&apos;ordine risulterà ritirato e ti chiederemo un feedback.
+          </p>
+        ) : (
+          <>
         <p className="flex items-center gap-2 text-[13.5px] font-bold text-ink-900">
           <ScanLine size={17} className="text-brand-600" /> Simulazione del ritiro
         </p>
         <p className="text-[12.5px] leading-snug text-ink-500">
-          Nel prototipo il personale (o il locker) che legge il QR viene simulato da questo pulsante. Dopo il ritiro ti chiederemo un feedback.
+          Nella demo puoi simulare il ritiro con questo pulsante, oppure aprire la demo supermercato su questo dispositivo e scansionare il QR.
         </p>
         <button
           type="button"
@@ -101,6 +141,8 @@ export function QrScreen() {
         >
           <CheckCircle2 size={17} /> {validating ? "Verifica in corso…" : "Simula validazione al ritiro"}
         </button>
+          </>
+        )}
         {confirmCancel ? (
           <div className="rounded-xl bg-rose-50 p-3 text-[13px] text-rose-800">
             <p>Annullare la prenotazione {current.id}? I punti assegnati verranno tolti e un eventuale voucher torna disponibile.</p>
@@ -129,5 +171,39 @@ export function QrScreen() {
       </div>
       {history}
     </div>
+  );
+}
+
+const STEPS: { id: DeskStatus; label: string; icon: typeof StoreIcon }[] = [
+  { id: "da_preparare", label: "Ricevuto", icon: StoreIcon },
+  { id: "in_preparazione", label: "In preparazione", icon: ChefHat },
+  { id: "pronto", label: "Pronto", icon: PackageCheck },
+];
+
+/** Where the booking is at the supermarket: received -> being prepared -> ready */
+function StoreProgress({ status }: { status?: DeskStatus }) {
+  const at = status ? STEPS.findIndex((s) => s.id === status) : -1;
+  return (
+    <section className="card p-4" aria-label="Stato al supermercato">
+      <p className="eyebrow mb-3">Stato al supermercato</p>
+      {at < 0 ? (
+        <p className="text-[13px] text-ink-500">Invio al supermercato in corso…</p>
+      ) : (
+        <ol className="grid grid-cols-3 gap-2">
+          {STEPS.map((s, i) => {
+            const done = i <= at;
+            const Icon = s.icon;
+            return (
+              <li key={s.id} className="flex flex-col items-center gap-1.5 text-center">
+                <span className={`grid h-10 w-10 place-items-center rounded-full ${done ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-400"}`}>
+                  <Icon size={18} aria-hidden="true" />
+                </span>
+                <span className={`text-[12px] font-semibold ${done ? "text-ink-900" : "text-ink-400"}`}>{s.label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </section>
   );
 }

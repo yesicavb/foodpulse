@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft, Award, ChevronRight, CircleCheck, CircleDashed, Leaf, LogOut, MessageSquareText, Package, RotateCcw } from "lucide-react";
-import type { ReactNode } from "react";
+import { ArrowLeft, Award, ChevronRight, CircleCheck, CircleDashed, Leaf, LogOut, MessageSquareText, Package, RotateCcw, Store as StoreIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Sheet } from "@/components/ui/Controls";
 import { initials, formatInt } from "@/lib/format";
 import { levelOf } from "@/lib/loyalty";
 import { PROFILE_SECTIONS, completion } from "@/lib/profile";
@@ -66,7 +67,8 @@ function Row({ icon, label, detail, onClick }: { icon: ReactNode; label: string;
 }
 
 function ProfileHome() {
-  const { data, account, setProfileView, logout, resetDemo, notify } = useApp();
+  const { data, account, setProfileView, logout, resetDemo, notify, linkStoreCode } = useApp();
+  const [storeSheet, setStoreSheet] = useState(false);
   if (!data || !account) return null;
   const p = data.profile;
   const comp = completion(p);
@@ -152,12 +154,49 @@ function ProfileHome() {
               }}
             />
           )}
+          {account.cloud && (
+            <Row icon={<StoreIcon size={20} className="text-ink-500" />} label="Sei un supermercato?" detail="Collega l'account al tuo punto vendita con il codice negozio" onClick={() => setStoreSheet(true)} />
+          )}
           <Row icon={<LogOut size={20} className="text-ink-500" />} label="Esci" detail={account?.cloud ? "I tuoi dati restano salvati nel tuo account" : "I tuoi dati restano salvati su questo dispositivo"} onClick={logout} />
         </div>
       </section>
+      <StoreCodeSheet open={storeSheet} onClose={() => setStoreSheet(false)} link={linkStoreCode} />
       <p className="px-1 text-center text-[11.5px] leading-snug text-ink-500">
         FOODPULSE · prototipo dimostrativo. Dati salvati solo su questo dispositivo.
       </p>
     </div>
+  );
+}
+
+/** Supermarket staff: enter the store code to turn this account into a supermarket account */
+function StoreCodeSheet({ open, onClose, link }: { open: boolean; onClose: () => void; link: (code: string) => Promise<{ ok: boolean; error?: string }> }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <Sheet open={open} onClose={onClose} title="Accesso supermercato">
+      <form
+        className="grid gap-3"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!code.trim()) return setError("Inserisci il codice negozio.");
+          setBusy(true);
+          setError(null);
+          const r = await link(code);
+          setBusy(false);
+          if (!r.ok) setError(r.error ?? "Codice negozio non valido.");
+        }}
+      >
+        <p className="text-[13.5px] leading-snug text-ink-600">
+          Inserisci il codice che il team FoodPulse ha dato al tuo punto vendita. L&apos;app si aprirà sulla dashboard del supermercato, con gli ordini dei clienti e lo scanner dei QR.
+        </p>
+        <label htmlFor="pf-store-code" className="field-label">Codice negozio</label>
+        <input id="pf-store-code" className="input font-mono uppercase tracking-wider" placeholder="ESS-MI-XXXXXX" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+        {error && <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2.5 text-[13.5px] text-rose-700">{error}</p>}
+        <button type="submit" className="btn-primary h-12" disabled={busy}>
+          Collega il punto vendita
+        </button>
+      </form>
+    </Sheet>
   );
 }

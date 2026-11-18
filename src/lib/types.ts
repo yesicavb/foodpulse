@@ -237,6 +237,8 @@ export interface Order {
   kgFood: number;
   points: number;
   status: OrderStatus;
+  /** note for the supermarket, written at checkout */
+  notes?: string;
   completedAt?: string;
   cancelledAt?: string;
   feedbackDone: boolean;

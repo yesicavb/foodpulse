@@ -1,0 +1,268 @@
+/**
+ * The supermarket side ("desk"): orders as the store sees them.
+ *
+ * Two places to keep them, with the same functions:
+ * - Supabase (table `orders`, see supabase/store-dashboard.sql) for real accounts;
+ * - this browser's localStorage for the demo, so the customer demo and the supermarket
+ *   demo on the same device see each other's orders.
+ */
+import type { Order } from "@/lib/types";
+import { supabase } from "@/lib/supabase";
+
+export type DeskStatus = "da_preparare" | "in_preparazione" | "pronto" | "completato" | "annullato";
+
+export interface DeskLine {
+  name: string;
+  qty: number;
+}
+
+export interface DeskOrder {
+  id: string;
+  code: string;
+  storeId: string;
+  customerName: string;
+  lines: DeskLine[];
+  total: number;
+  pickupDate: string; // yyyy-mm-dd
+  slot: string;
+  method: Order["method"];
+  pickupDetail: string;
+  notes: string;
+  status: DeskStatus;
+  seen: boolean;
+  createdAt: string;
+}
+
+export const DESK_STATUS: Record<DeskStatus, { label: string; cls: string; next?: DeskStatus; action?: string }> = {
+  da_preparare: { label: "Da preparare", cls: "bg-amber-100 text-amber-800", next: "in_preparazione", action: "Inizia preparazione" },
+  in_preparazione: { label: "In preparazione", cls: "bg-sky-100 text-sky-800", next: "pronto", action: "Segna come pronto" },
+  pronto: { label: "Pronto per il ritiro", cls: "bg-brand-100 text-brand-800" },
+  completato: { label: "Ritirato", cls: "bg-ink-100 text-ink-700" },
+  annullato: { label: "Annullato", cls: "bg-rose-100 text-rose-700" },
+};
+
+/** Store of the supermarket demo */
+export const DEMO_STORE_ID = "st-ess-piave";
+
+const LOCAL_KEY = "foodpulse-desk-v1";
+/** yyyy-mm-dd in the device's own time zone (toISOString would shift it to the day before in Italy) */
+export const localDay = (d: string | Date = new Date()) => {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+};
+const day = localDay;
+
+/** Order as the customer created it -> order as the store sees it */
+export function toDeskOrder(o: Order, customerName: string): DeskOrder {
+  return {
+    id: o.id,
+    code: o.code,
+    storeId: o.storeId,
+    customerName,
+    lines: o.lines.map((l) => ({ name: l.name, qty: l.qty })),
+    total: o.total,
+    pickupDate: day(o.pickupDate),
+    slot: o.slot,
+    method: o.method,
+    pickupDetail: o.method === "delivery" ? o.deliveryAddress ?? "" : o.pickupDetail,
+    notes: o.notes ?? "",
+    status: o.status === "completato" ? "completato" : o.status === "annullato" ? "annullato" : "da_preparare",
+    seen: false,
+    createdAt: o.createdAt,
+  };
+}
+
+/** Reads the code from a scanned QR (the app's QR holds JSON) or from typed text */
+export function codeFromText(text: string): string {
+  const t = text.trim();
+  try {
+    const j = JSON.parse(t) as { app?: string; code?: string };
+    if (j && j.app === "foodpulse" && typeof j.code === "string") return j.code.toUpperCase();
+  } catch {
+    /* not JSON: typed code */
+  }
+  return t.replace(/[\s-]/g, "").toUpperCase();
+}
+
+/* ---------------- local (demo) ---------------- */
+
+function readLocal(): DeskOrder[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_KEY);
+    return raw ? (JSON.parse(raw) as DeskOrder[]) : [];
+  } catch {
+    return [];
+  }
+}
+function writeLocal(list: DeskOrder[]) {
+  try {
+    window.localStorage.setItem(LOCAL_KEY, JSON.stringify(list.slice(0, 200)));
+  } catch {
+    /* memory only */
+  }
+}
+
+/** A few example orders, so the supermarket demo is never empty */
+function demoSeed(): DeskOrder[] {
+  const today = new Date();
+  const plus = (n: number) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + n);
+    return day(d);
+  };
+  const ago = (min: number) => new Date(Date.now() - min * 60000).toISOString();
+  const base = { storeId: DEMO_STORE_ID, method: "instore" as const, pickupDetail: "Banco prenotazioni · accanto alla gastronomia" };
+  return [
+    { ...base, id: "FP-482113", code: "K7QW2MNA", customerName: "Marco Rossi", lines: [{ name: "Yogurt greco", qty: 2 }, { name: "Petto di pollo", qty: 1 }, { name: "Insalata mista", qty: 2 }, { name: "Mele", qty: 1 }], total: 28.4, pickupDate: plus(0), slot: "17:00 – 19:00", notes: "Pollo tagliato a fette, per favore", status: "da_preparare", seen: false, createdAt: ago(12) },
+    { ...base, id: "FP-377920", code: "P3XH8RTE", customerName: "Sara Bianchi", lines: [{ name: "Latte fresco", qty: 2 }, { name: "Pane integrale", qty: 1 }, { name: "Mozzarella", qty: 3 }], total: 15.9, pickupDate: plus(0), slot: "12:00 – 14:00", notes: "", status: "in_preparazione", seen: true, createdAt: ago(95) },
+    { ...base, id: "FP-551204", code: "D9LMV4CS", customerName: "Luca Ferrari", lines: [{ name: "Orata", qty: 2 }, { name: "Insalata mista", qty: 1 }, { name: "Banane", qty: 1 }], total: 31.2, pickupDate: plus(0), slot: "8:30 – 10:30", notes: "", status: "pronto", seen: true, createdAt: ago(60 * 20) },
+    { ...base, id: "FP-693318", code: "R2TNB7YK", customerName: "Elena Conti", lines: [{ name: "Parmigiano", qty: 1 }, { name: "Uova", qty: 2 }, { name: "Pomodori", qty: 1 }], total: 19.6, pickupDate: plus(1), slot: "17:00 – 19:00", notes: "Vengo con mia figlia a ritirare", status: "da_preparare", seen: false, createdAt: ago(30) },
+    { ...base, id: "FP-208457", code: "W5CJ3HQZ", customerName: "Andrea Russo", lines: [{ name: "Latte fresco", qty: 1 }, { name: "Mele", qty: 2 }], total: 7.8, pickupDate: plus(-1), slot: "19:00 – 21:00", notes: "", status: "completato", seen: true, createdAt: ago(60 * 30) },
+  ];
+}
+
+const local = {
+  list(storeId: string): DeskOrder[] {
+    let all = readLocal();
+    if (storeId === DEMO_STORE_ID && !all.some((o) => o.storeId === DEMO_STORE_ID && o.id.startsWith("FP-482113"))) {
+      all = [...all, ...demoSeed()];
+      writeLocal(all);
+    }
+    return all.filter((o) => o.storeId === storeId);
+  },
+  upsert(o: DeskOrder) {
+    const all = readLocal();
+    const i = all.findIndex((x) => x.id === o.id);
+    if (i >= 0) all[i] = { ...all[i], ...o };
+    else all.unshift(o);
+    writeLocal(all);
+  },
+  patch(id: string, p: Partial<DeskOrder>) {
+    writeLocal(readLocal().map((o) => (o.id === id ? { ...o, ...p } : o)));
+  },
+  statuses(ids: string[]): Record<string, DeskStatus> {
+    const out: Record<string, DeskStatus> = {};
+    readLocal().forEach((o) => {
+      if (ids.includes(o.id)) out[o.id] = o.status;
+    });
+    return out;
+  },
+};
+
+/* ---------------- Supabase ---------------- */
+
+type Row = {
+  id: string;
+  code: string;
+  store_id: string;
+  customer_name: string;
+  lines: DeskLine[];
+  total: number;
+  pickup_date: string;
+  slot: string;
+  method: Order["method"];
+  pickup_detail: string;
+  notes: string | null;
+  status: DeskStatus;
+  seen_by_store: boolean;
+  created_at: string;
+};
+const fromRow = (r: Row): DeskOrder => ({
+  id: r.id,
+  code: r.code,
+  storeId: r.store_id,
+  customerName: r.customer_name,
+  lines: r.lines ?? [],
+  total: Number(r.total),
+  pickupDate: r.pickup_date,
+  slot: r.slot,
+  method: r.method,
+  pickupDetail: r.pickup_detail,
+  notes: r.notes ?? "",
+  status: r.status,
+  seen: r.seen_by_store,
+  createdAt: r.created_at,
+});
+
+/* ---------------- what the app uses ---------------- */
+
+/** Customer side: sends a new booking to the store */
+export async function sendToStore(o: Order, customerName: string, cloud: boolean): Promise<boolean> {
+  const d = toDeskOrder(o, customerName);
+  if (!cloud || !supabase) {
+    local.upsert(d);
+    return true;
+  }
+  const { error } = await supabase.from("orders").upsert(
+    {
+      id: d.id,
+      store_id: d.storeId,
+      code: d.code,
+      customer_name: d.customerName,
+      lines: d.lines,
+      total: d.total,
+      pickup_date: d.pickupDate,
+      slot: d.slot,
+      method: d.method,
+      pickup_detail: d.pickupDetail,
+      notes: d.notes || null,
+      status: "da_preparare",
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
+  if (error) console.error("FoodPulse: order not sent to the store", error);
+  return !error;
+}
+
+/** Customer side: cancels a booking at the store */
+export async function cancelAtStore(id: string, cloud: boolean) {
+  if (!cloud || !supabase) return local.patch(id, { status: "annullato" });
+  const { error } = await supabase.from("orders").update({ status: "annullato", updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) console.error("FoodPulse: cancel not sent to the store", error);
+}
+
+/** Customer side: status the store gave to each booking (missing = store hasn't got it yet) */
+export async function statusesAtStore(ids: string[], cloud: boolean): Promise<Record<string, DeskStatus>> {
+  if (!ids.length) return {};
+  if (!cloud || !supabase) return local.statuses(ids);
+  const { data, error } = await supabase.from("orders").select("id,status").in("id", ids);
+  if (error || !data) return {};
+  return Object.fromEntries((data as { id: string; status: DeskStatus }[]).map((r) => [r.id, r.status]));
+}
+
+/** Store side: all orders of the store, newest first */
+export async function storeOrders(storeId: string, cloud: boolean): Promise<DeskOrder[]> {
+  const sort = (l: DeskOrder[]) => [...l].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (!cloud || !supabase) return sort(local.list(storeId));
+  const { data, error } = await supabase.from("orders").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(300);
+  if (error) throw error;
+  return (data as Row[]).map(fromRow);
+}
+
+/** Store side: changes the status and/or marks orders as read */
+export async function updateAtStore(id: string, p: { status?: DeskStatus; seen?: boolean }, cloud: boolean) {
+  if (!cloud || !supabase) return local.patch(id, p);
+  const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (p.status) row.status = p.status;
+  if (p.seen !== undefined) row.seen_by_store = p.seen;
+  const { error } = await supabase.from("orders").update(row).eq("id", id);
+  if (error) throw error;
+}
+
+/** Supermarket account: which store this logged-in account works for (null = customer) */
+export async function staffStoreOf(userId: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.from("store_staff").select("store_id").eq("user_id", userId).maybeSingle();
+  return (data as { store_id: string } | null)?.store_id ?? null;
+}
+
+/** Links the logged-in account to a store with its code; returns the store id or null */
+export async function claimStoreCode(code: string): Promise<{ storeId: string | null; error?: string }> {
+  if (!supabase) return { storeId: null, error: "Gli account supermercato funzionano solo nella versione online dell'app." };
+  const { data, error } = await supabase.rpc("claim_store_code", { p_code: code.trim() });
+  if (error) {
+    console.error("FoodPulse: store code", error);
+    return { storeId: null, error: "Non è stato possibile verificare il codice. Riprova tra poco." };
+  }
+  return data ? { storeId: data as string } : { storeId: null, error: "Codice negozio non valido. Controlla e riprova." };
+}

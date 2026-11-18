@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { POINTS } from "@/data/config";
 import { storeById } from "@/data/stores";
+import { cancelAtStore, claimStoreCode, sendToStore, staffStoreOf } from "@/lib/desk";
 import { setAccountType, track } from "@/lib/analytics";
 import { addDays } from "@/lib/format";
 import { hashPassword } from "@/lib/hash";
@@ -107,7 +108,15 @@ interface Ctx {
   setQrOrderId: (id: string | null) => void;
   toast: string | null;
   notify: (msg: string) => void;
-  register: (f: { firstName: string; lastName: string; email: string; password: string }) => Promise<Result>;
+  register: (f: { firstName: string; lastName: string; email: string; password: string; storeCode?: string }) => Promise<Result>;
+  /** store id if the logged-in account is a supermarket account; null = customer; undefined = still checking */
+  staffStore: string | null | undefined;
+  /** the supermarket demo is open (no account needed) */
+  storeDemo: boolean;
+  startStoreDemo: () => void;
+  exitStoreDemo: () => void;
+  /** links the logged-in account to a supermarket with its store code */
+  linkStoreCode: (code: string) => Promise<Result>;
   login: (email: string, password: string) => Promise<Result>;
   /** "Continua con Google": leaves the page for Google and comes back logged in */
   loginWithGoogle: () => Promise<Result>;
@@ -152,6 +161,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [recovering, setRecovering] = useState(false);
+  const [staffStore, setStaffStore] = useState<string | null | undefined>(undefined);
+  const [storeDemo, setStoreDemo] = useState(false);
+  useEffect(() => {
+    try {
+      setStoreDemo(window.sessionStorage.getItem("foodpulse-store-demo") === "1");
+    } catch {
+      /* no storage */
+    }
+  }, []);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** last data object loaded from or saved to Supabase, to skip saving unchanged data */
   const lastCloudData = useRef<UserData | null>(null);
@@ -281,13 +299,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const register: Ctx["register"] = useCallback(async ({ firstName, lastName, email, password }) => {
+  const register: Ctx["register"] = useCallback(async ({ firstName, lastName, email, password, storeCode }) => {
     const e = email.trim().toLowerCase();
     if (supabase) {
+      const sc = storeCode?.trim().toUpperCase();
+      if (sc) {
+        const { data: ok, error: codeErr } = await supabase.rpc("store_code_exists", { p_code: sc });
+        if (codeErr) return { ok: false, error: "Non è stato possibile verificare il codice negozio. Riprova tra poco." };
+        if (!ok) return { ok: false, error: "Codice negozio non valido. Controlla e riprova, oppure registrati come cliente." };
+      }
       const { data: r, error } = await supabase.auth.signUp({
         email: e,
         password,
-        options: { data: { first_name: firstName.trim(), last_name: lastName.trim() }, emailRedirectTo: redirectUrl() },
+        options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), ...(sc ? { store_code: sc } : {}) }, emailRedirectTo: redirectUrl() },
       });
       if (error) return { ok: false, error: cloudError(error.message) };
       if (!r.session || !r.user) {
@@ -383,10 +407,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lastCloudData.current = null;
     }
     setState((s) => (s ? { ...localPart(s), session: null } : s));
+    setStaffStore(undefined);
     setTabState("basket");
     setProfileView("home");
     setQrOrderId(null);
   }, [account, saveNow]);
+
+  // supermarket account? (store_staff row; a store code given at sign-up is linked at the first login)
+  const accountId = account?.id;
+  const accountCloud = !!account?.cloud;
+  useEffect(() => {
+    if (!accountId) return setStaffStore(undefined);
+    if (!accountCloud || !supabase) return setStaffStore(null);
+    let alive = true;
+    (async () => {
+      let sid = await staffStoreOf(accountId);
+      if (!sid && supabase) {
+        const { data: u } = await supabase.auth.getUser();
+        const code = (u.user?.user_metadata as { store_code?: string } | undefined)?.store_code;
+        if (code) sid = (await claimStoreCode(code)).storeId;
+      }
+      if (alive) setStaffStore(sid);
+    })().catch(() => alive && setStaffStore(null));
+    return () => {
+      alive = false;
+    };
+  }, [accountId, accountCloud]);
+
+  const linkStoreCode: Ctx["linkStoreCode"] = useCallback(async (code) => {
+    if (!account?.cloud) return { ok: false, error: "Per collegare un supermercato serve un account registrato (non la demo)." };
+    const r = await claimStoreCode(code);
+    if (!r.storeId) return { ok: false, error: r.error ?? "Codice negozio non valido." };
+    track("store_account_linked");
+    setStaffStore(r.storeId);
+    return { ok: true };
+  }, [account]);
+
+  const startStoreDemo = useCallback(() => {
+    try {
+      window.sessionStorage.setItem("foodpulse-store-demo", "1");
+    } catch {
+      /* memory only */
+    }
+    track("store_demo_start");
+    setStoreDemo(true);
+  }, []);
+  const exitStoreDemo = useCallback(() => {
+    try {
+      window.sessionStorage.removeItem("foodpulse-store-demo");
+    } catch {
+      /* memory only */
+    }
+    setStoreDemo(false);
+  }, []);
 
   const updateProfile = useCallback((patch: Partial<Profile>) => update((d) => ({ ...d, profile: { ...d.profile, ...patch } })), [update]);
   const toggleFavorite = useCallback(
@@ -474,6 +547,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return next;
       });
       setQrOrderId(order.id);
+      const who = `${data.profile.firstName ?? ""} ${data.profile.lastName ?? ""}`.trim() || account?.email || "Cliente";
+      void sendToStore(order, who, !!account?.cloud).then((ok) => {
+        if (!ok) notify("Prenotazione salvata, ma non ancora inviata al supermercato. Riproveremo.");
+      });
       track("pre_order", {
         advance_days: order.advance,
         discount_pct: order.subtotal ? Math.round((100 * order.discount) / order.subtotal) : 0,
@@ -485,7 +562,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       return order;
     },
-    [data, store, update]
+    [data, store, update, account, notify]
   );
 
   const completeOrder = useCallback(
@@ -510,7 +587,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const cancelOrder = useCallback(
-    (id: string) =>
+    (id: string) => {
+      void cancelAtStore(id, !!account?.cloud);
       update((d) => {
         const o = d.orders.find((x) => x.id === id);
         if (!o || o.status !== "attivo") return d;
@@ -521,8 +599,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
         next = applyPoints(next, -o.points, `Annullamento ${o.id}`);
         return next;
-      }),
-    [update]
+      });
+    },
+    [update, account]
   );
 
   const submitFeedback = useCallback(
@@ -591,6 +670,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast,
       notify,
       register,
+      staffStore,
+      storeDemo,
+      startStoreDemo,
+      exitStoreDemo,
+      linkStoreCode,
       login,
       loginWithGoogle,
       startDemo,
@@ -617,7 +701,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
