@@ -3,6 +3,8 @@
 import {
   AlertTriangle,
   BarChart3,
+  Bell,
+  BellOff,
   CheckCircle2,
   ChefHat,
   ClipboardList,
@@ -22,6 +24,7 @@ import { Logo } from "@/components/ui/Logo";
 import { storeById } from "@/data/stores";
 import { LanguageSwitch } from "@/i18n/LanguageProvider";
 import { track } from "@/lib/analytics";
+import { playChime, unlockChime } from "@/lib/chime";
 import {
   codeFromText,
   DESK_STATUS,
@@ -80,6 +83,33 @@ export function StoreApp({
   const [openId, setOpenId] = useState<string | null>(null);
   const [scan, setScan] = useState<null | "camera" | "manual">(null);
   const knownIds = useRef<Set<string> | null>(null);
+  // sound for new orders, on by default; the choice is remembered on this device
+  const [sound, setSound] = useState(() => {
+    try {
+      return localStorage.getItem("foodpulse-desk-sound") !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const soundRef = useRef(sound);
+  soundRef.current = sound;
+  useEffect(() => {
+    // browsers only allow sound after the first tap on the page
+    const unlock = () => unlockChime();
+    window.addEventListener("pointerdown", unlock);
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+  const toggleSound = () => {
+    const next = !sound;
+    setSound(next);
+    try {
+      localStorage.setItem("foodpulse-desk-sound", next ? "on" : "off");
+    } catch {
+      /* ignore */
+    }
+    if (next) playChime();
+    notify(next ? "Suono per i nuovi ordini attivo" : "Suono per i nuovi ordini disattivato");
+  };
 
   const load = useCallback(async () => {
     try {
@@ -90,6 +120,7 @@ export function StoreApp({
         const fresh = list.filter(
           (o) => !knownIds.current!.has(o.id) && o.status === "da_preparare",
         );
+        if (fresh.length && soundRef.current) playChime();
         if (fresh.length)
           notify(
             fresh.length === 1
@@ -150,6 +181,15 @@ export function StoreApp({
     ).length,
   };
 
+  // new orders also show in the browser tab title, e.g. "(2) Nuovi ordini · FOODPULSE"
+  useEffect(() => {
+    const base = document.title.replace(/^\(\d+\) Nuovi ordini · /, "");
+    document.title = counts.nuovi ? `(${counts.nuovi}) Nuovi ordini · ${base}` : base;
+    return () => {
+      document.title = base;
+    };
+  }, [counts.nuovi]);
+
   const shown = useMemo(() => {
     const l = orders ?? [];
     const f =
@@ -192,6 +232,15 @@ export function StoreApp({
           <Logo size={30} wordSize={17} />
           <div className="flex items-center gap-2">
             <LanguageSwitch />
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-pressed={sound}
+              className={`grid h-9 w-9 place-items-center rounded-full border ${sound ? "border-brand-200 bg-brand-50 text-brand-700" : "border-ink-200 bg-white text-ink-400"}`}
+              aria-label={sound ? "Disattiva il suono per i nuovi ordini" : "Attiva il suono per i nuovi ordini"}
+            >
+              {sound ? <Bell size={17} /> : <BellOff size={17} />}
+            </button>
             <button
               type="button"
               onClick={onExit}
