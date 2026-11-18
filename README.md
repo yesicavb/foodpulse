@@ -45,7 +45,7 @@ The repo needs two Actions variables (Settings → Secrets and variables → Act
 
 **SQL setup**, run once in the SQL Editor, in this order:
 
-1. `supabase/schema.sql` (user data and feedback)
+1. `supabase/schema.sql` (user data) and `supabase/app-feedback.sql` (Feedback tab)
 2. `supabase/store-dashboard.sql` (orders, store codes, store staff)
 3. the private store-codes file (not in this repo)
 4. `supabase/partner-stores.sql` (free codes and partner shops)
