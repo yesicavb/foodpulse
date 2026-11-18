@@ -97,6 +97,8 @@ export interface Store {
   stockFactor: number;
   /** extra store discount, in percentage points, per department */
   categoryPromos: Partial<Record<CategoryId, number>>;
+  /** shop that joined FoodPulse itself (registered with a free store code) */
+  partner?: boolean;
   /** fresh products not available in this store */
   unavailable: string[];
   services: {

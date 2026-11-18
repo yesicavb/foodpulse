@@ -315,3 +315,39 @@ export async function claimStoreCode(code: string): Promise<{ storeId: string | 
   }
   return data ? { storeId: data as string } : { storeId: null, error: "Codice negozio non valido. Controlla e riprova." };
 }
+
+/** 'free' = unused code for a new shop, 'store' = code of an existing store, null = wrong code */
+export async function storeCodeKind(code: string): Promise<"free" | "store" | null | "error"> {
+  if (!supabase) return "error";
+  const { data, error } = await supabase.rpc("store_code_kind", { p_code: code.trim() });
+  if (error) {
+    console.error("FoodPulse: store code kind", error);
+    return "error";
+  }
+  return (data as "free" | "store" | null) ?? null;
+}
+
+export interface NewShop {
+  name: string;
+  address: string;
+  city: string;
+}
+
+/** Creates the shop for a free code and links the logged-in account to it */
+export async function claimNewStore(code: string, shop: NewShop): Promise<{ storeId: string | null; error?: string }> {
+  if (!supabase) return { storeId: null, error: "Gli account supermercato funzionano solo nella versione online dell'app." };
+  const { data, error } = await supabase.rpc("claim_new_store", { p_code: code.trim(), p_name: shop.name, p_address: shop.address, p_city: shop.city });
+  if (error) {
+    console.error("FoodPulse: new store", error);
+    return { storeId: null, error: "Non è stato possibile registrare il negozio. Riprova tra poco." };
+  }
+  return data ? { storeId: data as string } : { storeId: null, error: "Codice negozio non valido. Controlla e riprova." };
+}
+
+/** Partner shops for the store list (everyone can read them) */
+export async function loadPartnerStores(): Promise<{ id: string; name: string; address: string; city: string }[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("partner_stores").select("id,name,address,city").order("created_at");
+  if (error) return [];
+  return (data ?? []) as { id: string; name: string; address: string; city: string }[];
+}

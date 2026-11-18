@@ -3,7 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { POINTS } from "@/data/config";
 import { storeById } from "@/data/stores";
-import { cancelAtStore, claimStoreCode, sendToStore, staffStoreOf } from "@/lib/desk";
+import { cancelAtStore, claimNewStore, claimStoreCode, loadPartnerStores, sendToStore, staffStoreOf, storeCodeKind, type NewShop } from "@/lib/desk";
+import { addPartnerStores } from "@/data/stores";
 import { setAccountType, track } from "@/lib/analytics";
 import { addDays } from "@/lib/format";
 import { hashPassword } from "@/lib/hash";
@@ -108,7 +109,7 @@ interface Ctx {
   setQrOrderId: (id: string | null) => void;
   toast: string | null;
   notify: (msg: string) => void;
-  register: (f: { firstName: string; lastName: string; email: string; password: string; storeCode?: string }) => Promise<Result>;
+  register: (f: { firstName: string; lastName: string; email: string; password: string; storeCode?: string; shop?: NewShop }) => Promise<Result>;
   /** store id if the logged-in account is a supermarket account; null = customer; undefined = still checking */
   staffStore: string | null | undefined;
   /** the supermarket demo is open (no account needed) */
@@ -163,6 +164,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [recovering, setRecovering] = useState(false);
   const [staffStore, setStaffStore] = useState<string | null | undefined>(undefined);
   const [storeDemo, setStoreDemo] = useState(false);
+  // partner shops come from Supabase; the app waits for them (max 4 s) so a saved partner store is found
+  const [partnersReady, setPartnersReady] = useState(!supabase);
+  useEffect(() => {
+    if (!supabase) return;
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        setPartnersReady(true);
+      }
+    };
+    const t = setTimeout(finish, 4000);
+    loadPartnerStores()
+      .then((rows) => addPartnerStores(rows))
+      .finally(() => {
+        clearTimeout(t);
+        finish();
+      });
+  }, []);
   useEffect(() => {
     try {
       setStoreDemo(window.sessionStorage.getItem("foodpulse-store-demo") === "1");
@@ -299,19 +319,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const register: Ctx["register"] = useCallback(async ({ firstName, lastName, email, password, storeCode }) => {
+  const register: Ctx["register"] = useCallback(async ({ firstName, lastName, email, password, storeCode, shop }) => {
     const e = email.trim().toLowerCase();
     if (supabase) {
       const sc = storeCode?.trim().toUpperCase();
       if (sc) {
-        const { data: ok, error: codeErr } = await supabase.rpc("store_code_exists", { p_code: sc });
-        if (codeErr) return { ok: false, error: "Non è stato possibile verificare il codice negozio. Riprova tra poco." };
-        if (!ok) return { ok: false, error: "Codice negozio non valido. Controlla e riprova, oppure registrati come cliente." };
+        const kind = await storeCodeKind(sc);
+        if (kind === "error") return { ok: false, error: "Non è stato possibile verificare il codice negozio. Riprova tra poco." };
+        if (!kind) return { ok: false, error: "Codice negozio non valido. Controlla e riprova, oppure registrati come cliente." };
+        if (kind === "free" && !(shop?.name.trim() && shop.address.trim() && shop.city.trim()))
+          return { ok: false, error: "Inserisci nome, indirizzo e città del negozio." };
       }
+      const meta = {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        ...(sc ? { store_code: sc } : {}),
+        ...(sc && shop?.name.trim() ? { store_shop: { name: shop.name.trim(), address: shop.address.trim(), city: shop.city.trim() } } : {}),
+      };
       const { data: r, error } = await supabase.auth.signUp({
         email: e,
         password,
-        options: { data: { first_name: firstName.trim(), last_name: lastName.trim(), ...(sc ? { store_code: sc } : {}) }, emailRedirectTo: redirectUrl() },
+        options: { data: meta, emailRedirectTo: redirectUrl() },
       });
       if (error) return { ok: false, error: cloudError(error.message) };
       if (!r.session || !r.user) {
@@ -424,8 +452,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       let sid = await staffStoreOf(accountId);
       if (!sid && supabase) {
         const { data: u } = await supabase.auth.getUser();
-        const code = (u.user?.user_metadata as { store_code?: string } | undefined)?.store_code;
-        if (code) sid = (await claimStoreCode(code)).storeId;
+        const meta = u.user?.user_metadata as { store_code?: string; store_shop?: NewShop } | undefined;
+        const code = meta?.store_code;
+        if (code && meta?.store_shop) {
+          sid = (await claimNewStore(code, meta.store_shop)).storeId;
+          // show the new shop in the store list straight away
+          if (sid) addPartnerStores([{ id: sid, ...meta.store_shop, city: meta.store_shop.city.replace(/\b\p{L}/gu, (c) => c.toUpperCase()) }]);
+          if (sid) track("partner_store_created");
+        } else if (code) sid = (await claimStoreCode(code)).storeId;
       }
       if (alive) setStaffStore(sid);
     })().catch(() => alive && setStaffStore(null));
@@ -436,6 +470,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const linkStoreCode: Ctx["linkStoreCode"] = useCallback(async (code) => {
     if (!account?.cloud) return { ok: false, error: "Per collegare un supermercato serve un account registrato (non la demo)." };
+    if ((await storeCodeKind(code)) === "free")
+      return { ok: false, error: "Questo codice è per un nuovo negozio: esci e usa \"Sei un supermercato?\" → \"Registra il tuo negozio\"." };
     const r = await claimStoreCode(code);
     if (!r.storeId) return { ok: false, error: r.error ?? "Codice negozio non valido." };
     track("store_account_linked");
@@ -653,7 +689,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(
     () => ({
-      ready: state !== null,
+      ready: state !== null && partnersReady,
       cloud: supabase !== null,
       recovering,
       requestPasswordReset,
@@ -701,7 +737,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, partnersReady, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

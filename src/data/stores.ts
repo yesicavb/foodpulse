@@ -186,6 +186,16 @@ function buildStore([id, city, chain, label, address, distanceKm]: Row): Store {
 
 export const STORES: Store[] = REAL_STORES.map(buildStore);
 
+/** Partner shops registered in the app with a free store code (loaded from Supabase at start-up) */
+export function addPartnerStores(rows: { id: string; name: string; address: string; city: string }[]) {
+  for (const r of rows) {
+    if (STORES.some((x) => x.id === r.id)) continue;
+    const st = buildStore([r.id, r.city, "Partner", r.name, r.address, -1]);
+    STORES.unshift({ ...st, name: r.name, partner: true });
+    if (!CITIES.includes(r.city)) CITIES.splice(Math.max(0, CITIES.indexOf("Negozio di prova")), 0, r.city);
+  }
+}
+
 /** Ids of the four Milan demo stores used before November 2026, so saved accounts keep a store */
 const LEGACY_IDS: Record<string, string> = {
   "st-coop-lodi": "st-milano-coop-umbria",

@@ -145,6 +145,7 @@ export function StorePicker() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
                         <span className="text-[15px] font-bold text-ink-900">{s.name}</span>
+                        {s.partner && <span className="badge shrink-0 bg-brand-600 text-white">Partner FoodPulse</span>}
                       </span>
                       <span className="mt-0.5 block text-[13px] text-ink-500">
                         {s.address}, {s.city} · {s.hours}

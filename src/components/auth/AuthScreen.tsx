@@ -6,6 +6,8 @@ import { LogoMark, Wordmark } from "@/components/ui/Logo";
 import { useApp } from "@/store/AppStore";
 import { LanguageSwitch } from "@/i18n/LanguageProvider";
 import { supabase } from "@/lib/supabase";
+import { CITIES } from "@/data/stores";
+import { storeCodeKind } from "@/lib/desk";
 
 type View = "welcome" | "login" | "register" | "forgot" | "store" | "storeRegister";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -246,6 +248,13 @@ function Register({ go, store = false }: { go: (v: View) => void; store?: boolea
   const [f, setF] = useState({ firstName: "", lastName: "", email: "", password: "", confirm: "" });
   const isStore = store;
   const [storeCode, setStoreCode] = useState("");
+  // a free code (new shop) also asks for the shop's name, address and city
+  const [codeKind, setCodeKind] = useState<"free" | "store" | null | "error" | undefined>(undefined);
+  const [shop, setShop] = useState({ name: "", address: "", city: "" });
+  const checkCode = async (c: string) => {
+    if (c.replace(/[^A-Z0-9]/gi, "").length < 8) return setCodeKind(undefined);
+    setCodeKind(await storeCodeKind(c));
+  };
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -265,7 +274,11 @@ function Register({ go, store = false }: { go: (v: View) => void; store?: boolea
       setBusy(false);
       return setError("Inserisci il codice negozio che hai ricevuto dal team FoodPulse.");
     }
-    const r = await register({ ...f, storeCode: isStore ? storeCode : undefined });
+    if (isStore && codeKind === "free" && !(shop.name.trim() && shop.address.trim() && shop.city.trim())) {
+      setBusy(false);
+      return setError("Inserisci nome, indirizzo e città del negozio.");
+    }
+    const r = await register({ ...f, storeCode: isStore ? storeCode : undefined, shop: isStore && codeKind === "free" ? shop : undefined });
     setBusy(false);
     if (!r.ok) setError(r.error);
     else if (r.info) setInfo(r.info);
@@ -300,12 +313,40 @@ function Register({ go, store = false }: { go: (v: View) => void; store?: boolea
             <input
               id="reg-store-code"
               className="input font-mono uppercase tracking-wider"
-              placeholder="ESS-MI-XXXXXX"
+              placeholder="FPN-XXXXXX"
               autoComplete="off"
               autoCapitalize="characters"
               value={storeCode}
-              onChange={(e) => setStoreCode(e.target.value.toUpperCase())}
+              onChange={(e) => {
+                const v = e.target.value.toUpperCase();
+                setStoreCode(v);
+                void checkCode(v);
+              }}
             />
+            {codeKind === null && <p className="mt-1.5 text-[12.5px] font-semibold text-rose-700">Codice non valido: controlla e riprova.</p>}
+            {codeKind === "store" && <p className="mt-1.5 text-[12.5px] font-semibold text-brand-800">Codice valido ✓</p>}
+            {codeKind === "free" && (
+              <div className="mt-3 grid gap-3 border-t border-brand-200 pt-3">
+                <p className="text-[12.5px] font-semibold text-brand-800">Codice valido ✓ Nuovo negozio: come lo vedranno i clienti?</p>
+                <div>
+                  <label htmlFor="reg-shop-name" className="field-label">Nome del negozio</label>
+                  <input id="reg-shop-name" className="input" placeholder="Es. Alimentari Rossi" maxLength={80} value={shop.name} onChange={(e) => setShop((x) => ({ ...x, name: e.target.value }))} />
+                </div>
+                <div>
+                  <label htmlFor="reg-shop-address" className="field-label">Indirizzo</label>
+                  <input id="reg-shop-address" className="input" placeholder="Es. Via Roma, 12" maxLength={120} autoComplete="street-address" value={shop.address} onChange={(e) => setShop((x) => ({ ...x, address: e.target.value }))} />
+                </div>
+                <div>
+                  <label htmlFor="reg-shop-city" className="field-label">Città</label>
+                  <input id="reg-shop-city" className="input" list="reg-city-list" placeholder="Es. Milano" maxLength={60} autoComplete="address-level2" value={shop.city} onChange={(e) => setShop((x) => ({ ...x, city: e.target.value }))} />
+                  <datalist id="reg-city-list">
+                    {CITIES.filter((c) => c !== "Negozio di prova").map((c) => (
+                      <option key={c} value={c} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+            )}
             <p className="mt-1.5 text-[12px] leading-snug text-brand-800">
               Il codice collega l&apos;account al tuo punto vendita: dopo l&apos;accesso vedrai gli ordini dei clienti e potrai scansionare i QR.
             </p>
