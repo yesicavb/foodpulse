@@ -7,6 +7,7 @@ import { CartScreen } from "@/components/cart/CartScreen";
 import { FeedbackSheet } from "@/components/feedback/FeedbackSheet";
 import { ProfileScreen } from "@/components/profile/ProfileScreen";
 import { QrScreen } from "@/components/qr/QrScreen";
+import { OrderStatusProvider } from "@/components/qr/OrderStatus";
 import { StoreApp } from "@/components/store/StoreApp";
 import { DEMO_STORE_ID } from "@/lib/desk";
 import { AppShell } from "@/components/shell/AppShell";
@@ -37,6 +38,7 @@ function Gate() {
   }
   if (staffStore) return <StoreApp storeId={staffStore} cloud demo={false} onExit={logout} />;
   return (
+    <OrderStatusProvider>
     <AppShell>
       {tab === "basket" && <SmartBasketScreen />}
       {tab === "cart" && <CartScreen />}
@@ -45,6 +47,7 @@ function Gate() {
       {tab === "feedback" && <AppFeedbackScreen />}
       {data.pendingFeedback && <FeedbackSheet orderId={data.pendingFeedback} />}
     </AppShell>
+    </OrderStatusProvider>
   );
 }
 

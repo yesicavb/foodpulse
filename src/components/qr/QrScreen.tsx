@@ -2,7 +2,8 @@
 
 import { CheckCircle2, ChefHat, History, PackageCheck, QrCode, ScanLine, Store as StoreIcon, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { sendToStore, statusesAtStore, type DeskStatus } from "@/lib/desk";
+import { type DeskStatus } from "@/lib/desk";
+import { CUSTOMER_STATUS, useOrderStatus } from "./OrderStatus";
 import { track } from "@/lib/analytics";
 import { EmptyState, SectionTitle } from "@/components/ui/Controls";
 import { formatDayShort } from "@/lib/format";
@@ -12,36 +13,7 @@ import { OrderTicket } from "./OrderTicket";
 export function QrScreen() {
   const { data, account, qrOrderId, setQrOrderId, completeOrder, cancelOrder, setTab, setProfileView, notify } = useApp();
   const cloud = !!account?.cloud;
-  const [atStore, setAtStore] = useState<Record<string, DeskStatus>>({});
-  const activeIds = (data?.orders ?? []).filter((o) => o.status === "attivo").map((o) => o.id).join(",");
-
-  // what the supermarket is doing with each booking (checked every 10 seconds while this tab is open)
-  useEffect(() => {
-    if (!activeIds || !data) return;
-    let alive = true;
-    const ids = activeIds.split(",");
-    const who = `${data.profile.firstName ?? ""} ${data.profile.lastName ?? ""}`.trim() || "Cliente";
-    const check = async () => {
-      const st = await statusesAtStore(ids, cloud);
-      if (!alive) return;
-      setAtStore(st);
-      for (const id of ids) {
-        const o = data.orders.find((x) => x.id === id);
-        if (!o) continue;
-        if (st[id] === "completato") {
-          completeOrder(id);
-          notify("Ritiro confermato dal supermercato");
-        } else if (!st[id]) void sendToStore(o, who, cloud); // older booking the store never received
-      }
-    };
-    void check();
-    const t = setInterval(check, 10000);
-    return () => {
-      alive = false;
-      clearInterval(t);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIds, cloud]);
+  const { atStore } = useOrderStatus();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [validating, setValidating] = useState(false);
   // one qr_view per booking shown (the QR code is what the customer shows in the shop)
@@ -109,9 +81,9 @@ export function QrScreen() {
         </div>
       )}
 
-      <OrderTicket order={current} />
-
       <StoreProgress status={atStore[current.id]} />
+
+      <OrderTicket order={current} />
 
       <div className="card space-y-2 p-4">
         {cloud ? (
@@ -180,29 +152,44 @@ const STEPS: { id: DeskStatus; label: string; icon: typeof StoreIcon }[] = [
   { id: "pronto", label: "Pronto", icon: PackageCheck },
 ];
 
-/** Where the booking is at the supermarket: received -> being prepared -> ready */
+/** Where the booking is at the supermarket: big coloured status card + received -> being prepared -> ready */
 function StoreProgress({ status }: { status?: DeskStatus }) {
   const at = status ? STEPS.findIndex((s) => s.id === status) : -1;
+  const look = status ? CUSTOMER_STATUS[status] : undefined;
   return (
-    <section className="card p-4" aria-label="Stato al supermercato">
-      <p className="eyebrow mb-3">Stato al supermercato</p>
-      {at < 0 ? (
-        <p className="text-[13px] text-ink-500">Invio al supermercato in corso…</p>
+    <section className={`overflow-hidden rounded-3xl shadow-card ${look ? look.tone : "bg-white"}`} aria-label="Stato al supermercato" aria-live="polite">
+      {!look ? (
+        <p className="p-4 text-[13px] text-ink-500">Invio al supermercato in corso…</p>
       ) : (
-        <ol className="grid grid-cols-3 gap-2">
-          {STEPS.map((s, i) => {
-            const done = i <= at;
-            const Icon = s.icon;
-            return (
-              <li key={s.id} className="flex flex-col items-center gap-1.5 text-center">
-                <span className={`grid h-10 w-10 place-items-center rounded-full ${done ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-400"}`}>
-                  <Icon size={18} aria-hidden="true" />
-                </span>
-                <span className={`text-[12px] font-semibold ${done ? "text-ink-900" : "text-ink-400"}`}>{s.label}</span>
-              </li>
-            );
-          })}
-        </ol>
+        <>
+          <div className="flex items-center gap-3 p-4">
+            <span className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-white ${look.ring}`}>
+              {status !== "da_preparare" && <span className={`absolute inset-0 animate-ping rounded-2xl opacity-25 ${look.ring}`} aria-hidden="true" />}
+              <look.icon size={24} aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11.5px] font-bold uppercase tracking-wider opacity-70">Stato al supermercato</p>
+              <p className="text-[17px] font-extrabold leading-tight">{look.title}</p>
+              <p className="mt-0.5 text-[12.5px] leading-snug opacity-80">{look.text}</p>
+            </div>
+          </div>
+          <ol className="flex items-start bg-white/70 px-4 py-3">
+            {STEPS.map((s, i) => {
+              const done = i <= at;
+              const now = i === at;
+              const Icon = s.icon;
+              return (
+                <li key={s.id} className="relative flex flex-1 flex-col items-center gap-1 text-center">
+                  {i > 0 && <span className={`absolute right-1/2 top-[16px] h-1 w-full rounded-full ${i <= at ? look.ring : "bg-ink-200"}`} aria-hidden="true" />}
+                  <span className={`relative z-10 grid h-9 w-9 place-items-center rounded-full ${done ? `${look.ring} text-white` : "bg-ink-100 text-ink-400"} ${now ? "ring-4 ring-white" : ""}`}>
+                    <Icon size={17} aria-hidden="true" />
+                  </span>
+                  <span className={`text-[12px] ${now ? "font-extrabold text-ink-900" : done ? "font-semibold text-ink-700" : "font-semibold text-ink-400"}`}>{s.label}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </>
       )}
     </section>
   );

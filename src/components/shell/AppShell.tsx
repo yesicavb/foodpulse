@@ -7,6 +7,7 @@ import { Logo } from "@/components/ui/Logo";
 import { initials } from "@/lib/format";
 import { isAvailable } from "@/lib/pricing";
 import { useApp, type Tab } from "@/store/AppStore";
+import { useOrderStatus } from "@/components/qr/OrderStatus";
 
 const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
   { id: "basket", label: "Smart Basket", icon: Sparkles },
@@ -17,6 +18,7 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { tab, setTab, data, store, toast, setProfileView } = useApp();
+  const { unseen: statusNews } = useOrderStatus();
   /** orange dot on Feedback until the user opens it once (accounts that already sent feedback never see it) */
   const feedbackDot = !!data && !data.feedbackTabSeen && !(data.appFeedbacks?.length);
   const p = data?.profile;
@@ -80,6 +82,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                       <span className="sr-only">Nuovo</span>
                     </span>
                   )}
+                  {id === "qr" && statusNews && !active && (
+                    <span className="absolute left-[24%] top-1 flex h-3 w-3" aria-hidden="true">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-brand-600 ring-2 ring-white" />
+                    </span>
+                  )}
+                  {id === "qr" && statusNews && !active && <span className="sr-only">Aggiornamento sul tuo ordine</span>}
                   {badge > 0 && (
                     <span className="absolute right-[20%] top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-extrabold tabular-nums text-white">
                       {badge}
