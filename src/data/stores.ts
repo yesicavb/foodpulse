@@ -12,6 +12,9 @@ import type { CategoryId, Store } from "@/lib/types";
  */
 type Row = [id: string, city: string, chain: string, label: string, address: string, distanceKm: number];
 
+/** Test store for demonstrations to shop owners (has its own store code) */
+export const TEST_STORE_ID = "st-foodpulse-prova";
+
 const REAL_STORES: Row[] = [
   ["st-milano-carrefour-italia", "Milano", "Carrefour", "Carrefour Market", "Corso Italia, 13", 1.3],
   ["st-milano-sigma-di-porta-romana", "Milano", "Sigma", "Sigma", "Corso di Porta Romana, 96", 1.3],
@@ -93,6 +96,8 @@ const REAL_STORES: Row[] = [
   ["st-cagliari-crai-giacomo-leopardi", "Cagliari", "Crai", "Crai", "Via Giacomo Leopardi, 11", 0.5],
   ["st-cagliari-despar-dante", "Cagliari", "Despar", "Despar", "Via Dante, 27", 0.6],
   ["st-cagliari-carrefour-manno", "Cagliari", "Carrefour", "Carrefour Express", "Via Manno, 10", 0.6],
+  // Test store for showing FoodPulse to shop owners: not a real shop (its city is listed last)
+  [TEST_STORE_ID, "Negozio di prova", "FoodPulse", "Negozio di prova FoodPulse", "Solo per dimostrazioni", 0],
 ];
 
 /** Cities in the order shown in the picker (largest first) */

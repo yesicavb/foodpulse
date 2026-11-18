@@ -8,6 +8,7 @@
  */
 import type { Order } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
+import { FRESH, SHELF } from "@/data/products";
 
 export type DeskStatus = "da_preparare" | "in_preparazione" | "pronto" | "completato" | "annullato";
 
@@ -121,11 +122,59 @@ function demoSeed(): DeskOrder[] {
   ];
 }
 
+/** Four weeks of past orders for the demo, so the statistics tab has something to show */
+function demoHistory(): DeskOrder[] {
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const pick = <T,>(a: T[]) => a[Math.floor(rnd() * a.length)];
+  const names = ["Giulia M.", "Paolo R.", "Chiara L.", "Davide B.", "Francesca T.", "Matteo G.", "Laura P.", "Simone V.", "Alessia C.", "Roberto F.", "Marta S.", "Giorgio N."];
+  const slots = ["8:30 – 10:30", "12:00 – 14:00", "17:00 – 19:00", "17:00 – 19:00", "19:00 – 21:00"];
+  // fresh products are booked more often than shelf ones, and a few favourites stand out
+  const pool = [...FRESH.map((p) => p.name), ...FRESH.slice(0, 12).map((p) => p.name), ...SHELF.map((p) => p.name)];
+  const price = new Map<string, number>([...FRESH, ...SHELF].map((p) => [p.name, p.basePrice]));
+  const out: DeskOrder[] = [];
+  for (let d = 28; d >= 1; d--) {
+    const date = new Date();
+    date.setDate(date.getDate() - d);
+    const n = Math.floor(rnd() * 3) + (d < 10 ? 2 : 1); // more orders in recent weeks
+    for (let k = 0; k < n; k++) {
+      const lines: DeskLine[] = [];
+      const count = 2 + Math.floor(rnd() * 4);
+      while (lines.length < count) {
+        const name = pick(pool);
+        if (!lines.some((l) => l.name === name)) lines.push({ name, qty: 1 + Math.floor(rnd() * 3) });
+      }
+      const i = out.length;
+      out.push({
+        id: `FP-H${String(i).padStart(4, "0")}`,
+        code: `H${String(i).padStart(3, "0")}DEMO`,
+        storeId: DEMO_STORE_ID,
+        customerName: pick(names),
+        lines,
+        total: Math.round(lines.reduce((a, l) => a + (price.get(l.name) ?? 2) * l.qty, 0) * 0.85 * 100) / 100,
+        pickupDate: day(date),
+        slot: pick(slots),
+        method: rnd() < 0.8 ? "instore" : "locker",
+        pickupDetail: "",
+        notes: "",
+        status: rnd() < 0.08 ? "annullato" : "completato",
+        seen: true,
+        createdAt: new Date(date.getTime() - 20 * 3600000).toISOString(),
+      });
+    }
+  }
+  return out;
+}
+
 const local = {
   list(storeId: string): DeskOrder[] {
     let all = readLocal();
     if (storeId === DEMO_STORE_ID && !all.some((o) => o.storeId === DEMO_STORE_ID && o.id.startsWith("FP-482113"))) {
       all = [...all, ...demoSeed()];
+      writeLocal(all);
+    }
+    if (storeId === DEMO_STORE_ID && !all.some((o) => o.id === "FP-H0000")) {
+      all = [...all, ...demoHistory()];
       writeLocal(all);
     }
     return all.filter((o) => o.storeId === storeId);
