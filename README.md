@@ -1,32 +1,69 @@
-# FOODPULSE · MVP
+# FOODPULSE
 
 **Produce better, sell sooner, waste less.**
 
-A mobile-first app for booking fresh products from your own supermarket in advance, getting discounts, receiving a personalized shopping list, and tracking your savings and impact. Supermarkets get their own area in the same app: an inbox of incoming orders, a QR scanner to confirm pickups, and statistics.
+FoodPulse lets shoppers book fresh products from their supermarket in advance, with a discount, and pick them up with a QR code. Supermarkets see the bookings coming in, prepare them, and learn what their customers want. Less fresh food is left unsold.
 
-The app's on-screen text is in Italian, because it targets Italian shoppers. The code and this documentation are in English.
+Student MVP for the course Technology Entrepreneurship, in collaboration with Accenture. The app is in Italian, with an English switch (IT | EN).
 
-**Live app:** https://yesicavb.github.io/foodpulse/ — every push to `main` rebuilds and republishes it (GitHub Actions → "Deploy to GitHub Pages").
+**Open the app: https://yesicavb.github.io/foodpulse/**
 
-## Getting started
+## Try it
 
-To try it: on the welcome screen, tap **Prova la demo senza registrarti** ("Try the demo without signing up"). This loads an example profile: a family of 4, interested in fitness and healthy eating, with a purchase history and 3 past orders. For the supermarket side, tap **Sei un supermercato?** → **Prova la demo supermercato**. Both demos work without an account.
+No account needed:
 
-To run it on your own computer you need Node.js LTS (https://nodejs.org):
+- **As a shopper:** tap *Prova la demo senza registrarti*. You get an example family of 4 with past orders.
+- **As a supermarket:** tap *Sei un supermercato?* → *Prova la demo supermercato*. You see example orders, the QR scanner and the statistics.
+
+## What the app can do
+
+**For shoppers**
+- choose your city and supermarket (20 Italian cities)
+- a personal shopping list, the Smart Basket, based on your profile and past purchases
+- book fresh products in advance, with up to 15% discount
+- pick up with a QR code, and see live when the order is being prepared and ready
+- collect points and vouchers
+- give feedback about the app
+
+**For supermarkets**
+- an inbox of new orders, with a sound, notifications and an email for each order
+- statuses from "to prepare" to "collected"
+- scan the customer's QR code to confirm the pickup
+- statistics on the most booked products, departments and pickup times
+- new shops can join themselves with a store code
+
+## What is real and what is simulated
+
+- **Real:** accounts (email or Google), bookings, the supermarket inbox, QR scanning, order emails, the 80 store addresses.
+- **Simulated:** prices, stock, opening hours, sponsored brands, payment, lockers and delivery. Supermarket chain names are used for illustration only, with no official partnership.
+
+---
+
+## Technical details
+
+*Only needed if you want to work on the code or set up the database. To use the app, the link above is all you need.*
+
+The code and this documentation are in English; the texts in the app are in Italian.
+
+### Running it on your own computer
+
+Not needed to use the app: the website updates itself. Every change pushed to `main` on GitHub rebuilds and republishes it within a minute or two (GitHub Actions → "Deploy to GitHub Pages").
+
+To work on the code on your own computer you need Node.js LTS (https://nodejs.org):
 
 ```bash
-npm install                # first time only
+npm install                # first time only: downloads the libraries
 npm run dev                # starts the app at http://localhost:3000
 npm run build:standalone   # creates standalone/foodpulse.html: the whole app in a single file
 ```
 
-The website is built with `npm run build:standalone` (see `.github/workflows/deploy-pages.yml`); everything in `site/` (privacy page, service worker, notification icon) is published next to it.
+The website is that single file (see `.github/workflows/deploy-pages.yml`); everything in `site/` (privacy page, service worker, notification icon) is published next to it.
 
-## Stack
+### Stack
 
 Next.js 15 · React 19 · TypeScript · Tailwind CSS 3 · Lucide React · Recharts · qrcode.react · jsQR (QR scanner) · Supabase (accounts, data, Edge Function) · Google Analytics 4 · GitHub Pages.
 
-## Accounts and data (Supabase)
+### Accounts and data (Supabase)
 
 With Supabase configured, accounts are real: email + password or **Continua con Google**, with a confirmation email and password reset. Without it, everything is saved in the browser. The demo accounts are always saved in the browser only.
 
@@ -57,7 +94,7 @@ Ready-made queries for the team: `supabase/kpi-queries.sql` and `supabase/dashbo
 
 Supabase free plan: the project pauses after a week without use. Unpause it on supabase.com before a demo.
 
-## Supermarket area
+### Supermarket area
 
 - **Access:** a supermarket account is linked to one store with a **store code**: at sign-up ("Sei un supermercato?" → "Registra il tuo negozio") or later in the profile. Each of the 80 listed stores has its own code. A **free code** lets a new shop register itself: the app then asks for the shop's name, address and city, and the shop appears for customers straight away, first in its city, with a "Partner FoodPulse" badge. More staff of the same shop can use the same code.
 - **Dashboard:** counters (Nuovi / Da preparare / In preparazione / Pronti), an inbox of new orders that refreshes every 8 seconds, filters, order details with customer notes, and the status flow Da preparare → In preparazione → Pronto per il ritiro → Ritirato (+ Annullato).
@@ -68,7 +105,7 @@ Supabase free plan: the project pauses after a week without use. Unpause it on s
 
 The shared logic is in `src/lib/desk.ts`; the screens in `src/components/store/`.
 
-## Notifications and email
+### Notifications and email
 
 | For | In the app | Browser notification | Email |
 |---|---|---|---|
@@ -78,11 +115,11 @@ The shared logic is in `src/lib/desk.ts`; the screens in `src/components/store/`
 - **Browser notifications** (`src/lib/systemNotify.ts`, `site/sw.js`) only work while FoodPulse is open in the background. On iPhone only from the home-screen app. Push notifications with the app closed are not built.
 - **Order emails:** the Edge Function `supabase/functions/order-email/index.ts` (deployed in Supabase as `hyper-action`) is called by a Database Webhook on INSERT into `orders`. It sends the order to the email addresses of that store's staff, from foodpulse.ordini@gmail.com through Gmail (port 465). The function needs the Supabase secrets `GMAIL_USER` and `GMAIL_APP_PASSWORD` (a Gmail app password). Each call's result can be read in SQL: `select created, status_code, content from net._http_response order by created desc;`. University mail filters tend to block these emails.
 
-## Analytics
+### Analytics
 
 Google Analytics 4 (`G-BQ2BDPLSTZ`) only loads after the visitor taps "Accetta" in the cookie banner. It records anonymous funnel events, among others sign_up, login, demo_start, add_to_cart, pre_order, qr_view, order_completed, store_select, store_demo_start, store_order_status, store_pickup_confirmed, partner_store_created and notifications_answer. Read them in GA4 → Reports → Realtime or Explore → Funnel exploration.
 
-## Design
+### Design
 
 Look and feel follow the team's design (Nov 2026): Poppins font, cream background and the palette below, set in `tailwind.config.ts`.
 
@@ -96,7 +133,7 @@ Look and feel follow the team's design (Nov 2026): Poppins font, cream backgroun
 
 **Food pictures:** products, department tiles and sponsored campaigns use free photos from Unsplash, listed in `src/data/photos.ts` (photo id, photographer, link), under the [Unsplash License](https://unsplash.com/license). If a photo can't load, a drawn illustration from `src/components/ui/FoodArt.tsx` is shown instead.
 
-## Languages (Italian / English)
+### Languages (Italian / English)
 
 The **IT | EN** switch changes the whole app, including products, stores, messages and browser notifications. The choice is remembered per device.
 
@@ -110,7 +147,7 @@ The key must be the Italian text exactly as it appears on screen. Texts with a c
 
 Saved data (profile choices, feedback answers) always stays in Italian, so the team's queries keep working.
 
-## Navigation
+### Navigation
 
 **Welcome screen:** for shoppers, Continua con Google, Registrati, Accedi and the demo link. At the bottom, **Sei un supermercato?** leads to the supermarket area (demo, register a store with a code, log in).
 
@@ -123,7 +160,7 @@ Saved data (profile choices, feedback answers) always stays in Italian, so the t
 
 **Supermarket accounts** open the dashboard instead of the customer app.
 
-## How the features are connected
+### How the features are connected
 
 | Event | Effect |
 |---|---|
@@ -135,7 +172,7 @@ Saved data (profile choices, feedback answers) always stays in Italian, so the t
 | Feedback submitted | +30 points, saved in the feedback history |
 | Cancellation | points removed, voucher available again, order marked "Annullato" at the store |
 
-## Algorithms (in `src/lib/`)
+### Algorithms (in `src/lib/`)
 
 - **`smartBasket.ts`**: a rule-based algorithm, **not** a trained AI model. Score = frequency in the history + interests + favourites + family/children + goals + promotions (if the customer cares about saving). Excludes products that don't fit the diet, allergens or disliked foods. Quantities depend on household size; the fresh-product list stays within about 60% of the weekly budget. "Rigenera" changes some of the suggestions.
 - **`ads.ts`** (retail media): filters on active campaign, availability in the store and diet → **relevance** with a minimum threshold → score = 40% relevance + 60% commercial value. A product that isn't relevant is never shown. Without consent to personalized advertising, only generic promotions are shown. Health data is never used; brands receive no individual data.
@@ -146,7 +183,7 @@ Saved data (profile choices, feedback answers) always stays in Italian, so the t
 
 All parameters are in `src/data/config.ts`; supermarkets, products and campaigns are in `src/data/`.
 
-## What is simulated, and what real use would need
+### What is simulated, and what real use would need
 
 | Feature | In the prototype | For real use |
 |---|---|---|
@@ -160,7 +197,7 @@ All parameters are in `src/data/config.ts`; supermarkets, products and campaigns
 | Notifications | in the app, browser notifications while open, email to the store | push notifications with the app closed |
 | Environmental impact | estimate: 25% of booked kg × CO₂e factors per department | a method validated in the pilot with real unsold-stock data |
 
-## Structure
+### Structure
 
 ```
 src/
