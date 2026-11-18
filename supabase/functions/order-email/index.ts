@@ -45,6 +45,10 @@ Deno.serve(async (req) => {
     if (body?.type !== "INSERT" || body?.table !== "orders" || !o) return new Response("ignored", { status: 200 });
     if (o.status !== "da_preparare") return new Response("not new", { status: 200 });
 
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD")?.replace(/\s+/g, "");
+    if (!gmailUser || !gmailPass) throw new Error("Secret GMAIL_USER of GMAIL_APP_PASSWORD ontbreekt (Edge Functions -> Secrets)");
+
     const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // everyone who works for this store
@@ -97,12 +101,14 @@ Deno.serve(async (req) => {
       host: "smtp.gmail.com",
       port: 465,
       secure: true,
-      auth: { user: Deno.env.get("GMAIL_USER")!, pass: Deno.env.get("GMAIL_APP_PASSWORD")! },
+      auth: { user: gmailUser, pass: gmailPass },
     });
-    await mail.sendMail({ from: `FoodPulse Ordini <${Deno.env.get("GMAIL_USER")}>`, to: emails.join(", "), subject, text, html });
+    await mail.sendMail({ from: `FoodPulse Ordini <${gmailUser}>`, to: emails.join(", "), subject, text, html });
     return new Response(`sent to ${emails.length}`, { status: 200 });
   } catch (e) {
-    console.error("order-email failed", e);
-    return new Response("error", { status: 500 });
+    // the message is also returned, so it can be read in SQL: select * from net._http_response
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("order-email failed", msg);
+    return new Response(`order-email failed: ${msg}`, { status: 500 });
   }
 });
