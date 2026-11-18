@@ -99,10 +99,10 @@ Supabase free plan: the project pauses after a week without use. Unpause it on s
 ### Supermarket area
 
 - **Access:** a supermarket account is linked to one store with a **store code**: at sign-up ("Are you a supermarket?" → "Register your store") or later in the profile. Each of the 80 listed stores has its own code. A **free code** lets a new shop register itself: the app then asks for the shop's name, address and city, and the shop appears for customers straight away, first in its city, with a "FoodPulse partner" badge. More staff of the same shop can use the same code.
-- **Dashboard:** counters (Nuovi / Da preparare / In preparazione / Pronti), an inbox of new orders that refreshes every 8 seconds, filters, order details with customer notes, and the status flow Da preparare → In preparazione → Pronto per il ritiro → Ritirato (+ Annullato).
+- **Dashboard:** counters (New / To prepare / Being prepared / Ready), an inbox of new orders that refreshes every 8 seconds, filters, order details with customer notes, and the status flow To prepare → Being prepared → Ready for pickup → Picked up (+ Cancelled).
 - **Pickup:** the central **Scan QR** button opens the camera and reads the customer's QR code; "Enter the code by hand" is the backup. An order that was already collected or cancelled is blocked.
-- **Statistiche:** bookings, booked value, average basket, top products, departments, pickup days and slots, pickup method (last 7 days / 30 days / all). Aggregated, no personal data.
-- **Test store:** "Negozio di prova FoodPulse" (city "Negozio di prova", last in the list), with its own code, for showing the app to shop owners on two phones.
+- **Statistics:** bookings, booked value, average basket, top products, departments, pickup days and slots, pickup method (last 7 days / 30 days / all). Aggregated, no personal data.
+- **Test store:** "FoodPulse test store" (city "Test store", last in the list), with its own code, for showing the app to shop owners on two phones.
 - **Demo:** example orders plus four weeks of example history, saved in the browser only. Real accounts never see examples.
 
 The shared logic is in `src/lib/desk.ts`; the screens in `src/components/store/`.
@@ -172,7 +172,7 @@ Saved data (profile choices, feedback answers) always stays in Italian, so the t
 | Store changes the status | customer sees it within seconds (pop-up, dot, notification) |
 | Store scans the QR | order completed, purchase history updated (used by the Smart Basket), feedback request shown once |
 | Feedback submitted | +30 points, saved in the feedback history |
-| Cancellation | points removed, voucher available again, order marked "Annullato" at the store |
+| Cancellation | points removed, voucher available again, order marked "Cancelled" at the store |
 
 ### Algorithms (in `src/lib/`)
 
