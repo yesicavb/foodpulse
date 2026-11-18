@@ -4,6 +4,7 @@ import { CheckCircle2, ChefHat, History, PackageCheck, QrCode, ScanLine, Store a
 import { useEffect, useState } from "react";
 import { type DeskStatus } from "@/lib/desk";
 import { CUSTOMER_STATUS, useOrderStatus } from "./OrderStatus";
+import { NotifyCard } from "@/components/ui/NotifyCard";
 import { track } from "@/lib/analytics";
 import { EmptyState, SectionTitle } from "@/components/ui/Controls";
 import { formatDayShort } from "@/lib/format";
@@ -82,6 +83,8 @@ export function QrScreen() {
       )}
 
       <StoreProgress status={atStore[current.id]} />
+
+      {current.status === "attivo" && <NotifyCard where="customer" text="Ricevi una notifica quando il supermercato prepara il tuo ordine e quando è pronto." />}
 
       <OrderTicket order={current} />
 

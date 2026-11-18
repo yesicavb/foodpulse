@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { track } from "@/lib/analytics";
 import { sendToStore, statusesAtStore, type DeskStatus } from "@/lib/desk";
 import { useApp } from "@/store/AppStore";
+import { systemNotify } from "@/lib/systemNotify";
 
 /** How each store status looks for the customer */
 export const CUSTOMER_STATUS: Partial<Record<DeskStatus, { title: string; text: string; icon: typeof ChefHat; tone: string; ring: string }>> = {
@@ -111,6 +112,8 @@ export function OrderStatusProvider({ children }: { children: ReactNode }) {
           /* not supported */
         }
         track("order_status_seen", { status: fresh.status });
+        const look = CUSTOMER_STATUS[fresh.status];
+        if (look) void systemNotify(look.title, look.text, `foodpulse-${fresh.orderId}`);
       }
     };
     void check();

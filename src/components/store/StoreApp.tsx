@@ -25,6 +25,8 @@ import { storeById } from "@/data/stores";
 import { LanguageSwitch } from "@/i18n/LanguageProvider";
 import { track } from "@/lib/analytics";
 import { playChime, unlockChime } from "@/lib/chime";
+import { NotifyCard } from "@/components/ui/NotifyCard";
+import { systemNotify } from "@/lib/systemNotify";
 import {
   codeFromText,
   DESK_STATUS,
@@ -121,6 +123,12 @@ export function StoreApp({
           (o) => !knownIds.current!.has(o.id) && o.status === "da_preparare",
         );
         if (fresh.length && soundRef.current) playChime();
+        if (fresh.length)
+          void systemNotify(
+            fresh.length === 1 ? `Nuovo ordine da ${fresh[0].customerName}` : `${fresh.length} nuovi ordini`,
+            fresh.length === 1 ? (() => { const n = fresh[0].lines.reduce((a, l) => a + l.qty, 0); return `Ritiro ${fresh[0].slot} · ${n} ${n === 1 ? "prodotto" : "prodotti"}`; })() : "Apri FoodPulse per vederli",
+            "foodpulse-new-order",
+          );
         if (fresh.length)
           notify(
             fresh.length === 1
@@ -324,6 +332,8 @@ export function StoreApp({
           </dl>
           <p className="mt-3 text-[12.5px] text-white/80">{`${counts.oggi} ritiri previsti oggi`}</p>
         </section>
+
+        <NotifyCard where="store" text="Ricevi una notifica per ogni nuovo ordine, anche quando stai usando un'altra app o scheda." />
 
         {demo && (
           <p className="rounded-2xl bg-amber-50 px-3 py-2.5 text-[12.5px] leading-snug text-amber-900">
