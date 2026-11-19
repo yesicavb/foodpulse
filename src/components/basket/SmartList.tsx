@@ -67,8 +67,18 @@ export function SmartList() {
       )}
 
       <div className="grid gap-2.5">
-        {visible.map((s) => {
+        {[...visible.filter((x) => x.kind === "fresh"), ...visible.filter((x) => x.kind !== "fresh")].map((s, i, all) => {
           const qty = data.basket.qty[s.id] ?? s.qty;
+          // shelf products come last, under their own heading
+          const shelfHeading =
+            s.kind !== "fresh" && (i === 0 || all[i - 1].kind === "fresh") ? (
+              <div key="shelf-heading" className="mt-3 px-1">
+                <h3 className="flex items-center gap-1.5 text-[16px] font-bold text-ink-900">
+                  <ListPlus size={17} className="text-ink-500" aria-hidden="true" /> Da prendere sullo scaffale
+                </h3>
+                <p className="text-[12.5px] leading-snug text-ink-500">Non si prenotano: aggiungili alla lista e prendili quando passi a ritirare.</p>
+              </div>
+            ) : null;
           if (s.kind === "fresh") {
             const prod = freshById(s.id);
             if (!prod) return null;
@@ -132,14 +142,15 @@ export function SmartList() {
           const prod = shelfById(s.id);
           if (!prod) return null;
           const added = inList.has(s.id);
-          return (
+          return [
+            shelfHeading,
             <article key={s.id} className="card animate-rise border-dashed border-ink-200 bg-cream/60 p-3.5">
               <div className="flex gap-3">
                 <ProductArt id={prod.id} size={72} label={prod.name} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <span className="badge bg-ink-100 text-ink-700">Da scaffale · non prenotabile</span>
+                      <span className="badge bg-ink-100 text-ink-700">Non prenotabile</span>
                       <h3 className="mt-1 text-[15px] font-bold leading-tight text-ink-900">{prod.name}</h3>
                       <p className="text-[12px] text-ink-500">
                         {prod.unit && <span>{prod.unit} · </span>}
@@ -176,8 +187,8 @@ export function SmartList() {
                   </button>
                 )}
               </div>
-            </article>
-          );
+            </article>,
+          ];
         })}
         {visible.length === 0 && (
           <div className="card p-5 text-center text-[14px] text-ink-500">
