@@ -52,7 +52,7 @@ export function CartScreen() {
         </div>
       ) : (
         <>
-          <SectionTitle eyebrow={store ? store.name : "Nessun supermercato"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare. Lo sconto dipende da quanto in anticipo prenoti." />
+          <SectionTitle eyebrow={store ? store.name : "Nessun supermercato"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare." />
           <AdvanceSelector />
           <section aria-label="Prodotti da prenotare" className="grid gap-2.5">
             {t.lines.map((l) => {

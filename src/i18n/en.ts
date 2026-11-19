@@ -447,6 +447,7 @@ export const EN: Record<string, string> = {
   "Nessun supermercato": "No supermarket",
   "Il mio carrello": "My cart",
   "Prodotti freschi da prenotare. Lo sconto dipende da quanto in anticipo prenoti.": "Fresh products to book. The discount depends on how far ahead you book.",
+  "Prodotti freschi da prenotare.": "Fresh products to book.",
   "Il carrello è vuoto": "Your cart is empty",
   "Aggiungi i freschi suggeriti nello Smart Basket o esplora il catalogo.": "Add the fresh products suggested in the Smart Basket or browse the catalogue.",
   "Scegli un supermercato nello Smart Basket per iniziare.": "Choose a supermarket in the Smart Basket to get started.",
