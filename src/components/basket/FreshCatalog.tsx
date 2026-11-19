@@ -10,7 +10,6 @@ import { formatDayShort, money } from "@/lib/format";
 import { availableFresh, priceInfo, stockFor } from "@/lib/pricing";
 import type { CategoryId } from "@/lib/types";
 import { pickupDateFor, useApp } from "@/store/AppStore";
-import { AdvanceSelector } from "./AdvanceSelector";
 
 /**
  * AREA C – browse and book more fresh products from the selected store.
@@ -142,7 +141,6 @@ export function FreshCatalog() {
           <Percent size={28} strokeWidth={2.6} />
         </span>
       </div>
-      <AdvanceSelector />
     </section>
   );
 }
