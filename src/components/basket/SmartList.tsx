@@ -101,7 +101,6 @@ export function SmartList() {
                   <div className="min-w-0 leading-tight">
                     <span className="text-[19px] font-bold tabular-nums text-ink-900">{money(pi.final * qty)}</span>
                     <span className="ml-1.5 text-[13px] tabular-nums text-ink-400 line-through">{money(pi.price * qty)}</span>
-                    <span className="block text-[11px] text-ink-500">Quantità suggerita: {s.qty}</span>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
                     {added ? (

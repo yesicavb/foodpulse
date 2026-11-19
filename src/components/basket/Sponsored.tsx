@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, Info, ListPlus, MapPin, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Info, ListPlus, MapPin, ShieldCheck, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
 import { track } from "@/lib/analytics";
 import { FavoriteButton, SectionTitle, Sheet } from "@/components/ui/Controls";
@@ -8,10 +8,14 @@ import { FoodArt } from "@/components/ui/FoodArt";
 import { rankAds, type RankedAd } from "@/lib/ads";
 import { useApp } from "@/store/AppStore";
 
+/** how many sponsored products show before "Mostra altri" */
+const FIRST = 3;
+
 /** AREA D – products sponsored by CPG brands (retail media) */
 export function Sponsored() {
   const { data, store, addToList, notify, setTab, setProfileView } = useApp();
   const [open, setOpen] = useState<RankedAd | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const ranked = useMemo(() => (data && store ? rankAds(data.profile, data.history, store.id) : null), [data, store]);
   if (!data || !store || !ranked) return null;
   const inList = new Set(data.list.map((l) => l.id));
@@ -38,7 +42,7 @@ export function Sponsored() {
       )}
 
       <div className="grid gap-3">
-        {ranked.items.map((ad) => {
+        {(showAll ? ranked.items : ranked.items.slice(0, FIRST)).map((ad) => {
           const c = ad.campaign;
           return (
             <article key={c.id} className="flex gap-3 rounded-3xl border border-plum-100 bg-plum-50 p-3.5">
@@ -71,6 +75,18 @@ export function Sponsored() {
             </article>
           );
         })}
+        {!showAll && ranked.items.length > FIRST && (
+          <button
+            type="button"
+            className="btn-ghost h-11 w-full rounded-full border border-plum-100 bg-white text-[14px] text-ink-700"
+            onClick={() => {
+              setShowAll(true);
+              track("sponsored_show_more", { count: ranked.items.length });
+            }}
+          >
+            {`Mostra altri ${ranked.items.length - FIRST} prodotti`} <ChevronDown size={16} aria-hidden="true" />
+          </button>
+        )}
         {ranked.items.length === 0 && (
           <p className="card w-full p-5 text-center text-[13.5px] text-ink-500">Nessuna proposta pertinente in questo punto vendita al momento.</p>
         )}
