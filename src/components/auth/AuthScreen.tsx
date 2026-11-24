@@ -107,19 +107,16 @@ function Welcome({ go }: { go: (v: View) => void }) {
         <button type="button" className="btn-secondary h-12 text-[15px]" onClick={() => go("login")}>
           Accedi
         </button>
-        <button type="button" className="btn-ghost h-12 text-[15px]" onClick={startDemo}>
-          Prova la demo senza registrarti
-        </button>
         <button
           type="button"
           onClick={() => go("store")}
           className="mt-2 flex items-center justify-center gap-2 border-t border-ink-100 pt-4 text-[13.5px] font-semibold text-ink-600 hover:text-ink-900"
         >
-          <StoreIcon size={16} aria-hidden="true" /> Sei un supermercato? <ChevronRight size={16} aria-hidden="true" />
+          <StoreIcon size={16} aria-hidden="true" /> Sei un negozio partner? <ChevronRight size={16} aria-hidden="true" />
         </button>
-        <p className="mt-1 text-center text-[11.5px] leading-snug text-ink-500">
-          Prototipo dimostrativo: supermercati, prezzi e campagne sono simulati.
-        </p>
+        <button type="button" onClick={startDemo} className="mt-1 text-center text-[12.5px] font-semibold text-ink-500 underline underline-offset-2 hover:text-ink-800">
+          Guarda la demo · versione Italia, dati simulati
+        </button>
       </div>
     </div>
   );

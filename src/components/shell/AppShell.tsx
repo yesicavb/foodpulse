@@ -7,6 +7,7 @@ import { Logo } from "@/components/ui/Logo";
 import { initials } from "@/lib/format";
 import { isAvailable } from "@/lib/pricing";
 import { useApp, type Tab } from "@/store/AppStore";
+import { DemoBar } from "@/components/ui/DemoBar";
 import { useOrderStatus } from "@/components/qr/OrderStatus";
 
 const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
@@ -17,7 +18,7 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { tab, setTab, data, store, toast, setProfileView } = useApp();
+  const { tab, setTab, data, store, toast, setProfileView, account, logout } = useApp();
   const { unseen: statusNews } = useOrderStatus();
   /** orange dot on Feedback until the user opens it once (accounts that already sent feedback never see it) */
   const feedbackDot = !!data && !data.feedbackTabSeen && !(data.appFeedbacks?.length);
@@ -29,7 +30,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-cream sm:shadow-2xl">
-      <header className="gutter sticky top-0 z-40 flex items-center justify-between gap-3 bg-cream/95 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur">
+      <div className="sticky top-0 z-40">
+      {account?.demo && <DemoBar onExit={logout} />}
+      <header className="gutter flex items-center justify-between gap-3 bg-cream/95 pb-3 pt-3 backdrop-blur">
         <button type="button" onClick={() => setTab("basket")} aria-label="Vai allo Smart Basket">
           <Logo size={32} wordSize={18} />
         </button>
@@ -51,6 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
       </header>
+      </div>
 
       <main className="gutter flex-1 pb-36 pt-4">{children}</main>
 

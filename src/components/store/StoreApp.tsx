@@ -40,6 +40,7 @@ import { formatDayShort, money } from "@/lib/format";
 import { useApp } from "@/store/AppStore";
 import { QrScanner } from "./QrScanner";
 import { StoreStats } from "./StoreStats";
+import { DemoBar } from "@/components/ui/DemoBar";
 
 type Filter = "nuovi" | "attivi" | DeskStatus;
 const ACTIVE: DeskStatus[] = ["da_preparare", "in_preparazione", "pronto"];
@@ -235,7 +236,9 @@ export function StoreApp({
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-cream sm:shadow-2xl">
-      <header className="gutter sticky top-0 z-40 bg-cream/95 pb-3 pt-[max(12px,env(safe-area-inset-top))] backdrop-blur">
+      <div className="sticky top-0 z-40">
+      {demo && <DemoBar onExit={onExit} />}
+      <header className="gutter bg-cream/95 pb-3 pt-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <Logo size={30} wordSize={17} />
           <div className="flex items-center gap-2">
@@ -260,6 +263,7 @@ export function StoreApp({
           </div>
         </div>
       </header>
+      </div>
 
       <main className="gutter flex-1 space-y-4 pb-44 pt-2">
         <section
