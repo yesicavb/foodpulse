@@ -110,11 +110,11 @@ function Welcome({ go }: { go: (v: View) => void }) {
         <button
           type="button"
           onClick={() => go("store")}
-          className="mt-2 flex items-center justify-center gap-2 border-t border-ink-100 pt-4 text-[13.5px] font-semibold text-ink-600 hover:text-ink-900"
+          className="flex h-11 items-center justify-center gap-2 text-[14px] font-semibold text-ink-700 hover:text-ink-900"
         >
           <StoreIcon size={16} aria-hidden="true" /> Sei un negozio partner? <ChevronRight size={16} aria-hidden="true" />
         </button>
-        <button type="button" onClick={startDemo} className="mt-1 text-center text-[12.5px] font-semibold text-ink-500 underline underline-offset-2 hover:text-ink-800">
+        <button type="button" onClick={startDemo} className="mt-2 border-t border-ink-100 pt-4 text-center text-[12.5px] font-semibold text-ink-500 underline underline-offset-2 hover:text-ink-800">
           Guarda la demo · versione Italia, dati simulati
         </button>
       </div>
