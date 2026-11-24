@@ -169,9 +169,11 @@ export function StorePicker() {
             </div>
           </>
         )}
-        <p className="mt-4 text-[11.5px] leading-snug text-ink-500">
+        {!pilot && (
+              <p className="mt-4 text-[11.5px] leading-snug text-ink-500">
           Indirizzi reali dei punti vendita. Nomi delle catene usati a scopo illustrativo, senza integrazioni ufficiali. Orari, prezzi, disponibilità e servizi sono simulati.
         </p>
+            )}
       </Sheet>
     </section>
   );
