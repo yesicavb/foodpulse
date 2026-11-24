@@ -43,6 +43,7 @@ import { useApp } from "@/store/AppStore";
 import { QrScanner } from "./QrScanner";
 import { StoreStats } from "./StoreStats";
 import { DemoBar } from "@/components/ui/DemoBar";
+import { PickupRating, WeeklyFeedbackCard } from "./StoreFeedback";
 
 type Filter = "nuovi" | "attivi" | DeskStatus;
 const ACTIVE: DeskStatus[] = ["da_preparare", "in_preparazione", "pronto"];
@@ -341,6 +342,8 @@ export function StoreApp({
 
         <NotifyCard where="store" text="Ricevi una notifica per ogni nuovo ordine, anche quando stai usando un'altra app o scheda." />
 
+        <WeeklyFeedbackCard storeId={storeId} cloud={cloud} />
+
         {demo && (
           <p className="rounded-2xl bg-amber-50 px-3 py-2.5 text-[12.5px] leading-snug text-amber-900">
             Demo: ordini di esempio di questo punto vendita, più quelli fatti
@@ -498,6 +501,8 @@ export function StoreApp({
       </Sheet>
 
       <ScanSheet
+        storeId={storeId}
+        cloud={cloud}
         mode={scan}
         setMode={setScan}
         find={async (code) => {
@@ -686,11 +691,15 @@ type Found =
   | { kind: "done"; order: DeskOrder };
 
 function ScanSheet({
+  storeId,
+  cloud,
   mode,
   setMode,
   find,
   confirm,
 }: {
+  storeId: string;
+  cloud: boolean;
   mode: null | "camera" | "manual";
   setMode: (m: null | "camera" | "manual") => void;
   find: (code: string) => Promise<DeskOrder | null>;
@@ -818,6 +827,7 @@ function ScanSheet({
             {found.order.customerName} · {found.order.code}. Il cliente riceve
             la conferma nell&apos;app.
           </p>
+          <PickupRating storeId={storeId} orderId={found.order.id} cloud={cloud} />
           <button type="button" className="btn-primary h-12" onClick={reset}>
             Scansiona il prossimo
           </button>

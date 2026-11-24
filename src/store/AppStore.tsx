@@ -319,7 +319,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // tells Google Analytics (if accepted) whether events come from the demo or a real account
-  useEffect(() => setAccountType(account ? (account.demo ? "demo" : "registered") : undefined), [account]);
+  useEffect(() => setAccountType(account ? (account.demo ? "demo" : "registered") : storeDemo ? "demo" : undefined), [account, storeDemo]);
 
   /** Updates the logged-in user's data */
   const update = useCallback((fn: (d: UserData) => UserData) => {

@@ -361,3 +361,59 @@ export async function loadPartnerStores(): Promise<{ id: string; name: string; a
   const basic = await supabase.from("partner_stores").select("id,name,address,city").order("created_at");
   return basic.error ? [] : ((basic.data ?? []) as Row[]);
 }
+
+/* ---------------- shop feedback (pilot) ---------------- */
+
+export interface StoreFeedback {
+  storeId: string;
+  kind: "pickup" | "weekly";
+  orderId?: string;
+  rating?: number;
+  answers?: Record<string, string | number>;
+}
+const FB_KEY = "foodpulse-store-feedback-v1";
+
+/** Saves a shop's rating of a pickup, or its weekly answers */
+export async function sendStoreFeedback(f: StoreFeedback, cloud: boolean): Promise<boolean> {
+  if (!cloud || !supabase) {
+    try {
+      const all = JSON.parse(localStorage.getItem(FB_KEY) ?? "[]") as (StoreFeedback & { at: string })[];
+      all.push({ ...f, at: new Date().toISOString() });
+      localStorage.setItem(FB_KEY, JSON.stringify(all));
+    } catch {
+      /* ignore */
+    }
+    return true;
+  }
+  const { error } = await supabase.from("store_feedback").insert({
+    store_id: f.storeId,
+    kind: f.kind,
+    order_id: f.orderId ?? null,
+    rating: f.rating ?? null,
+    answers: f.answers ?? null,
+  });
+  if (error) console.error("FoodPulse: store feedback", error);
+  return !error;
+}
+
+/** When this shop last filled in the weekly feedback (null = never) */
+export async function lastWeeklyFeedback(storeId: string, cloud: boolean): Promise<Date | null> {
+  if (!cloud || !supabase) {
+    try {
+      const all = JSON.parse(localStorage.getItem(FB_KEY) ?? "[]") as (StoreFeedback & { at: string })[];
+      const mine = all.filter((x) => x.storeId === storeId && x.kind === "weekly").map((x) => x.at).sort();
+      return mine.length ? new Date(mine[mine.length - 1]) : null;
+    } catch {
+      return null;
+    }
+  }
+  const { data, error } = await supabase
+    .from("store_feedback")
+    .select("created_at")
+    .eq("store_id", storeId)
+    .eq("kind", "weekly")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error || !data?.length) return null;
+  return new Date(data[0].created_at as string);
+}
