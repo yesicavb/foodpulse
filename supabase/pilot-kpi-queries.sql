@@ -1,5 +1,6 @@
 -- FOODPULSE · PILOT KPIs for the Supabase SQL Editor
 --
+-- Quickest: query 0 (KPI OVERVIEW) shows every KPI in one table.
 -- How to use: SQL Editor -> New query -> paste ONE query (from "-- C1." or "-- S1." up to the next one) -> Run.
 -- Click "Save" with the query's name so the team can reuse it.
 --
@@ -7,6 +8,40 @@
 -- Only the partner shops count (the test store and the demo are never included: demo data is not stored in Supabase).
 -- KPIs 1-3 for customers (new visitors, registration rate, engagement time) come from Google Analytics,
 -- filtered on account_type = "registered". C1b below gives the sign-ups from Supabase as a check.
+
+
+-- 0. KPI OVERVIEW: all pilot KPIs in one table (one row per KPI). Paste this whole query and click Run.
+--    Save it as "00 · Pilot KPI overview" so it sits at the top of the saved queries.
+--    Customer KPIs 1-3 (visitors, registration rate, engagement time) come from Google Analytics.
+with p as (select date '2026-11-25' as start),
+shops as (select id, name from public.partner_stores where catalog is not null),
+o as (select o.* from public.orders o, p where o.created_at >= p.start and o.store_id in (select id from shops)),
+cust as (select u.id, u.created_at, u.last_sign_in_at from auth.users u where u.id not in (select user_id from public.store_staff)),
+ratings as (
+  select (f->'ratings'->>'overall')::numeric as stars
+  from public.user_data d
+  cross join lateral jsonb_array_elements(coalesce(d.data->'feedbacks', '[]'::jsonb)) f
+  join o on o.id = f->>'orderId'
+  where f->'ratings' ? 'overall'
+),
+sf as (select f.* from public.store_feedback f, p where f.created_at >= p.start and f.store_id in (select id from shops))
+select * from (values
+  ('C0', 'Customers', 'New customer sign-ups',              (select count(*)::text from cust, p where cust.created_at >= p.start)),
+  ('C4', 'Customers', 'Average booking lead time (days)',   (select coalesce(round(avg(pickup_date - (created_at at time zone 'Europe/Rome')::date), 1)::text, '-') from o)),
+  ('C5', 'Customers', 'Order conversion rate (%)',          (select coalesce(round(100.0 * (select count(distinct user_id) from o) / nullif((select count(*) from cust, p where cust.last_sign_in_at >= p.start), 0), 1)::text, '-'))),
+  ('C6', 'Customers', 'Customer satisfaction (1-5)',        (select coalesce(round(avg(stars), 2)::text, '-') || ' (' || count(*) || ' ratings)' from ratings)),
+  ('C7', 'Customers', 'Average order value (€)',            (select coalesce(round(avg(total), 2)::text, '-') from o where status <> 'annullato')),
+  ('C8', 'Customers', 'Collected orders',                   (select count(*)::text from o where status = 'completato')),
+  ('S1', 'Shops',     'New retailer accounts',              (select count(*)::text from public.store_staff s, p where s.created_at >= p.start and s.store_id in (select id from shops))),
+  ('S2', 'Shops',     'Confirmed pre-orders (all shops)',   (select count(*)::text from o)),
+  ('S3', 'Shops',     'Pickup rate (%)',                    (select coalesce(round(100.0 * count(*) filter (where status = 'completato') / nullif(count(*), 0), 1)::text, '-') from o)),
+  ('S4', 'Shops',     'Cancellation rate (%)',              (select coalesce(round(100.0 * count(*) filter (where status = 'annullato') / nullif(count(*), 0), 1)::text, '-') from o)),
+  ('S5', 'Shops',     'Preparation time (minutes)',         (select coalesce(round(avg(extract(epoch from (ready_at - created_at)) / 60))::text, '-') from o where ready_at is not null)),
+  ('S6', 'Shops',     'Revenue via FoodPulse (€)',          (select coalesce(sum(total), 0)::text from o where status = 'completato')),
+  ('S7', 'Shops',     'Active shops in the last 7 days',    (select count(distinct store_id)::text from o where created_at >= now() - interval '7 days')),
+  ('S8', 'Shops',     'Retailer satisfaction (1-5)',        (select coalesce(round(avg(rating), 2)::text, '-') || ' (' || count(*) || ' ratings)' from sf where rating is not null))
+) as k(code, side, kpi, value)
+order by code;
 
 
 -- ======================= CUSTOMERS (C) =======================
