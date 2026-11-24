@@ -8,12 +8,19 @@ Student MVP for the course Technology Entrepreneurship, in collaboration with Ac
 
 **Open the app: https://yesicavb.github.io/foodpulse/**
 
+## Pilot and demo
+
+The app has two sides:
+
+- **Pilot (real accounts):** customers book at the partner shops that joined FoodPulse (San Lazzaro di Savena area), with the shops' own products and prices per kg, in steps of 100 g. The shops receive the orders in their dashboard.
+- **Demo:** the full-Italy vision with 80 simulated stores, Smart Basket and sponsored products. It has an orange "DEMO" bar on every screen, so nobody confuses it with the pilot.
+
 ## Try it
 
-The app opens in Italian. Tap **EN** at the top to switch to English. No account needed:
+The app opens in Italian. Tap **EN** at the top to switch to English. The demo needs no account: tap *See the demo* (*Guarda la demo*) at the bottom of the first screen.
 
-- **As a shopper:** tap *Try the demo without signing up* (*Prova la demo senza registrarti*). You get an example family of 4 with past orders.
-- **As a supermarket:** tap *Are you a supermarket?* → *Try the supermarket demo*. You see example orders, the QR scanner and the statistics.
+- **As a shopper:** you get an example family of 4 with past orders.
+- **As a shop:** tap *Are you a partner shop?* → *Try the supermarket demo*. You see example orders, the QR scanner and the statistics.
 
 ## What the app can do
 
@@ -34,8 +41,8 @@ The app opens in Italian. Tap **EN** at the top to switch to English. No account
 
 ## What is real and what is simulated
 
-- **Real:** accounts (email or Google), bookings, the supermarket inbox, QR scanning, order emails, the 80 store addresses.
-- **Simulated:** prices, stock, opening hours, sponsored brands, payment, lockers and delivery. Supermarket chain names are used for illustration only, with no official partnership.
+- **Real:** the partner shops and their prices (pilot), accounts (email or Google), bookings, the supermarket inbox, QR scanning, order emails, the 80 store addresses.
+- **Simulated (demo only):** the 80 chain stores, their prices, stock, opening hours, sponsored brands, payment, lockers and delivery. Supermarket chain names are used for illustration only, with no official partnership.
 
 ---
 
@@ -95,6 +102,15 @@ The repo needs two Actions variables (Settings → Secrets and variables → Act
 Ready-made queries for the team: `supabase/kpi-queries.sql` and `supabase/dashboard-queries.sql` (query 17: written feedback).
 
 Supabase free plan: the project pauses after a week without use. Unpause it on supabase.com before a demo.
+
+### Pilot
+
+- Catalogues of the partner shops: `src/data/pilot.ts` (product, price per kg). Sold by weight: in the cart 1 unit = 100 g (0.1–5 kg).
+- Each partner shop gets its catalogue through the `catalog` column of `partner_stores`; a private SQL file links shops to catalogues via their store codes. A shop without a catalogue is hidden from customers.
+- Real accounts only see shops with a catalogue (plus the team's test store); the demo only sees the simulated stores.
+- Setup: `supabase/pilot.sql` (catalog column, ready/picked-up times on orders, `store_feedback` table).
+- Shop feedback: 1–5 stars after each confirmed pickup, and 5 questions once a week (`store_feedback`).
+- KPIs: `supabase/pilot-kpi-queries.sql` (customer queries C…, shop queries S…, extra lists X…).
 
 ### Supermarket area
 
