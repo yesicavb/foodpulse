@@ -35,6 +35,8 @@ import {
   updateAtStore,
   type DeskOrder,
   type DeskStatus,
+  lineCount,
+  lineQty,
 } from "@/lib/desk";
 import { formatDayShort, money } from "@/lib/format";
 import { useApp } from "@/store/AppStore";
@@ -127,7 +129,7 @@ export function StoreApp({
         if (fresh.length)
           void systemNotify(
             fresh.length === 1 ? `Nuovo ordine da ${fresh[0].customerName}` : `${fresh.length} nuovi ordini`,
-            fresh.length === 1 ? (() => { const n = fresh[0].lines.reduce((a, l) => a + l.qty, 0); return `Ritiro ${fresh[0].slot} · ${n} ${n === 1 ? "prodotto" : "prodotti"}`; })() : "Apri FoodPulse per vederli",
+            fresh.length === 1 ? (() => { const n = lineCount(fresh[0].lines); return `Ritiro ${fresh[0].slot} · ${n} ${n === 1 ? "prodotto" : "prodotti"}`; })() : "Apri FoodPulse per vederli",
             "foodpulse-new-order",
           );
         if (fresh.length)
@@ -531,7 +533,7 @@ function OrderCard({
   onNext: (s: DeskStatus) => void;
 }) {
   const st = DESK_STATUS[o.status];
-  const items = o.lines.reduce((a, l) => a + l.qty, 0);
+  const items = lineCount(o.lines);
   const isNew = !o.seen && ACTIVE.includes(o.status);
   return (
     <article
@@ -568,7 +570,7 @@ function OrderCard({
           </span>
         </p>
         <p className="mt-1.5 line-clamp-2 text-[13px] text-ink-500">
-          {`${items} prodotti: ${o.lines.map((l) => `${l.qty}× ${l.name}`).join(", ")}`}
+          {`${items} prodotti: ${o.lines.map((l) => `${lineQty(l)} ${l.name}`).join(", ")}`}
         </p>
         {o.notes && (
           <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-[13px] text-amber-900">
@@ -647,7 +649,7 @@ function OrderDetail({
               className="flex items-center gap-3 px-3 py-2.5 text-[14px]"
             >
               <span className="grid h-7 min-w-7 place-items-center rounded-lg bg-brand-50 px-1.5 text-[13px] font-bold tabular-nums text-brand-800">
-                {l.qty}×
+                {lineQty(l)}
               </span>
               <span className="text-ink-900">{l.name}</span>
             </li>
@@ -901,7 +903,7 @@ function ScanResult({
         {o.lines.map((l, i) => (
           <li key={i} className="flex items-center gap-3 px-3 py-2 text-[14px]">
             <span className="font-bold tabular-nums text-brand-800">
-              {l.qty}×
+              {lineQty(l)}
             </span>{" "}
             {l.name}
           </li>

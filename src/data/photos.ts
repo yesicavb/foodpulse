@@ -12,6 +12,17 @@ export interface Photo {
 }
 
 export const PHOTOS: Record<string, Photo> = {
+  // PILOT products (chosen by the team on 24 Nov 2026; scamorza, passatelli and quadrucci use a drawing until the shops send their own photos)
+  "pt-mozzarella-bufala": { src: "1633253037246-12bb11ff545a", by: "laura novara", page: "a-container-filled-with-white-marshmallows-sitting-on-top-of-a-counter-Z9H78pwQJMY" },
+  "pt-olive": { src: "1698775942613-3e9fc114b2a1", by: "John Cameron", page: "a-pile-of-green-olives-and-olives-next-to-each-other-RD0iQoLCkPo" },
+  "pt-salsiccia": { src: "1770222341238-15b5665fa1ce", by: "Marshalok Brend", page: "raw-sausages-arranged-on-a-platter-with-ingredients-IOsbvrk8q6E" },
+  "pt-tortelloni": { src: "1646470288584-c36e748fac65", by: "Elisa Corvaro", page: "a-close-up-of-some-food-on-a-table-DJoaulLVdEE" },
+  "pt-tagliatelle": { src: "1609167463946-678c7b8ecbcb", by: "laura adai", page: "pasta-on-brown-wooden-tray-iZwjrW6ILQs" },
+  "pt-lasagne": { src: "1709429790175-b02bb1b19207", by: "Emanuel Ekström", page: "a-white-plate-topped-with-lasagna-covered-in-sauce-flEUTTwGlJQ" },
+  "pt-biscotti": { src: "1777665998483-54f328e79eeb", by: "Donghun Shin", page: "tray-of-freshly-baked-biscotti-cookies-with-nuts-ut7xuKjjQNI" },
+  "pt-prova-mozzarella": { src: "1633253037246-12bb11ff545a", by: "laura novara", page: "a-container-filled-with-white-marshmallows-sitting-on-top-of-a-counter-Z9H78pwQJMY" },
+  "pt-prova-tortelloni": { src: "1646470288584-c36e748fac65", by: "Elisa Corvaro", page: "a-close-up-of-some-food-on-a-table-DJoaulLVdEE" },
+  "pt-prova-tagliatelle": { src: "1609167463946-678c7b8ecbcb", by: "laura adai", page: "pasta-on-brown-wooden-tray-iZwjrW6ILQs" },
   "pane-integrale": { src: "1549931319-a545dcf3bc73", by: "Jude Infantini", page: "selective-focus-photography-of-sliced-bread-rYOqbTcGp1c" },
   "pane-segale": { src: "1509440159596-0249088772ff", by: "Wesual Click", page: "rustic-bread-loaves-with-wheat-stalks-rsWZ-P9FbQ4" },
   "focaccia": { src: "1619452357216-e88ca8119eeb", by: "Paula Berto", page: "brown-bread-with-red-sauce-WLbD34w3kRQ" },

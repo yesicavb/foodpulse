@@ -1,5 +1,6 @@
 "use client";
 
+import { kgLabel } from "@/data/pilot";
 import { QRCodeSVG } from "qrcode.react";
 import { Lock, Store as StoreIcon, Truck } from "lucide-react";
 import { LOCKER_LABEL, METHOD_LABEL } from "@/data/config";
@@ -80,7 +81,7 @@ export function OrderTicket({ order, showQr = true }: { order: Order; showQr?: b
             {order.lines.map((l) => (
               <tr key={l.productId} className="border-t border-ink-100">
                 <td className="py-1.5 pr-2 text-ink-800">
-                  {l.qty}× {l.name} <span className="text-[11.5px] font-bold text-brand-700">−{l.pct}%</span>
+                  {l.byWeight ? kgLabel(l.qty) : `${l.qty}×`} {l.name} <span className="text-[11.5px] font-bold text-brand-700">−{l.pct}%</span>
                 </td>
                 <td className="py-1.5 text-right tabular-nums">
                   <span className="mr-1 text-[11.5px] text-ink-400 line-through">{money(l.unitPrice * l.qty)}</span>

@@ -15,7 +15,14 @@ export type DeskStatus = "da_preparare" | "in_preparazione" | "pronto" | "comple
 export interface DeskLine {
   name: string;
   qty: number;
+  /** sold by weight: kg booked (qty is then in units of 100 g) */
+  kg?: number;
 }
+
+/** "3×" or "0,3 kg" */
+export const lineQty = (l: DeskLine) => (l.kg ? `${l.kg.toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg` : `${l.qty}×`);
+/** number of products in an order (a product by weight counts once) */
+export const lineCount = (lines: DeskLine[]) => lines.reduce((a, l) => a + (l.kg ? 1 : l.qty), 0);
 
 export interface DeskOrder {
   id: string;
@@ -60,7 +67,7 @@ export function toDeskOrder(o: Order, customerName: string): DeskOrder {
     code: o.code,
     storeId: o.storeId,
     customerName,
-    lines: o.lines.map((l) => ({ name: l.name, qty: l.qty })),
+    lines: o.lines.map((l) => (l.byWeight ? { name: l.name, qty: l.qty, kg: Math.round(l.qty) / 10 } : { name: l.name, qty: l.qty })),
     total: o.total,
     pickupDate: day(o.pickupDate),
     slot: o.slot,
@@ -345,9 +352,12 @@ export async function claimNewStore(code: string, shop: NewShop): Promise<{ stor
 }
 
 /** Partner shops for the store list (everyone can read them) */
-export async function loadPartnerStores(): Promise<{ id: string; name: string; address: string; city: string }[]> {
+export async function loadPartnerStores(): Promise<{ id: string; name: string; address: string; city: string; catalog?: string | null }[]> {
   if (!supabase) return [];
-  const { data, error } = await supabase.from("partner_stores").select("id,name,address,city").order("created_at");
-  if (error) return [];
-  return (data ?? []) as { id: string; name: string; address: string; city: string }[];
+  type Row = { id: string; name: string; address: string; city: string; catalog?: string | null };
+  const full = await supabase.from("partner_stores").select("id,name,address,city,catalog").order("created_at");
+  if (!full.error) return (full.data ?? []) as Row[];
+  // before supabase/pilot-catalog.sql is run, the catalog column does not exist yet
+  const basic = await supabase.from("partner_stores").select("id,name,address,city").order("created_at");
+  return basic.error ? [] : ((basic.data ?? []) as Row[]);
 }

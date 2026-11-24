@@ -45,7 +45,7 @@ export function OrdersView() {
                 <span className="min-w-0 flex-1">
                   <span className="block text-[14.5px] font-bold text-ink-900">{o.id} · {o.storeName}</span>
                   <span className="block text-[12.5px] text-ink-500">
-                    {o.status === "attivo" ? "Ritiro" : o.status === "completato" ? "Ritirato" : "Annullato"} {formatDayShort(o.completedAt ?? o.cancelledAt ?? o.pickupDate)} · {o.lines.reduce((a, l) => a + l.qty, 0)} prodotti · {money(o.total)}
+                    {o.status === "attivo" ? "Ritiro" : o.status === "completato" ? "Ritirato" : "Annullato"} {formatDayShort(o.completedAt ?? o.cancelledAt ?? o.pickupDate)} · {o.lines.reduce((a, l) => a + (l.byWeight ? 1 : l.qty), 0)} prodotti · {money(o.total)}
                   </span>
                 </span>
                 {o.status === "completato" && !o.feedbackDone && <span className="badge bg-amber-100 text-amber-800">Feedback</span>}

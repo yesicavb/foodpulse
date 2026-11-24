@@ -1,5 +1,6 @@
 import { ADVANCE_TIERS, MAX_DISCOUNT_PCT, POINTS } from "@/data/config";
 import { FRESH, freshById } from "@/data/products";
+import { PILOT_PRODUCTS } from "@/data/pilot";
 import type { CartLine, FreshProduct, ShelfProduct, Store } from "./types";
 import { hashCode, round2 } from "./format";
 
@@ -22,10 +23,14 @@ export function stockFor(p: FreshProduct, store: Store) {
   return Math.max(3, Math.round(p.stock * store.stockFactor * variation));
 }
 
-export const isAvailable = (productId: string, store: Store | null) =>
-  !!store && !store.unavailable.includes(productId) && !!freshById(productId);
+export const isAvailable = (productId: string, store: Store | null) => {
+  const p = freshById(productId);
+  if (!store || !p || store.unavailable.includes(productId)) return false;
+  // pilot shops only sell their own catalogue; demo stores never sell pilot products
+  return (p.catalog ?? null) === (store.catalog ?? null);
+};
 
-export const availableFresh = (store: Store | null) => (store ? FRESH.filter((p) => isAvailable(p.id, store)) : []);
+export const availableFresh = (store: Store | null) => (store ? (store.catalog ? PILOT_PRODUCTS : FRESH).filter((p) => isAvailable(p.id, store)) : []);
 
 export function cartTotals(cart: CartLine[], store: Store | null, advance: number) {
   let subtotal = 0;
@@ -40,7 +45,7 @@ export function cartTotals(cart: CartLine[], store: Store | null, advance: numbe
       const info = priceInfo(product, store, advance);
       subtotal += info.price * line.qty;
       final += info.final * line.qty;
-      items += line.qty;
+      items += product.byWeight ? 1 : line.qty;
       kg += product.weightKg * line.qty;
       lines.push({ product, qty: line.qty, price: info.price, final: info.final, pct: info.pct });
     }

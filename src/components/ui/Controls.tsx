@@ -4,7 +4,7 @@ import { Heart, Minus, Plus, Star, Trash2, X } from "lucide-react";
 import { useApp } from "@/store/AppStore";
 import { useEffect, type ReactNode } from "react";
 
-export function QtyStepper({ value, onChange, min = 0, max = 20, label }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string }) {
+export function QtyStepper({ value, onChange, min = 0, max = 20, label, format }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string; format?: (n: number) => string }) {
   const removes = value - 1 < Math.max(min, 1) && min === 0;
   return (
     <div className="inline-flex items-center rounded-full border border-brand-100 bg-white" role="group" aria-label={`Quantità ${label}`}>
@@ -17,7 +17,7 @@ export function QtyStepper({ value, onChange, min = 0, max = 20, label }: { valu
       >
         {removes ? <Trash2 size={15} /> : <Minus size={16} strokeWidth={2.4} />}
       </button>
-      <span className="w-6 text-center text-[15px] font-bold tabular-nums text-ink-900">{value}</span>
+      <span className={`${format ? "min-w-[3.6rem] px-0.5" : "w-6"} text-center text-[15px] font-bold tabular-nums text-ink-900`}>{format ? format(value) : value}</span>
       <button
         type="button"
         aria-label={`Aumenta ${label}`}

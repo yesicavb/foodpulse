@@ -60,6 +60,7 @@ export function buildOrder(input: OrderInput): Order {
       unitFinal: l.final,
       pct: l.pct,
       weightKg: l.product.weightKg,
+      ...(l.product.byWeight ? { byWeight: true } : {}),
     })),
     subtotal: t.subtotal,
     discount: t.discount,
@@ -79,7 +80,7 @@ export function buildOrder(input: OrderInput): Order {
 export function orderImpact(o: Order) {
   const kgSaved = o.lines.reduce((a, l) => a + l.weightKg * l.qty * AVOIDED_WASTE_SHARE, 0);
   const co2 = o.lines.reduce((a, l) => a + l.weightKg * l.qty * AVOIDED_WASTE_SHARE * CO2_FACTORS[l.category], 0);
-  const products = o.lines.reduce((a, l) => a + l.qty, 0);
+  const products = o.lines.reduce((a, l) => a + (l.byWeight ? 1 : l.qty), 0);
   return { kgSaved: round2(kgSaved), co2: round2(co2), products, saved: round2(o.discount + o.voucherValue) };
 }
 

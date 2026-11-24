@@ -5,6 +5,8 @@ import { POINTS } from "@/data/config";
 import { storeById } from "@/data/stores";
 import { cancelAtStore, claimNewStore, claimStoreCode, loadPartnerStores, sendToStore, staffStoreOf, storeCodeKind, type NewShop } from "@/lib/desk";
 import { addPartnerStores } from "@/data/stores";
+import { freshById } from "@/data/products";
+import { MAX_WEIGHT_UNITS } from "@/data/pilot";
 import { setAccountType, track } from "@/lib/analytics";
 import { addDays } from "@/lib/format";
 import { hashPassword } from "@/lib/hash";
@@ -114,6 +116,8 @@ interface Ctx {
   staffStore: string | null | undefined;
   /** the supermarket demo is open (no account needed) */
   storeDemo: boolean;
+  /** real account: pilot with the partner shops (false in the demo) */
+  pilot: boolean;
   startStoreDemo: () => void;
   exitStoreDemo: () => void;
   /** links the logged-in account to a supermarket with its store code */
@@ -153,6 +157,9 @@ interface Ctx {
 }
 
 const AppContext = createContext<Ctx | null>(null);
+
+/** max quantity in the cart: 20 pieces, or 5 kg (50 × 100 g) for products sold by weight */
+const maxUnits = (productId: string) => (freshById(productId)?.byWeight ? MAX_WEIGHT_UNITS : 20);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(null);
@@ -268,7 +275,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const account = state?.accounts.find((a) => a.id === state.session) ?? null;
   const data = account && state ? state.data[account.id] ?? null : null;
-  const store = storeById(data?.storeId);
+  // PILOT: real accounts shop only at partner shops with a catalogue; the demo keeps the simulated stores
+  const pilot = !!account && !account.demo;
+  const savedStore = storeById(data?.storeId);
+  const store = savedStore && !!savedStore.catalog === pilot ? savedStore : null;
 
   // Supabase storage: save the logged-in user's data shortly after each change
   const pendingSave = useRef<{ userId: string; snapshot: UserData } | null>(null);
@@ -525,7 +535,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const rest = d.cart.filter((l) => l.productId !== productId);
         if (qty <= 0) return { ...d, cart: rest };
         const exists = d.cart.some((l) => l.productId === productId);
-        return { ...d, cart: exists ? d.cart.map((l) => (l.productId === productId ? { ...l, qty: Math.min(20, qty) } : l)) : [...d.cart, { productId, qty: Math.min(20, qty) }] };
+        return { ...d, cart: exists ? d.cart.map((l) => (l.productId === productId ? { ...l, qty: Math.min(maxUnits(productId), qty) } : l)) : [...d.cart, { productId, qty: Math.min(maxUnits(productId), qty) }] };
       }),
     [update]
   );
@@ -536,7 +546,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const ex = d.cart.find((l) => l.productId === productId);
         return {
           ...d,
-          cart: ex ? d.cart.map((l) => (l.productId === productId ? { ...l, qty: Math.min(20, l.qty + qty) } : l)) : [...d.cart, { productId, qty }],
+          cart: ex ? d.cart.map((l) => (l.productId === productId ? { ...l, qty: Math.min(maxUnits(productId), l.qty + qty) } : l)) : [...d.cart, { productId, qty: Math.min(maxUnits(productId), qty) }],
         };
       });
     },
@@ -708,6 +718,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       register,
       staffStore,
       storeDemo,
+      pilot,
       startStoreDemo,
       exitStoreDemo,
       linkStoreCode,
@@ -737,7 +748,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, partnersReady, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, partnersReady, pilot, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

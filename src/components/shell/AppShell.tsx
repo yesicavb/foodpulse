@@ -7,6 +7,7 @@ import { Logo } from "@/components/ui/Logo";
 import { initials } from "@/lib/format";
 import { isAvailable } from "@/lib/pricing";
 import { useApp, type Tab } from "@/store/AppStore";
+import { freshById } from "@/data/products";
 import { DemoBar } from "@/components/ui/DemoBar";
 import { useOrderStatus } from "@/components/qr/OrderStatus";
 
@@ -25,7 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const p = data?.profile;
   const hasName = !!(p?.firstName || p?.lastName);
   const onProfile = tab === "profile";
-  const cartCount = data ? data.cart.filter((l) => isAvailable(l.productId, store)).reduce((a, l) => a + l.qty, 0) : 0;
+  const cartCount = data ? data.cart.filter((l) => isAvailable(l.productId, store)).reduce((a, l) => a + (freshById(l.productId)?.byWeight ? 1 : l.qty), 0) : 0;
   const activeOrders = data ? data.orders.filter((o) => o.status === "attivo").length : 0;
 
   return (

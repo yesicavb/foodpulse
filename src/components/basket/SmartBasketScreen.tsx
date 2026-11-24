@@ -8,11 +8,12 @@ import { useApp } from "@/store/AppStore";
 import { FreshCatalog } from "./FreshCatalog";
 import { SmartList } from "./SmartList";
 import { Sponsored } from "./Sponsored";
+import { PilotShop } from "./PilotShop";
 import { StorePicker } from "./StorePicker";
 
 /** Main screen: the Smart Basket (no separate Home screen) */
 export function SmartBasketScreen() {
-  const { data, store, setOnboarded, setTab, setProfileView } = useApp();
+  const { data, store, setOnboarded, setTab, setProfileView, pilot } = useApp();
   if (!data) return null;
   const firstName = data.profile.firstName;
 
@@ -33,7 +34,9 @@ export function SmartBasketScreen() {
 
       <StorePicker />
 
-      {store ? (
+      {store && pilot ? (
+        <PilotShop />
+      ) : store ? (
         <>
           <SmartList />
           <FreshCatalog />

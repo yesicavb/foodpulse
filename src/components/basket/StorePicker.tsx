@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Sheet } from "@/components/ui/Controls";
 import { CATEGORIES } from "@/data/config";
 import { CITIES, STORES } from "@/data/stores";
+import { catalogSize } from "@/data/pilot";
 import { track } from "@/lib/analytics";
 import type { CategoryId, Store } from "@/lib/types";
 import { useApp } from "@/store/AppStore";
@@ -34,7 +35,9 @@ export function ServiceBadges({ store }: { store: Store }) {
 
 /** AREA A – supermarket selection */
 export function StorePicker() {
-  const { store, setStore, notify } = useApp();
+  const { store, setStore, notify, pilot } = useApp();
+  // pilot: only partner shops with a catalogue; demo: the simulated stores
+  const pool = useMemo(() => STORES.filter((x) => (pilot ? catalogSize(x.catalog) > 0 : !x.catalog)), [pilot]);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   // step 1: choose the city; step 2: choose one of its supermarkets
@@ -48,16 +51,17 @@ export function StorePicker() {
 
   const cities = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return CITIES.filter((c) => !s || c.toLowerCase().includes(s));
-  }, [q]);
+    const withShops = CITIES.filter((c) => pool.some((x) => x.city === c));
+    return withShops.filter((c) => !s || c.toLowerCase().includes(s));
+  }, [q, pool]);
 
-  const list = useMemo(() => (city ? STORES.filter((x) => x.city === city).sort((a, b) => a.distanceKm - b.distanceKm) : []), [city]);
+  const list = useMemo(() => (city ? pool.filter((x) => x.city === city).sort((a, b) => a.distanceKm - b.distanceKm) : []), [city, pool]);
 
   return (
     <section aria-labelledby="store-title" className="overflow-hidden rounded-3xl bg-brand-600 text-white shadow-card">
       <div className="p-4">
         <p id="store-title" className="max-w-[24ch] text-[13px] font-bold uppercase leading-snug tracking-[0.04em] text-brand-300">
-          In quale supermercato vuoi fare la spesa?
+          {pilot ? "In quale negozio vuoi fare la spesa?" : "In quale supermercato vuoi fare la spesa?"}
         </p>
         {store ? (
           <button type="button" onClick={openPicker} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left text-ink-900 transition hover:bg-brand-50">
@@ -76,7 +80,7 @@ export function StorePicker() {
         ) : (
           <button type="button" onClick={openPicker} className="mt-3 flex w-full items-center justify-between gap-3 rounded-2xl bg-white p-4 text-left text-brand-900">
             <span>
-              <span className="block text-[16px] font-bold">Scegli il tuo supermercato</span>
+              <span className="block text-[16px] font-bold">{pilot ? "Scegli il tuo negozio" : "Scegli il tuo supermercato"}</span>
               <span className="text-[13px] text-ink-500">Prodotti, prezzi e servizi dipendono dal punto vendita</span>
             </span>
             <ChevronRight size={20} className="shrink-0" />
@@ -84,7 +88,7 @@ export function StorePicker() {
         )}
       </div>
 
-      <Sheet open={open} onClose={() => setOpen(false)} title={city ? `Supermercati a ${city}` : "In quale città fai la spesa?"}>
+      <Sheet open={open} onClose={() => setOpen(false)} title={city ? (pilot ? `Negozi a ${city}` : `Supermercati a ${city}`) : "In quale città fai la spesa?"}>
         {!city ? (
           <>
             <label htmlFor="city-search" className="relative block">

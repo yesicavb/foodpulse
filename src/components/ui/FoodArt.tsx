@@ -1158,6 +1158,20 @@ export const ART: Record<string, Art> = {
 
 /** Which drawing each product (or department, or empty state) uses */
 const ART_FOR: Record<string, string> = {
+  // pilot products: drawing used when there is no photo (scamorza, passatelli, quadrucci) or a photo fails to load
+  "pt-scamorza": "cheese",
+  "pt-passatelli": "pasta",
+  "pt-quadrucci": "pasta",
+  "pt-mozzarella-bufala": "mozzarella",
+  "pt-olive": "vegmix",
+  "pt-salsiccia": "sausage",
+  "pt-tortelloni": "pasta",
+  "pt-tagliatelle": "pasta",
+  "pt-lasagne": "lasagne",
+  "pt-biscotti": "biscuits",
+  "pt-prova-mozzarella": "mozzarella",
+  "pt-prova-tortelloni": "pasta",
+  "pt-prova-tagliatelle": "pasta",
   "pane-integrale": "bread",
   "pane-segale": "rye",
   focaccia: "focaccia",

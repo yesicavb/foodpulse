@@ -2,6 +2,7 @@
 
 import { AlertCircle, ArrowRight, CheckSquare, ChevronRight, Leaf, ListChecks, Plus, Square, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { MAX_WEIGHT_UNITS, kgLabel } from "@/data/pilot";
 import { QtyStepper, SectionTitle } from "@/components/ui/Controls";
 import { BasketHero, FoodArt, ProductArt } from "@/components/ui/FoodArt";
 import { freshById } from "@/data/products";
@@ -64,7 +65,7 @@ export function CartScreen() {
                       <div className="min-w-0">
                         <h3 className="text-[14.5px] font-bold leading-tight text-ink-900">{l.product.name}</h3>
                         <p className="text-[12px] text-ink-500">
-                          {l.product.unit} · {money(l.final)} cad. invece di {money(l.price)}
+                          {l.product.byWeight ? `${money(l.final * 10)}/kg invece di ${money(l.price * 10)}/kg` : `${l.product.unit} · ${money(l.final)} cad. invece di ${money(l.price)}`}
                         </p>
                       </div>
                       <button type="button" onClick={() => setCartQty(l.product.id, 0)} aria-label={`Elimina ${l.product.name}`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-100">
@@ -72,7 +73,7 @@ export function CartScreen() {
                       </button>
                     </div>
                     <div className="mt-2 flex items-end justify-between gap-2">
-                      <QtyStepper value={l.qty} onChange={(n) => setCartQty(l.product.id, n)} label={l.product.name} />
+                      <QtyStepper value={l.qty} onChange={(n) => setCartQty(l.product.id, n)} label={l.product.name} {...(l.product.byWeight ? { max: MAX_WEIGHT_UNITS, format: kgLabel } : {})} />
                       <div className="text-right leading-tight">
                         <span className="badge bg-brand-400 text-white">−{l.pct}%</span>
                         <p className="mt-0.5">

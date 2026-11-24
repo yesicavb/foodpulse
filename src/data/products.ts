@@ -1,3 +1,4 @@
+import { PILOT_PRODUCTS } from "./pilot";
 import type { FreshProduct, ShelfProduct } from "@/lib/types";
 
 /** Bookable fresh and ultra-fresh products (base price list, before the store's price index) */
@@ -54,7 +55,7 @@ export const SHELF: ShelfProduct[] = [
   { id: "biscotti", name: "Biscotti", unit: "350 g", desc: "Senza olio di palma", aisle: "Corsia 7 · colazione", basePrice: 2.3, tags: ["colazione", "bambini"], allergens: ["glutine", "uova"], animal: ["uova"], icon: "cookie" },
 ];
 
-export const freshById = (id: string) => FRESH.find((p) => p.id === id);
+export const freshById = (id: string) => FRESH.find((p) => p.id === id) ?? PILOT_PRODUCTS.find((p) => p.id === id);
 export const shelfById = (id: string) => SHELF.find((p) => p.id === id);
 
 /** Most-booked products (used when the customer has no history yet) */

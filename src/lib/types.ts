@@ -57,6 +57,12 @@ export interface FreshProduct {
   /** bookable units per day in an average store */
   stock: number;
   icon: IconKey;
+  /** pilot products are sold by weight: 1 unit = 100 g */
+  byWeight?: boolean;
+  /** shop price per kg (pilot) */
+  perKg?: number;
+  /** pilot catalogue this product belongs to */
+  catalog?: string;
 }
 
 /** Packaged product, bought normally from the shelves (not bookable) */
@@ -99,6 +105,8 @@ export interface Store {
   categoryPromos: Partial<Record<CategoryId, number>>;
   /** shop that joined FoodPulse itself (registered with a free store code) */
   partner?: boolean;
+  /** pilot catalogue of this shop (only pilot shops have one) */
+  catalog?: string;
   /** fresh products not available in this store */
   unavailable: string[];
   services: {
@@ -210,6 +218,8 @@ export interface OrderLine {
   unitFinal: number;
   pct: number;
   weightKg: number;
+  /** sold by weight: qty is in units of 100 g */
+  byWeight?: boolean;
 }
 
 export type OrderStatus = "attivo" | "completato" | "annullato";

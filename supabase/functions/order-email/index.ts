@@ -11,7 +11,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const APP_URL = "https://yesicavb.github.io/foodpulse/";
 const METHOD: Record<string, string> = { instore: "Ritiro in negozio", locker: "Locker", delivery: "Consegna" };
 
-type Line = { name: string; qty: number };
+type Line = { name: string; qty: number; kg?: number };
+const qtyText = (l: Line) => (l.kg ? `${String(l.kg).replace(".", ",")} kg` : `${l.qty}×`);
 type Order = {
   id: string;
   store_id: string;
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
     if (!emails.length) return new Response("no staff for this store", { status: 200 });
 
     const lines = (o.lines ?? []) as Line[];
-    const pieces = lines.reduce((a, l) => a + (Number(l.qty) || 0), 0);
+    const pieces = lines.reduce((a, l) => a + (l.kg ? 1 : Number(l.qty) || 0), 0);
     const when = `${dayLabel(o.pickup_date)}, ${o.slot}`;
     const total = `€ ${Number(o.total).toFixed(2).replace(".", ",")}`;
     const subject = `Nuovo ordine da ${o.customer_name} · ritiro ${when}`;
@@ -75,7 +76,7 @@ Deno.serve(async (req) => {
       `Ritiro: ${when} · ${METHOD[o.method] ?? o.method}${o.pickup_detail ? ` (${o.pickup_detail})` : ""}`,
       ``,
       `Prodotti (${pieces}):`,
-      ...lines.map((l) => `  ${l.qty}× ${l.name}`),
+      ...lines.map((l) => `  ${qtyText(l)} ${l.name}`),
       ``,
       `Totale: ${total}`,
       ...(o.notes ? [``, `Note del cliente: ${o.notes}`] : []),
@@ -89,7 +90,7 @@ Deno.serve(async (req) => {
   <p style="margin:0 0 12px">Codice di ritiro: <b style="font-family:monospace;font-size:16px;letter-spacing:2px">${esc(o.code)}</b><br>
   ${esc(METHOD[o.method] ?? o.method)}${o.pickup_detail ? ` · ${esc(o.pickup_detail)}` : ""}</p>
   <table style="border-collapse:collapse;width:100%;margin-bottom:12px">
-    ${lines.map((l) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e6ebe3;width:40px;font-weight:bold;color:#1b5e20">${Number(l.qty)}×</td><td style="padding:6px 8px;border-bottom:1px solid #e6ebe3">${esc(String(l.name))}</td></tr>`).join("")}
+    ${lines.map((l) => `<tr><td style="padding:6px 8px;border-bottom:1px solid #e6ebe3;width:60px;font-weight:bold;color:#1b5e20">${esc(qtyText(l))}</td><td style="padding:6px 8px;border-bottom:1px solid #e6ebe3">${esc(String(l.name))}</td></tr>`).join("")}
   </table>
   <p style="margin:0 0 12px">Totale: <b>${esc(total)}</b> (${pieces} prodotti)</p>
   ${o.notes ? `<p style="background:#fff8e1;padding:10px 12px;border-radius:8px;margin:0 0 12px"><b>Note del cliente:</b> ${esc(o.notes)}</p>` : ""}

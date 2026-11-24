@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { CATEGORIES } from "@/data/config";
 import { FRESH, SHELF } from "@/data/products";
+import { PILOT_PRODUCTS } from "@/data/pilot";
 import { localDay, type DeskOrder } from "@/lib/desk";
 import { money } from "@/lib/format";
 
@@ -12,6 +13,7 @@ const DAY_NAMES = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 const CATEGORY_OF = new Map<string, string>([
   ...FRESH.map((p) => [p.name, CATEGORIES[p.category].label] as [string, string]),
   ...SHELF.map((p) => [p.name, "Dispensa e scaffale"] as [string, string]),
+  ...PILOT_PRODUCTS.map((p) => [p.name, CATEGORIES[p.category].label] as [string, string]),
 ]);
 
 /** Simple horizontal bar, value in % of the largest one */
@@ -55,12 +57,14 @@ export function StoreStats({ orders }: { orders: DeskOrder[] }) {
     const cancelled = inPeriod.length - valid.length;
 
     const products = new Map<string, number>();
+    const byKg = new Set<string>();
     const cats = new Map<string, number>();
     for (const o of valid)
       for (const l of o.lines) {
-        products.set(l.name, (products.get(l.name) ?? 0) + l.qty);
+        products.set(l.name, (products.get(l.name) ?? 0) + (l.kg ?? l.qty));
+        if (l.kg) byKg.add(l.name);
         const c = CATEGORY_OF.get(l.name) ?? "Altro";
-        cats.set(c, (cats.get(c) ?? 0) + l.qty);
+        cats.set(c, (cats.get(c) ?? 0) + (l.kg ? 1 : l.qty));
       }
     const units = [...products.values()].reduce((a, b) => a + b, 0);
 
@@ -91,6 +95,7 @@ export function StoreStats({ orders }: { orders: DeskOrder[] }) {
       collectedPct: inPeriod.length ? Math.round((collected / inPeriod.length) * 100) : 0,
       cancelled,
       products: sorted(products).slice(0, 8),
+      byKg,
       cats: sorted(cats),
       slots: sorted(slots),
       weekdays,
@@ -157,7 +162,7 @@ export function StoreStats({ orders }: { orders: DeskOrder[] }) {
           <Card title="Prodotti più prenotati" sub="Pezzi prenotati: utile per ordinare la merce e ridurre lo spreco">
             <ul className="grid gap-2.5">
               {s.products.map(([n, q]) => (
-                <Bar key={n} label={n} value={q} max={s.products[0][1]} right={`${q} pz`} />
+                <Bar key={n} label={n} value={q} max={s.products[0][1]} right={s.byKg.has(n) ? `${Math.round(q * 10) / 10} kg` : `${q} pz`} />
               ))}
             </ul>
           </Card>
