@@ -4,13 +4,14 @@ import { PILOT_PRODUCTS } from "@/data/pilot";
 import type { CartLine, FreshProduct, ShelfProduct, Store } from "./types";
 import { hashCode, round2 } from "./format";
 
-export const tierPct = (advance: number) => ADVANCE_TIERS.find((t) => t.days === advance)?.pct ?? 0;
+export const tierPct = (advance: number) => ADVANCE_TIERS.find((t) => advance >= t.min && advance <= t.max)?.pct ?? 0;
 
 /** Price of a fresh product in a store, with the discount for the chosen advance */
 export function priceInfo(p: FreshProduct, store: Store, advance: number) {
   const price = round2(p.basePrice * store.priceIndex);
   const promo = store.categoryPromos[p.category] ?? 0;
-  const pct = Math.min(MAX_DISCOUNT_PCT, tierPct(advance) + promo);
+  // PILOT shops (with a catalogue): advance-booking discounts are announced but not applied yet
+  const pct = store.catalog ? 0 : Math.min(MAX_DISCOUNT_PCT, tierPct(advance) + promo);
   const final = round2(price * (1 - pct / 100));
   return { price, final, pct, promo };
 }
@@ -61,4 +62,4 @@ export function cartTotals(cart: CartLine[], store: Store | null, advance: numbe
 }
 
 export const pointsFor = (total: number, advance: number) =>
-  Math.floor(total * POINTS.perEuro) + (advance >= 5 ? POINTS.bonusAdvance5 : advance >= 3 ? POINTS.bonusAdvance3 : 0);
+  Math.floor(total * POINTS.perEuro) + (advance >= 8 ? POINTS.bonusAdvance5 : advance >= 4 ? POINTS.bonusAdvance3 : 0);

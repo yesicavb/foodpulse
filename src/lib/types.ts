@@ -107,6 +107,8 @@ export interface Store {
   partner?: boolean;
   /** pilot catalogue of this shop (only pilot shops have one) */
   catalog?: string;
+  /** weekdays the shop is closed (0 = Sunday): no pickups on those days */
+  closedDays?: number[];
   /** fresh products not available in this store */
   unavailable: string[];
   services: {

@@ -12,17 +12,29 @@ export interface Photo {
 }
 
 export const PHOTOS: Record<string, Photo> = {
-  // PILOT products (chosen by the team on 24 Nov 2026; scamorza, passatelli and quadrucci use a drawing until the shops send their own photos)
-  "pt-mozzarella-bufala": { src: "1633253037246-12bb11ff545a", by: "laura novara", page: "a-container-filled-with-white-marshmallows-sitting-on-top-of-a-counter-Z9H78pwQJMY" },
-  "pt-olive": { src: "1698775942613-3e9fc114b2a1", by: "John Cameron", page: "a-pile-of-green-olives-and-olives-next-to-each-other-RD0iQoLCkPo" },
-  "pt-salsiccia": { src: "1770222341238-15b5665fa1ce", by: "Marshalok Brend", page: "raw-sausages-arranged-on-a-platter-with-ingredients-IOsbvrk8q6E" },
-  "pt-tortelloni": { src: "1646470288584-c36e748fac65", by: "Elisa Corvaro", page: "a-close-up-of-some-food-on-a-table-DJoaulLVdEE" },
-  "pt-tagliatelle": { src: "1609167463946-678c7b8ecbcb", by: "laura adai", page: "pasta-on-brown-wooden-tray-iZwjrW6ILQs" },
-  "pt-lasagne": { src: "1709429790175-b02bb1b19207", by: "Emanuel Ekström", page: "a-white-plate-topped-with-lasagna-covered-in-sauce-flEUTTwGlJQ" },
-  "pt-biscotti": { src: "1777665998483-54f328e79eeb", by: "Donghun Shin", page: "tray-of-freshly-baked-biscotti-cookies-with-nuts-ut7xuKjjQNI" },
-  "pt-prova-mozzarella": { src: "1633253037246-12bb11ff545a", by: "laura novara", page: "a-container-filled-with-white-marshmallows-sitting-on-top-of-a-counter-Z9H78pwQJMY" },
-  "pt-prova-tortelloni": { src: "1646470288584-c36e748fac65", by: "Elisa Corvaro", page: "a-close-up-of-some-food-on-a-table-DJoaulLVdEE" },
-  "pt-prova-tagliatelle": { src: "1609167463946-678c7b8ecbcb", by: "laura adai", page: "pasta-on-brown-wooden-tray-iZwjrW6ILQs" },
+  // PILOT products: the team's own photos (25 Nov 2026), served from site/products/
+  "pt-mozzarella-bufala": { src: "local:pt-mozzarella-bufala.jpg", by: "FoodPulse", page: "" },
+  "pt-olive": { src: "local:pt-olive.jpg", by: "FoodPulse", page: "" },
+  "pt-scamorza": { src: "local:pt-scamorza.jpg", by: "FoodPulse", page: "" },
+  "pt-salsiccia": { src: "local:pt-salsiccia.jpg", by: "FoodPulse", page: "" },
+  "pt-tortelloni": { src: "local:pt-tortelloni.jpg", by: "FoodPulse", page: "" },
+  "pt-tagliatelle": { src: "local:pt-tagliatelle.jpg", by: "FoodPulse", page: "" },
+  "pt-zuppa-imperiale": { src: "local:pt-zuppa-imperiale.jpg", by: "FoodPulse", page: "" },
+  "pt-passatelli": { src: "local:pt-passatelli.jpg", by: "FoodPulse", page: "" },
+  "pt-quadrucci": { src: "local:pt-quadrucci.jpg", by: "FoodPulse", page: "" },
+  "pt-maltagliati": { src: "local:pt-maltagliati.jpg", by: "FoodPulse", page: "" },
+  "pt-lasagne": { src: "local:pt-lasagne.jpg", by: "FoodPulse", page: "" },
+  "pt-rosette": { src: "local:pt-rosette.jpg", by: "FoodPulse", page: "" },
+  "pt-biscotti": { src: "local:pt-biscotti.jpg", by: "FoodPulse", page: "" },
+  "pt-raviole": { src: "local:pt-raviole.jpg", by: "FoodPulse", page: "" },
+  "pt-taralli-pugliesi": { src: "local:pt-taralli-pugliesi.jpg", by: "FoodPulse", page: "" },
+  "pt-taralli-napoletani": { src: "local:pt-taralli-napoletani.jpg", by: "FoodPulse", page: "" },
+  "pt-salame-napoli": { src: "local:pt-salame-napoli.jpg", by: "FoodPulse", page: "" },
+  "pt-salsiccia-secca": { src: "local:pt-salsiccia-secca.jpg", by: "FoodPulse", page: "" },
+  "pt-prova-mozzarella": { src: "local:pt-mozzarella-bufala.jpg", by: "FoodPulse", page: "" },
+  "pt-prova-tortelloni": { src: "local:pt-tortelloni.jpg", by: "FoodPulse", page: "" },
+  "pt-prova-tagliatelle": { src: "local:pt-tagliatelle.jpg", by: "FoodPulse", page: "" },
+  "pt-prova-biscotti": { src: "local:pt-biscotti.jpg", by: "FoodPulse", page: "" },
   "pane-integrale": { src: "1549931319-a545dcf3bc73", by: "Jude Infantini", page: "selective-focus-photography-of-sliced-bread-rYOqbTcGp1c" },
   "pane-segale": { src: "1509440159596-0249088772ff", by: "Wesual Click", page: "rustic-bread-loaves-with-wheat-stalks-rsWZ-P9FbQ4" },
   "focaccia": { src: "1619452357216-e88ca8119eeb", by: "Paula Berto", page: "brown-bread-with-red-sauce-WLbD34w3kRQ" },
@@ -85,6 +97,7 @@ export const PHOTOS: Record<string, Photo> = {
 
 /** Image URL at a given display size (2x for sharp screens, cropped square) */
 export function photoUrl(p: Photo, size: number): string {
+  if (p.src.startsWith("local:")) return `products/${p.src.slice(6)}`;
   const px = size <= 48 ? 120 : size <= 96 ? 200 : 320;
   return `https://images.unsplash.com/photo-${p.src}?w=${px}&h=${px}&fit=crop&crop=entropy&q=70&auto=format`;
 }
