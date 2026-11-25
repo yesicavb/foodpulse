@@ -43,8 +43,9 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
   const t = cartTotals(data.cart, store, data.advance);
   const needsCold = t.lines.some((l) => COLD.includes(l.product.category));
   const lockerPoint = store.services.locker?.points.find((p) => p.id === lockerId) ?? null;
+  const pickupDay = pickupDateFor(data.advance).getDay();
   const slots =
-    method === "instore" ? store.services.instore?.slots ?? [] : method === "locker" ? store.services.locker?.slots ?? [] : store.services.delivery?.slots ?? [];
+    method === "instore" ? (store.slotsByDay ? store.slotsByDay[pickupDay] ?? [] : store.services.instore?.slots ?? []) : method === "locker" ? store.services.locker?.slots ?? [] : store.services.delivery?.slots ?? [];
   const fee = method === "delivery" ? deliveryFee(store, t.afterDiscount) : 0;
   const vouchers = data.vouchers.filter((v) => !v.usedAt);
   const voucher = vouchers.find((v) => v.id === voucherId) ?? null;

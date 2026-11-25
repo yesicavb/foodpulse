@@ -44,12 +44,9 @@ export function PilotShop() {
       )}
       {inStore.length > 0 && (
         <div className="space-y-2.5 pt-3">
-          <div className="px-1">
-            <h3 className="flex items-center gap-1.5 text-[17px] font-bold text-ink-900">
-              <StoreIcon size={17} className="text-ink-500" aria-hidden="true" /> Disponibili in negozio
-            </h3>
-            <p className="text-[12.5px] leading-snug text-ink-500">Non si prenotano: aggiungili alla tua lista e prendili quando passi a ritirare.</p>
-          </div>
+          <h3 className="flex items-center gap-1.5 px-1 text-[17px] font-bold text-ink-900">
+            <StoreIcon size={17} className="text-ink-500" aria-hidden="true" /> Disponibili in negozio
+          </h3>
           <ul className="grid gap-2.5">
             {inStore.map((i) => (
               <li key={i.id}>
@@ -133,25 +130,27 @@ function InStoreItem({ item: i }: { item: ShopItem }) {
   return (
     <article className="card animate-rise border-dashed border-ink-200 bg-cream/60 p-3.5">
       <div className="flex gap-3">
-        <ProductArt id={i.id} size={68} label={i.name} />
+        <ProductArt id={i.id} size={76} label={i.name} />
         <div className="min-w-0 flex-1">
-          <span className="badge bg-ink-100 text-ink-700">Solo in negozio</span>
-          <h3 className="mt-1 text-[15px] font-bold leading-tight text-ink-900">{i.name}</h3>
-          <p className="text-[12.5px] text-ink-500">{i.desc}</p>
-          <p className="mt-1 text-[13px] font-bold tabular-nums text-ink-900">{byKg ? `${money(i.price)}/kg` : `${money(i.price)} a confezione`}</p>
+          <span className="badge bg-ink-100 text-ink-700">Da scaffale · non prenotabile</span>
+          <h3 className="mt-1 text-[15.5px] font-bold leading-tight text-ink-900">{i.name}</h3>
+          <p className="text-[12.5px] text-ink-500">{byKg ? `${i.desc} · al kg` : `${i.desc} · a confezione`}</p>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[14px] tabular-nums text-ink-500">
+          <strong className="text-[16px] text-ink-900">{byKg ? `${money(i.price)}/kg` : money(i.price)}</strong> prezzo in negozio
+        </p>
         {onList ? (
-          <span className="flex items-center gap-1.5 text-[13.5px] font-semibold text-brand-700">
+          <span className="flex h-11 items-center gap-1.5 text-[13.5px] font-semibold text-brand-700">
             <Check size={17} aria-hidden="true" /> Nella tua lista
           </span>
         ) : (
-          <>
+          <div className="flex items-center gap-2">
             <QtyStepper value={n} min={1} max={byKg ? MAX_WEIGHT_UNITS : 10} label={i.name} onChange={(v) => setN(Math.max(1, v))} {...(byKg ? { format: kgLabel } : {})} />
             <button
               type="button"
-              className="btn-secondary h-11 px-4"
+              className="btn-secondary h-11 px-3.5"
               onClick={() => {
                 addToList({ id: i.id, kind: "shelf", name: i.name, detail: `${amount} · circa ${money(estimate)} · da prendere in negozio` });
                 notify(`${i.name} aggiunto alla lista`);
@@ -159,7 +158,7 @@ function InStoreItem({ item: i }: { item: ShopItem }) {
             >
               <ListPlus size={17} aria-hidden="true" /> Alla lista
             </button>
-          </>
+          </div>
         )}
       </div>
     </article>

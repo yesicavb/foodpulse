@@ -51,8 +51,8 @@ export interface ShopItem {
 type ShopRow = [id: string, name: string, desc: string, price: number, unit: "kg" | "pacco"];
 const SHOP_ROWS: Record<string, ShopRow[]> = {
   "tipici-sud": [
-    ["pt-taralli-pugliesi", "Taralli scaldatelli pugliesi", "Confezione", 3.5, "pacco"],
-    ["pt-taralli-napoletani", "Taralli napoletani sugna e pepe", "Confezione", 6.5, "pacco"],
+    ["pt-taralli-pugliesi", "Taralli scaldatelli pugliesi", "Tipici pugliesi", 3.5, "pacco"],
+    ["pt-taralli-napoletani", "Taralli napoletani sugna e pepe", "Tipici napoletani", 6.5, "pacco"],
     ["pt-salame-napoli", "Salame Napoli", "Salume stagionato", 18.5, "kg"],
     ["pt-salsiccia-secca", "Salsiccia secca Napoli", "Salume stagionato", 18.5, "kg"],
   ],
@@ -93,3 +93,40 @@ export const catalogSize = (catalog?: string) => (catalog ? (CATALOGS[catalog]?.
 
 /** 3 units of 100 g → "0,3 kg" */
 export const kgLabel = (units: number) => `${(units / 10).toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
+
+/** Real opening hours of the partner shops (given by the shops, 25 Nov 2026). 0 = Sunday … 6 = Saturday */
+interface ShopHours {
+  name?: string;
+  hours: string;
+  slots: Record<number, string[]>;
+}
+const AM = (a: string) => [a];
+export const SHOP_HOURS: Record<string, ShopHours> = {
+  "tipici-sud": {
+    name: "Prodotti Tipici del Sud",
+    hours: "Lun–Sab · Dom chiuso",
+    slots: {
+      1: ["10:00 – 13:00", "16:00 – 19:00"],
+      2: ["9:00 – 13:00", "16:00 – 19:00"],
+      3: ["9:00 – 13:00", "16:00 – 19:00"],
+      4: AM("11:00 – 13:00"),
+      5: ["9:00 – 13:00", "13:00 – 16:00", "16:00 – 19:00"],
+      6: ["9:00 – 13:00", "17:00 – 19:00"],
+    },
+  },
+  "regno-pasta": {
+    hours: "Lun–Sab dalle 7:00 · Dom chiuso",
+    slots: {
+      1: ["7:00 – 13:00", "16:00 – 19:00"],
+      2: AM("7:00 – 13:00"),
+      3: ["7:00 – 13:00", "16:00 – 19:00"],
+      4: AM("7:00 – 13:00"),
+      5: ["7:00 – 13:00", "16:00 – 19:00"],
+      6: AM("7:00 – 13:00"),
+    },
+  },
+};
+SHOP_HOURS.prova = { hours: SHOP_HOURS["tipici-sud"].hours, slots: SHOP_HOURS["tipici-sud"].slots };
+
+/** closed weekdays = days without slots */
+export const closedDaysOf = (h?: ShopHours) => (h ? [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.slots[d]?.length) : [0]);

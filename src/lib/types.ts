@@ -109,6 +109,8 @@ export interface Store {
   catalog?: string;
   /** weekdays the shop is closed (0 = Sunday): no pickups on those days */
   closedDays?: number[];
+  /** pickup slots per weekday (0 = Sunday), from the shop's real opening hours */
+  slotsByDay?: Record<number, string[]>;
   /** fresh products not available in this store */
   unavailable: string[];
   services: {
