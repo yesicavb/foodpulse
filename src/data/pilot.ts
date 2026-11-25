@@ -27,6 +27,10 @@ const CATALOGS: Record<string, Item[]> = {
     ["pt-passatelli", "Passatelli", "Da cuocere in brodo", "gastronomia", 28, "soup"],
     ["pt-quadrucci", "Quadrucci", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
     ["pt-maltagliati", "Maltagliati", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
+    ["pt-lasagne", "Lasagne", "Pasta fresca da forno", "gastronomia", 23, "soup"],
+    ["pt-rosette", "Rosette", "Pasta fresca da forno", "gastronomia", 23, "soup"],
+    ["pt-biscotti", "Biscotti", "Dolci della casa", "panetteria", 25, "croissant"],
+    ["pt-raviole", "Raviole", "Dolci della casa", "panetteria", 25, "croissant"],
   ],
   // La bottega della carne: catalogue still to come
   "bottega-carne": [],
@@ -55,12 +59,6 @@ const SHOP_ROWS: Record<string, ShopRow[]> = {
     ["pt-taralli-napoletani", "Taralli napoletani sugna e pepe", "Tipici napoletani", 6.5, "pacco"],
     ["pt-salame-napoli", "Salame Napoli", "Salume stagionato", 18.5, "kg"],
     ["pt-salsiccia-secca", "Salsiccia secca Napoli", "Salume stagionato", 18.5, "kg"],
-  ],
-  "regno-pasta": [
-    ["pt-lasagne", "Lasagne", "Pasta fresca da forno", 23, "kg"],
-    ["pt-rosette", "Rosette", "Pasta fresca da forno", 23, "kg"],
-    ["pt-biscotti", "Biscotti", "Dolci della casa", 25, "kg"],
-    ["pt-raviole", "Raviole", "Dolci della casa", 25, "kg"],
   ],
   prova: [["pt-prova-biscotti", "Biscotti (prova)", "Prodotto di prova", 25, "kg"]],
 };
