@@ -1,4 +1,4 @@
-# FOODPULSEr
+# FOODPULSE
 
 **Produce better, sell sooner, waste less.**
 
