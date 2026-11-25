@@ -13,6 +13,9 @@ Student MVP for the course Technology Entrepreneurship, in collaboration with Ac
 The app has two sides:
 
 - **Pilot (real accounts):** customers book at the partner shops that joined FoodPulse (San Lazzaro di Savena area), with the shops' own products and prices per kg, in steps of 100 g. The shops receive the orders in their dashboard.
+  - Customers pick the pickup day in a calendar (up to 3 months ahead) and a time slot that follows the shop's real opening hours. Closed days are crossed out.
+  - Each shop has two lists: products to book, and in-store products (*Da scaffale · non prenotabile*) that customers can put on their shopping list by weight or by pack.
+  - Discounts for booking ahead are shown as *coming soon* in the pilot and are not applied.
 - **Demo:** the full-Italy vision with 80 simulated stores, Smart Basket and sponsored products. It has an orange "DEMO" bar on every screen, so nobody confuses it with the pilot.
 
 ## Try it
@@ -27,7 +30,7 @@ The app opens in Italian. Tap **EN** at the top to switch to English. The demo n
 **For shoppers**
 - choose your city and supermarket (20 Italian cities)
 - a personal shopping list, the Smart Basket, based on your profile and past purchases
-- book fresh products in advance, with up to 15% discount
+- book fresh products in advance with a calendar: 5% off for 1–3 days ahead, 10% for 4–7 days, 15% for 8+ days (demo only; coming soon in the pilot)
 - pick up with a QR code, and see live when the order is being prepared and ready
 - collect points and vouchers
 - give feedback about the app
