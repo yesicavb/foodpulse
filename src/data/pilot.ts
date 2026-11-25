@@ -97,6 +97,8 @@ export const kgLabel = (units: number) => `${(units / 10).toLocaleString("it-IT"
 /** Real opening hours of the partner shops (given by the shops, 25 Nov 2026). 0 = Sunday … 6 = Saturday */
 interface ShopHours {
   name?: string;
+  /** town shown to customers (overrides what the shop typed when signing up) */
+  city?: string;
   hours: string;
   slots: Record<number, string[]>;
 }
@@ -105,6 +107,7 @@ const AM7 = ["7:00 – 9:00", "9:00 – 11:00", "11:00 – 13:00"];
 export const SHOP_HOURS: Record<string, ShopHours> = {
   "tipici-sud": {
     name: "Prodotti Tipici del Sud",
+    city: "San Lazzaro di Savena",
     hours: "Lun–Sab · Dom chiuso",
     slots: {
       1: ["10:00 – 13:00", "16:00 – 19:00"],
@@ -116,6 +119,7 @@ export const SHOP_HOURS: Record<string, ShopHours> = {
     },
   },
   "regno-pasta": {
+    city: "San Lazzaro di Savena",
     hours: "Lun–Sab dalle 7:00 · Dom chiuso",
     slots: {
       1: [...AM7, "16:00 – 19:00"],

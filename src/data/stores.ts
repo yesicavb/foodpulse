@@ -200,6 +200,8 @@ export function addPartnerStores(rows: { id: string; name: string; address: stri
     }
     // "San Lazzaro Di Savena" -> "San Lazzaro di Savena"
     r = { ...r, city: r.city.replace(/ (Di|Del|Della|In|Sul|Sulla|De) /g, (m) => m.toLowerCase()) };
+    const shopCity = r.catalog ? SHOP_HOURS[r.catalog]?.city : undefined;
+    if (shopCity) r = { ...r, city: shopCity };
     const st = buildStore([r.id, r.city, "Partner", r.name, r.address, -1]);
     // real shops: their own prices (no simulated price index or promotions)
     const h = r.catalog ? SHOP_HOURS[r.catalog] : undefined;
