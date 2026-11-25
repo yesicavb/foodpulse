@@ -23,10 +23,10 @@ const CATALOGS: Record<string, Item[]> = {
   "regno-pasta": [
     ["pt-tortelloni", "Tortelloni", "Pasta fresca ripiena", "gastronomia", 28, "soup"],
     ["pt-tagliatelle", "Tagliatelle", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
-    ["pt-passatelli", "Zuppa imperiale e passatelli", "Da cuocere in brodo", "gastronomia", 28, "soup"],
-    ["pt-lasagne", "Lasagne e rosette", "Pasta fresca da forno", "gastronomia", 23, "soup"],
-    ["pt-biscotti", "Biscotti e raviole", "Dolci della casa", "panetteria", 25, "croissant"],
-    ["pt-quadrucci", "Quadrucci e maltagliati", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
+    ["pt-zuppa-imperiale", "Zuppa imperiale", "Da cuocere in brodo", "gastronomia", 28, "soup"],
+    ["pt-passatelli", "Passatelli", "Da cuocere in brodo", "gastronomia", 28, "soup"],
+    ["pt-quadrucci", "Quadrucci", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
+    ["pt-maltagliati", "Maltagliati", "Pasta fresca all'uovo", "gastronomia", 23, "soup"],
   ],
   // La bottega della carne: catalogue still to come
   "bottega-carne": [],
@@ -38,22 +38,37 @@ const CATALOGS: Record<string, Item[]> = {
   ],
 };
 
-/** (kept for reference) photo or drawing used for each pilot product */
-export const PILOT_ART: Record<string, string> = {
-  "pt-mozzarella-bufala": "pt-mozzarella-bufala",
-  "pt-olive": "pt-olive",
-  "pt-scamorza": "cheese",
-  "pt-salsiccia": "pt-salsiccia",
-  "pt-tortelloni": "pt-tortelloni",
-  "pt-tagliatelle": "pt-tagliatelle",
-  "pt-passatelli": "pasta",
-  "pt-lasagne": "lasagne",
-  "pt-biscotti": "pt-biscotti",
-  "pt-quadrucci": "pasta",
-  "pt-prova-mozzarella": "pt-mozzarella-bufala",
-  "pt-prova-tortelloni": "pt-tortelloni",
-  "pt-prova-tagliatelle": "pt-tagliatelle",
+/** Products the shop sells only in the store: not bookable, but customers can put them on their shopping list */
+export interface ShopItem {
+  id: string;
+  name: string;
+  desc: string;
+  catalog: string;
+  /** price per kg, or per pack */
+  price: number;
+  unit: "kg" | "pacco";
+}
+type ShopRow = [id: string, name: string, desc: string, price: number, unit: "kg" | "pacco"];
+const SHOP_ROWS: Record<string, ShopRow[]> = {
+  "tipici-sud": [
+    ["pt-taralli-pugliesi", "Taralli scaldatelli pugliesi", "Tipici pugliesi", 3.5, "pacco"],
+    ["pt-taralli-napoletani", "Taralli napoletani sugna e pepe", "Tipici napoletani", 6.5, "pacco"],
+    ["pt-salame-napoli", "Salame Napoli", "Salume stagionato", 18.5, "kg"],
+    ["pt-salsiccia-secca", "Salsiccia secca Napoli", "Salume stagionato", 18.5, "kg"],
+  ],
+  "regno-pasta": [
+    ["pt-lasagne", "Lasagne", "Pasta fresca da forno", 23, "kg"],
+    ["pt-rosette", "Rosette", "Pasta fresca da forno", 23, "kg"],
+    ["pt-biscotti", "Biscotti", "Dolci della casa", 25, "kg"],
+    ["pt-raviole", "Raviole", "Dolci della casa", 25, "kg"],
+  ],
+  prova: [["pt-prova-biscotti", "Biscotti (prova)", "Prodotto di prova", 25, "kg"]],
 };
+export const PILOT_SHOP_ITEMS: ShopItem[] = Object.entries(SHOP_ROWS).flatMap(([catalog, rows]) =>
+  rows.map(([id, name, desc, price, unit]) => ({ id, name, desc, catalog, price, unit }))
+);
+export const shopItemsOf = (catalog?: string) => PILOT_SHOP_ITEMS.filter((i) => i.catalog === catalog);
+
 
 export const PILOT_PRODUCTS: FreshProduct[] = Object.entries(CATALOGS).flatMap(([catalog, items]) =>
   items.map(([id, name, desc, category, perKg, icon]) => ({
@@ -74,7 +89,45 @@ export const PILOT_PRODUCTS: FreshProduct[] = Object.entries(CATALOGS).flatMap((
   }))
 );
 
-export const catalogSize = (catalog?: string) => (catalog ? (CATALOGS[catalog]?.length ?? 0) : 0);
+export const catalogSize = (catalog?: string) => (catalog ? (CATALOGS[catalog]?.length ?? 0) + (SHOP_ROWS[catalog]?.length ?? 0) : 0);
 
 /** 3 units of 100 g → "0,3 kg" */
 export const kgLabel = (units: number) => `${(units / 10).toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
+
+/** Real opening hours of the partner shops (given by the shops, 25 Nov 2026). 0 = Sunday … 6 = Saturday */
+interface ShopHours {
+  name?: string;
+  hours: string;
+  slots: Record<number, string[]>;
+}
+/** 7:00 – 13:00 split into 2-hour slots */
+const AM7 = ["7:00 – 9:00", "9:00 – 11:00", "11:00 – 13:00"];
+export const SHOP_HOURS: Record<string, ShopHours> = {
+  "tipici-sud": {
+    name: "Prodotti Tipici del Sud",
+    hours: "Lun–Sab · Dom chiuso",
+    slots: {
+      1: ["10:00 – 13:00", "16:00 – 19:00"],
+      2: ["9:00 – 13:00", "16:00 – 19:00"],
+      3: ["9:00 – 13:00", "16:00 – 19:00"],
+      4: ["11:00 – 13:00"],
+      5: ["9:00 – 11:00", "11:00 – 13:00", "13:00 – 15:00", "15:00 – 17:00", "17:00 – 19:00"],
+      6: ["9:00 – 13:00", "17:00 – 19:00"],
+    },
+  },
+  "regno-pasta": {
+    hours: "Lun–Sab dalle 7:00 · Dom chiuso",
+    slots: {
+      1: [...AM7, "16:00 – 19:00"],
+      2: AM7,
+      3: [...AM7, "16:00 – 19:00"],
+      4: AM7,
+      5: [...AM7, "16:00 – 19:00"],
+      6: AM7,
+    },
+  },
+};
+SHOP_HOURS.prova = { hours: SHOP_HOURS["tipici-sud"].hours, slots: SHOP_HOURS["tipici-sud"].slots };
+
+/** closed weekdays = days without slots */
+export const closedDaysOf = (h?: ShopHours) => (h ? [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.slots[d]?.length) : [0]);

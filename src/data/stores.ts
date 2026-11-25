@@ -1,3 +1,4 @@
+import { SHOP_HOURS, closedDaysOf } from "./pilot";
 import type { CategoryId, Store } from "@/lib/types";
 
 /**
@@ -186,20 +187,34 @@ function buildStore([id, city, chain, label, address, distanceKm]: Row): Store {
 
 export const STORES: Store[] = REAL_STORES.map(buildStore).map((s) =>
   // the test store is part of the pilot: own test catalogue, real prices
-  s.id === TEST_STORE_ID ? { ...s, name: "Negozio di prova FoodPulse", address: "Solo per i test del team", catalog: "prova", priceIndex: 1, categoryPromos: {}, unavailable: [], stockFactor: 1 } : s
+  s.id === TEST_STORE_ID ? { ...s, name: "Negozio di prova FoodPulse", address: "Solo per i test del team", catalog: "prova", closedDays: closedDaysOf(SHOP_HOURS.prova), slotsByDay: SHOP_HOURS.prova.slots, priceIndex: 1, categoryPromos: {}, unavailable: [], stockFactor: 1 } : s
 );
 
 /** Partner shops registered in the app with a free store code (loaded from Supabase at start-up) */
 export function addPartnerStores(rows: { id: string; name: string; address: string; city: string; catalog?: string | null }[]) {
-  for (const r of rows) {
+  for (let r of rows) {
     const known = STORES.find((x) => x.id === r.id);
     if (known) {
       if (r.catalog) known.catalog = r.catalog;
       continue;
     }
+    // "San Lazzaro Di Savena" -> "San Lazzaro di Savena"
+    r = { ...r, city: r.city.replace(/ (Di|Del|Della|In|Sul|Sulla|De) /g, (m) => m.toLowerCase()) };
     const st = buildStore([r.id, r.city, "Partner", r.name, r.address, -1]);
     // real shops: their own prices (no simulated price index or promotions)
-    STORES.unshift({ ...st, name: r.name, partner: true, priceIndex: 1, categoryPromos: {}, unavailable: [], stockFactor: 1, catalog: r.catalog ?? undefined });
+    const h = r.catalog ? SHOP_HOURS[r.catalog] : undefined;
+    STORES.unshift({
+      ...st,
+      name: h?.name ?? r.name,
+      ...(h ? { hours: h.hours, slotsByDay: h.slots } : {}),
+      partner: true,
+      priceIndex: 1,
+      categoryPromos: {},
+      unavailable: [],
+      stockFactor: 1,
+      catalog: r.catalog ?? undefined,
+      closedDays: closedDaysOf(h),
+    });
     if (!CITIES.includes(r.city)) CITIES.splice(Math.max(0, CITIES.indexOf("Negozio di prova")), 0, r.city);
   }
 }

@@ -6,10 +6,13 @@ import type { CategoryId, Interest, LockerType, PickupMethod } from "@/lib/types
 
 /** Progressive discounts based on how far ahead the booking is made */
 export const ADVANCE_TIERS = [
-  { days: 1, pct: 5, label: "Domani" },
-  { days: 3, pct: 10, label: "Tra 3 giorni" },
-  { days: 5, pct: 15, label: "Tra 5 giorni" },
+  { min: 1, max: 3, pct: 5, label: "1–3 giorni" },
+  { min: 4, max: 7, pct: 10, label: "4–7 giorni" },
+  { min: 8, max: Infinity, pct: 15, label: "8+ giorni" },
 ] as const;
+
+/** How far ahead a pickup can be booked (days) */
+export const MAX_ADVANCE_DAYS = 92;
 
 /** Maximum combined discount (advance booking + store promotion) */
 export const MAX_DISCOUNT_PCT = 25;

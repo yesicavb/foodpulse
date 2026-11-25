@@ -4,10 +4,10 @@ import { Heart, Minus, Plus, Star, Trash2, X } from "lucide-react";
 import { useApp } from "@/store/AppStore";
 import { useEffect, type ReactNode } from "react";
 
-export function QtyStepper({ value, onChange, min = 0, max = 20, label, format }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string; format?: (n: number) => string }) {
+export function QtyStepper({ value, onChange, min = 0, max = 20, label, format, wide }: { value: number; onChange: (n: number) => void; min?: number; max?: number; label: string; format?: (n: number) => string; wide?: boolean }) {
   const removes = value - 1 < Math.max(min, 1) && min === 0;
   return (
-    <div className="inline-flex items-center rounded-full border border-brand-100 bg-white" role="group" aria-label={`Quantità ${label}`}>
+    <div className={`${wide ? "flex h-11 w-full justify-between px-1" : "inline-flex"} items-center rounded-full border border-brand-100 bg-white`} role="group" aria-label={`Quantità ${label}`}>
       <button
         type="button"
         aria-label={removes ? `Rimuovi ${label}` : `Diminuisci ${label}`}
