@@ -137,20 +137,20 @@ function InStoreItem({ item: i }: { item: ShopItem }) {
           <p className="text-[12.5px] text-ink-500">{byKg ? `${i.desc} · al kg` : `${i.desc} · a confezione`}</p>
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[14px] tabular-nums text-ink-500">
-          <strong className="text-[16px] text-ink-900">{byKg ? `${money(i.price)}/kg` : money(i.price)}</strong> prezzo in negozio
-        </p>
+      <p className="mt-2.5 text-[14px] tabular-nums text-ink-500">
+        <strong className="text-[16px] text-ink-900">{byKg ? `${money(i.price)}/kg` : money(i.price)}</strong> prezzo in negozio
+      </p>
+      <div className="mt-2.5">
         {onList ? (
-          <span className="flex h-11 items-center gap-1.5 text-[13.5px] font-semibold text-brand-700">
+          <span className="flex h-11 items-center justify-center gap-1.5 text-[13.5px] font-semibold text-brand-700">
             <Check size={17} aria-hidden="true" /> Nella tua lista
           </span>
         ) : (
-          <div className="flex items-center gap-2">
-            <QtyStepper value={n} min={1} max={byKg ? MAX_WEIGHT_UNITS : 10} label={i.name} onChange={(v) => setN(Math.max(1, v))} {...(byKg ? { format: kgLabel } : {})} />
+          <div className="grid grid-cols-2 items-center gap-2">
+            <QtyStepper value={n} min={1} max={byKg ? MAX_WEIGHT_UNITS : 10} label={i.name} wide onChange={(v) => setN(Math.max(1, v))} {...(byKg ? { format: kgLabel } : {})} />
             <button
               type="button"
-              className="btn-secondary h-11 px-3.5"
+              className="btn-secondary h-11 w-full justify-center px-3.5"
               onClick={() => {
                 addToList({ id: i.id, kind: "shelf", name: i.name, detail: `${amount} · circa ${money(estimate)} · da prendere in negozio` });
                 notify(`${i.name} aggiunto alla lista`);
