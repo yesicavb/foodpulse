@@ -11,6 +11,29 @@ import { track } from "@/lib/analytics";
 import type { CategoryId, Store } from "@/lib/types";
 import { useApp } from "@/store/AppStore";
 
+// Original partner images, served alongside existing local product photos.
+const STORE_IMAGES: Readonly<Record<string, string>> = {
+  "bottega-carne": "bottega-della-carne.jpg",
+  "regno-pasta": "il-regno-della-pasta.png",
+  "tipici-sud": "prodotti-tipici-del-sud.png",
+};
+
+function PartnerImage({ store, selected = false, current = false }: { store: Store; selected?: boolean; current?: boolean }) {
+  const file = store.catalog ? STORE_IMAGES[store.catalog] : undefined;
+  const [failed, setFailed] = useState(false);
+  if (!file || failed) return (
+    <span className={current ? "grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-600" : `grid h-11 w-11 shrink-0 place-items-center rounded-xl ${selected ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-600"}`}>
+      {selected ? <Check size={20} /> : <StoreIcon size={current ? 22 : 20} />}
+    </span>
+  );
+  return (
+    <span className={`relative shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-white ${current ? "h-12 w-12" : "h-14 w-16"}`}>
+      <img src={`products/${file}`} alt="" className={`h-full w-full ${store.catalog === "tipici-sud" ? "object-cover" : "object-contain"}`} onError={() => setFailed(true)} />
+      {selected && <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-tl-lg bg-brand-600 text-white"><Check size={13} aria-hidden="true" /></span>}
+    </span>
+  );
+}
+
 export function ServiceBadges({ store }: { store: Store }) {
   return (
     <span className="flex flex-wrap gap-1.5">
@@ -65,9 +88,7 @@ export function StorePicker() {
         </p>
         {store ? (
           <button type="button" onClick={openPicker} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left text-ink-900 transition hover:bg-brand-50">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-600">
-              <StoreIcon size={22} />
-            </span>
+            <PartnerImage key={store.id} store={store} current />
             <span className="min-w-0 flex-1">
               <span className="block text-[15px] font-bold leading-snug">{store.name}</span>
               <span className="mt-0.5 block text-[12.5px] leading-snug text-ink-500">
@@ -143,9 +164,7 @@ export function StorePicker() {
                     }}
                     className={`card flex gap-3 p-4 text-left transition ${selected ? "border-2 border-brand-600" : "hover:border-ink-200"}`}
                   >
-                    <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${selected ? "bg-brand-600 text-white" : "bg-ink-100 text-ink-600"}`}>
-                      {selected ? <Check size={20} /> : <StoreIcon size={20} />}
-                    </span>
+                    <PartnerImage key={s.id} store={s} selected={selected} />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
                         <span className="text-[15px] font-bold text-ink-900">{s.name}</span>
