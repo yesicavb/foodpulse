@@ -12,6 +12,24 @@ export interface Photo {
 }
 
 export const PHOTOS: Record<string, Photo> = {
+  "pt-bc-maiale": { src: "local:pt-bc-maiale.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-filoncini": { src: "local:pt-bc-filoncini.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-barilini": { src: "local:pt-bc-barilini.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-mozzarella": { src: "local:pt-bc-mozzarella.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-vitello": { src: "local:pt-bc-vitello.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-pane": { src: "local:pt-bc-pane.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-pollo": { src: "local:pt-bc-pollo.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-salsiccia": { src: "local:pt-bc-salsiccia.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-scamone": { src: "local:pt-bc-scamone.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-svizzere": { src: "local:pt-bc-svizzere.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-parmigiano": { src: "local:pt-bc-parmigiano.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-gnocchi": { src: "local:pt-bc-gnocchi.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-passata": { src: "local:pt-bc-passata.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-giardiniera": { src: "local:pt-bc-giardiniera.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-penne": { src: "local:pt-bc-penne.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-spaghetti": { src: "local:pt-bc-spaghetti.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-stracciatella": { src: "local:pt-bc-stracciatella.jpg", by: "FoodPulse", page: "" },
+  "pt-bc-tigelle": { src: "local:pt-bc-tigelle.jpg", by: "FoodPulse", page: "" },
   // PILOT products: the team's own photos (25 Nov 2026), served from site/products/
   "pt-mozzarella-bufala": { src: "local:pt-mozzarella-bufala.jpg", by: "FoodPulse", page: "" },
   "pt-olive": { src: "local:pt-olive.jpg", by: "FoodPulse", page: "" },
