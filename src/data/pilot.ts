@@ -123,7 +123,25 @@ interface ShopHours {
 }
 /** 7:00 – 13:00 split into 2-hour slots */
 const AM7 = ["7:00 – 9:00", "9:00 – 11:00", "11:00 – 13:00"];
+
+// Bottega della Carne: conservative pickup windows based on public opening listings,
+// pending direct confirmation from the shop (26 Nov 2026).
+const BC_AM = [...AM7, "13:00 – 13:30"];
+const BC_PM = ["16:30 – 18:30", "18:30 – 20:00"];
 export const SHOP_HOURS: Record<string, ShopHours> = {
+  "bottega-carne": {
+    name: "La Bottega della Carne",
+    city: "San Lazzaro di Savena",
+    hours: "Lun–Sab dalle 7:00 · Mar pomeriggio e Dom chiuso",
+    slots: {
+      1: [...BC_AM, ...BC_PM],
+      2: BC_AM,
+      3: [...BC_AM, ...BC_PM],
+      4: [...BC_AM, ...BC_PM],
+      5: [...BC_AM, ...BC_PM],
+      6: [...BC_AM, "16:30 – 18:30", "18:30 – 19:30"],
+    },
+  },
   "tipici-sud": {
     name: "Prodotti Tipici del Sud",
     city: "San Lazzaro di Savena",

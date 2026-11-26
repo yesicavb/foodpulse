@@ -948,6 +948,7 @@ export const EN: Record<string, string> = {
   "Salsiccia secca Napoli": "Neapolitan dry sausage",
   "Lun–Sab · Dom chiuso": "Mon–Sat · closed Sun",
   "Lun–Sab dalle 7:00 · Dom chiuso": "Mon–Sat from 7:00 · closed Sun",
+  "Lun–Sab dalle 7:00 · Mar pomeriggio e Dom chiuso": "Mon–Sat from 7:00 · closed Tue afternoon and Sun",
 };
 
 /** Texts with a changing part (number, name, date). $1, $2… are the parts captured in brackets. */
