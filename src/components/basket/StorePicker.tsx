@@ -14,7 +14,7 @@ import { useApp } from "@/store/AppStore";
 // Original partner images, served alongside existing local product photos.
 const STORE_IMAGES: Readonly<Record<string, string>> = {
   "bottega-carne": "bottega-della-carne.jpg",
-  "regno-pasta": "il-regno-della-pasta.jpeg",
+
   "tipici-sud": "prodotti-tipici-del-sud.png",
 };
 
