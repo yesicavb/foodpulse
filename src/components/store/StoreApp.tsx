@@ -42,6 +42,7 @@ import { formatDayShort, money } from "@/lib/format";
 import { useApp } from "@/store/AppStore";
 import { QrScanner } from "./QrScanner";
 import { StoreStats } from "./StoreStats";
+import { StoreProduction } from "./StoreProduction";
 import { DemoBar } from "@/components/ui/DemoBar";
 import { PickupRating, WeeklyFeedbackCard } from "./StoreFeedback";
 
@@ -392,6 +393,7 @@ export function StoreApp({
           <StoreStats orders={list} />
         ) : (
           <>
+            {orders && <StoreProduction orders={orders} stale={loadError} />}
             <div
               role="tablist"
               aria-label="Filtra gli ordini"
