@@ -9,7 +9,7 @@ import type { CategoryId, FreshProduct, IconKey } from "@/lib/types";
 /** max units of 100 g per product (= 5 kg) */
 export const MAX_WEIGHT_UNITS = 50;
 
-type Item = [id: string, name: string, desc: string, category: CategoryId, perKg: number, icon: IconKey];
+type Item = [id: string, name: string, desc: string, category: CategoryId, price: number, icon: IconKey, perPiece?: boolean];
 
 const CATALOGS: Record<string, Item[]> = {
   // Prodotti tipici del sud · San Lazzaro di Savena
@@ -32,8 +32,21 @@ const CATALOGS: Record<string, Item[]> = {
     ["pt-biscotti", "Biscotti", "Dolci della casa", "panetteria", 25, "croissant"],
     ["pt-raviole", "Raviole", "Dolci della casa", "panetteria", 25, "croissant"],
   ],
-  // La bottega della carne: catalogue still to come
-  "bottega-carne": [],
+  // La Bottega della Carne · San Lazzaro di Savena
+  "bottega-carne": [
+    ["pt-bc-salsiccia", "Salsiccia Bologna", "Salsiccia fresca", "carne", 12.90, "drumstick"],
+    ["pt-bc-pollo", "Petto di pollo", "Carne fresca", "carne", 18.90, "drumstick"],
+    ["pt-bc-scamone", "Scamone di scottona", "Carne bovina", "carne", 31.90, "beef"],
+    ["pt-bc-svizzere", "Svizzere speck scamorza e rucola", "Preparazione di macelleria", "carne", 18.90, "beef"],
+    ["pt-bc-vitello", "Braciole di vitello", "Carne fresca", "carne", 31.90, "beef"],
+    ["pt-bc-maiale", "Braciole di maiale", "Carne fresca", "carne", 12.90, "beef"],
+    ["pt-bc-pane", "Pane fresco", "Pane", "panetteria", 8.90, "wheat"],
+    ["pt-bc-filoncini", "Filoncini", "Pane", "panetteria", 1, "wheat", true],
+    ["pt-bc-barilini", "Barilini", "Pane", "panetteria", 0.45, "wheat", true],
+    ["pt-bc-mozzarella", "Nodi di mozzarella", "Formaggio fresco", "latticini", 20.90, "milk"],
+    ["pt-bc-stracciatella", "Stracciatella", "Formaggio fresco", "latticini", 20.90, "milk"],
+    ["pt-bc-parmigiano", "Parmigiano Reggiano 30 mesi", "Formaggio stagionato", "latticini", 35.90, "milk"],
+  ],
   // FoodPulse test store: a few products to try the pilot without disturbing the real shops
   prova: [
     ["pt-prova-mozzarella", "Mozzarella di bufala (prova)", "Prodotto di prova", "latticini", 16, "salad"],
@@ -60,6 +73,14 @@ const SHOP_ROWS: Record<string, ShopRow[]> = {
     ["pt-salame-napoli", "Salame Napoli", "Salume stagionato", 18.5, "kg"],
     ["pt-salsiccia-secca", "Salsiccia secca Napoli", "Salume stagionato", 18.5, "kg"],
   ],
+  "bottega-carne": [
+    ["pt-bc-giardiniera", "Giardiniera in olio", "I Contadini", 15.90, "pacco"],
+    ["pt-bc-passata", "Passata di pomodoro Pera d'Abruzzo 550 g", "Rustichella d'Abruzzo", 6, "pacco"],
+    ["pt-bc-tigelle", "Tigelle classiche/rustiche", "Tigelle", 5.95, "pacco"],
+    ["pt-bc-penne", "Penne di semola di grano duro", "Filotea", 3.20, "pacco"],
+    ["pt-bc-spaghetti", "Spaghetti integrali trafilati al bronzo", "Rustichella d'Abruzzo", 4.10, "pacco"],
+    ["pt-bc-gnocchi", "Gnocchi di patate", "Rustichella d'Abruzzo", 3.90, "pacco"],
+  ],
   prova: [["pt-prova-biscotti", "Biscotti (prova)", "Prodotto di prova", 25, "kg"]],
 };
 export const PILOT_SHOP_ITEMS: ShopItem[] = Object.entries(SHOP_ROWS).flatMap(([catalog, rows]) =>
@@ -69,20 +90,20 @@ export const shopItemsOf = (catalog?: string) => PILOT_SHOP_ITEMS.filter((i) => 
 
 
 export const PILOT_PRODUCTS: FreshProduct[] = Object.entries(CATALOGS).flatMap(([catalog, items]) =>
-  items.map(([id, name, desc, category, perKg, icon]) => ({
+  items.map(([id, name, desc, category, price, icon, perPiece]) => ({
     id,
     name,
     desc,
     category,
-    unit: "100 g",
-    basePrice: Math.round(perKg * 10) / 100, // price of 100 g
-    weightKg: 0.1,
+    unit: perPiece ? "pezzo" : "100 g",
+    basePrice: perPiece ? price : Math.round(price * 10) / 100,
+    weightKg: perPiece ? 0 : 0.1, // piece weights not supplied; exclude from weight-based estimates
     tags: [],
     allergens: [],
     stock: 200,
     icon,
-    byWeight: true,
-    perKg,
+    byWeight: !perPiece,
+    ...(perPiece ? {} : { perKg: price }),
     catalog,
   }))
 );
