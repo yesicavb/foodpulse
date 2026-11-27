@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Award, ChevronRight, Bell, Leaf, LogOut, MessageSquareText, Package, RotateCcw, ShieldCheck, ShoppingBasket, UserRound, Utensils, Store as StoreIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Sheet } from "@/components/ui/Controls";
 import { initials, formatInt } from "@/lib/format";
 import { levelOf } from "@/lib/loyalty";
@@ -27,7 +27,29 @@ const TITLES: Record<Exclude<ProfileView, "home">, string> = {
 
 export function ProfileScreen() {
   const { profileView, setProfileView } = useApp();
-  if (profileView === "home") return <ProfileHome />;
+  const homeScroll = useRef<number | null>(null);
+  const previousView = useRef<ProfileView | null>(null);
+  const openSection = (view: ProfileView) => {
+    homeScroll.current = window.scrollY;
+    setProfileView(view);
+  };
+
+  // Restore after React has mounted the destination, not while the old
+  // (potentially shorter) screen is still in the document.
+  useLayoutEffect(() => {
+    if (previousView.current === profileView) return;
+    if (profileView === "home") {
+      if (homeScroll.current !== null) {
+        window.scrollTo({ top: homeScroll.current, behavior: "instant" });
+        homeScroll.current = null;
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+    previousView.current = profileView;
+  }, [profileView]);
+
+  if (profileView === "home") return <ProfileHome openSection={openSection} />;
   const VIEWS: Record<Exclude<ProfileView, "home">, ReactNode> = {
     personal: <PersonalSection />,
     interests: <DietSection />,
@@ -67,8 +89,8 @@ function Row({ icon, label, detail, onClick }: { icon: ReactNode; label: string;
   );
 }
 
-function ProfileHome() {
-  const { data, account, setProfileView, logout, resetDemo, notify, linkStoreCode, pilot } = useApp();
+function ProfileHome({ openSection }: { openSection: (view: ProfileView) => void }) {
+  const { data, account, logout, resetDemo, notify, linkStoreCode, pilot } = useApp();
   const [storeSheet, setStoreSheet] = useState(false);
   if (!data || !account) return null;
   const p = data.profile;
@@ -92,7 +114,7 @@ function ProfileHome() {
         </div>
         <button
           type="button"
-          onClick={() => setProfileView("loyalty")}
+          onClick={() => openSection("loyalty")}
           className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-50 px-3.5 py-2.5 text-left transition hover:bg-brand-100"
         >
           <span className="flex items-center gap-2 text-[14px] font-bold text-brand-800">
@@ -115,19 +137,19 @@ function ProfileHome() {
       <section aria-labelledby="pf-activity">
         <h2 id="pf-activity" className="eyebrow mb-2 px-1">La tua attività</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<Package size={20} className="text-brand-600" />} label="Storico prenotazioni" detail={pastOrders ? `${pastOrders} prenotazioni` : "Consulta le tue prenotazioni passate"} onClick={() => setProfileView("orders")} />
-          <Row icon={<Leaf size={20} className="text-brand-600" />} label="Il mio impatto" detail="Risparmio, cibo non sprecato e CO₂" onClick={() => setProfileView("impact")} />
-          <Row icon={<MessageSquareText size={20} className="text-brand-600" />} label="I miei feedback" detail={toFeedback ? `${toFeedback} ordine da valutare` : `${data.feedbacks.length} inviati`} onClick={() => setProfileView("feedbacks")} />
+          <Row icon={<Package size={20} className="text-brand-600" />} label="Storico prenotazioni" detail={pastOrders ? `${pastOrders} prenotazioni` : "Consulta le tue prenotazioni passate"} onClick={() => openSection("orders")} />
+          <Row icon={<Leaf size={20} className="text-brand-600" />} label="Il mio impatto" detail="Risparmio, cibo non sprecato e CO₂" onClick={() => openSection("impact")} />
+          <Row icon={<MessageSquareText size={20} className="text-brand-600" />} label="I miei feedback" detail={toFeedback ? `${toFeedback} ordine da valutare` : `${data.feedbacks.length} inviati`} onClick={() => openSection("feedbacks")} />
         </div>
       </section>
 
       <section aria-labelledby="pf-info">
         <h2 id="pf-info" className="eyebrow mb-2 px-1">Informazioni e preferenze</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<UserRound size={20} className="text-brand-600" />} label="Dati personali" detail="Nome, cognome e indirizzo" onClick={() => setProfileView("personal")} />
-          <Row icon={<Utensils size={20} className="text-brand-600" />} label="Preferenze alimentari" detail="Alimentazione, gusti e preferiti" onClick={() => setProfileView("diet")} />
-          <Row icon={<ShoppingBasket size={20} className="text-brand-600" />} label="Le mie abitudini di spesa" detail="Famiglia, budget e priorità" onClick={() => setProfileView("habits")} />
-          <Row icon={<ShieldCheck size={20} className="text-brand-600" />} label="Allergie e intolleranze" detail="Facoltativo" onClick={() => setProfileView("health")} />
+          <Row icon={<UserRound size={20} className="text-brand-600" />} label="Dati personali" detail="Nome, cognome e indirizzo" onClick={() => openSection("personal")} />
+          <Row icon={<Utensils size={20} className="text-brand-600" />} label="Preferenze alimentari" detail="Alimentazione, gusti e preferiti" onClick={() => openSection("diet")} />
+          <Row icon={<ShoppingBasket size={20} className="text-brand-600" />} label="Le mie abitudini di spesa" detail="Famiglia, budget e priorità" onClick={() => openSection("habits")} />
+          <Row icon={<ShieldCheck size={20} className="text-brand-600" />} label="Allergie e intolleranze" detail="Facoltativo" onClick={() => openSection("health")} />
         </div>
         <p className="mt-2 px-1 text-[12px] leading-snug text-ink-500">Le preferenze sono facoltative: non servono per prenotare.</p>
       </section>
@@ -135,7 +157,7 @@ function ProfileHome() {
       <section aria-labelledby="pf-account">
         <h2 id="pf-account" className="eyebrow mb-2 px-1">Impostazioni account</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<Bell size={20} className="text-ink-500" />} label="Notifiche e privacy" onClick={() => setProfileView("notifications")} />
+          <Row icon={<Bell size={20} className="text-ink-500" />} label="Notifiche e privacy" onClick={() => openSection("notifications")} />
           {account.demo && (
             <Row
               icon={<RotateCcw size={20} className="text-ink-500" />}

@@ -48,7 +48,6 @@ export function Saved() {
             if (!(await saveProfile())) return;
             notify(pilot ? "Dati salvati" : "Dati salvati ✓ Lo Smart Basket è aggiornato");
             setProfileView("home");
-            window.scrollTo({ top: 0 });
           } finally {
             setSaving(false);
           }
