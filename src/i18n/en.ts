@@ -4,6 +4,10 @@
  * A text that is missing here simply stays in Italian, so the app never breaks.
  */
 export const EN: Record<string, string> = {
+  "Salvataggio…": "Saving…",
+  "Modifica non salvata. Riprova.": "Change not saved. Try again.",
+  "Impossibile uscire: salva i dati e controlla la connessione.": "Unable to sign out: save your data and check your connection.",
+  "Impossibile uscire. Riprova.": "Unable to sign out. Try again.",
   "Dati personali": "Personal details",
   "Nome, cognome e indirizzo": "Name, surname and address",
   "Storico prenotazioni": "Booking history",

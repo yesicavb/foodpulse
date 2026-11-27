@@ -34,19 +34,27 @@ function Single({ options, value, onChange, label }: { options: string[]; value:
 
 /** Confirm button at the bottom of every profile section (changes are kept as you type; this confirms and returns to the profile) */
 export function Saved() {
-  const { notify, setProfileView, pilot } = useApp();
+  const { notify, setProfileView, pilot, saveProfile } = useApp();
+  const [saving, setSaving] = useState(false);
   return (
     <div className="sticky bottom-3 z-10 pt-2">
       <button
         type="button"
         className="btn-primary h-12 w-full shadow-card"
-        onClick={() => {
-          notify(pilot ? "Dati salvati" : "Dati salvati ✓ Lo Smart Basket è aggiornato");
-          setProfileView("home");
-          window.scrollTo({ top: 0 });
+        disabled={saving}
+        onClick={async () => {
+          setSaving(true);
+          try {
+            if (!(await saveProfile())) return;
+            notify(pilot ? "Dati salvati" : "Dati salvati ✓ Lo Smart Basket è aggiornato");
+            setProfileView("home");
+            window.scrollTo({ top: 0 });
+          } finally {
+            setSaving(false);
+          }
         }}
       >
-        <CheckCircle2 size={18} aria-hidden="true" /> Salva
+        <CheckCircle2 size={18} aria-hidden="true" /> {saving ? "Salvataggio…" : "Salva"}
       </button>
     </div>
   );

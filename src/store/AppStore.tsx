@@ -128,6 +128,7 @@ interface Ctx {
   startDemo: () => void;
   resetDemo: () => void;
   logout: () => void;
+  saveProfile: () => Promise<boolean>;
   updateProfile: (patch: Partial<Profile>) => void;
   /** heart on a product card: saves or removes a product from the favourites */
   toggleFavorite: (id: string) => void;
@@ -200,6 +201,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** last data object loaded from or saved to Supabase, to skip saving unchanged data */
   const lastCloudData = useRef<UserData | null>(null);
+  const saveQueue = useRef<Promise<boolean>>(Promise.resolve(true));
+  const loggingOut = useRef(false);
+  const latestData = useRef<{ userId: string; snapshot: UserData } | null>(null);
 
   const notify = useCallback((msg: string) => {
     setToast(msg);
@@ -282,24 +286,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Supabase storage: save the logged-in user's data shortly after each change
   const pendingSave = useRef<{ userId: string; snapshot: UserData } | null>(null);
-  const saveNow = useCallback(async () => {
-    const job = pendingSave.current;
+  const saveNow = useCallback((explicit?: { userId: string; snapshot: UserData }): Promise<boolean> => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    const job = explicit ?? pendingSave.current;
     pendingSave.current = null;
-    if (!supabase || !job) return;
-    const { error } = await supabase
-      .from(USER_DATA_TABLE)
-      .upsert({ user_id: job.userId, data: job.snapshot, updated_at: new Date().toISOString() });
-    if (error) notify("Modifica non salvata online. Controlla la connessione.");
-    else lastCloudData.current = job.snapshot;
+    if (!supabase || !job) return saveQueue.current;
+    const client = supabase;
+    // Serialize writes so an older request cannot overwrite a more recent edit.
+    const task = saveQueue.current.catch(() => false).then(async () => {
+      if (job.snapshot === lastCloudData.current) return true;
+      try {
+        const { error } = await client.from(USER_DATA_TABLE)
+          .upsert({ user_id: job.userId, data: job.snapshot, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        if (error) throw error;
+        lastCloudData.current = job.snapshot;
+        return true;
+      } catch {
+        // Keep the latest unsaved snapshot in memory for the next save attempt.
+        if (!pendingSave.current && latestData.current?.userId === job.userId)
+          pendingSave.current = latestData.current;
+        notify("Modifica non salvata online. Controlla la connessione.");
+        return false;
+      }
+    });
+    saveQueue.current = task;
+    return task;
   }, [notify]);
 
   useEffect(() => {
+    latestData.current = account && data ? { userId: account.id, snapshot: data } : null;
     if (!supabase || !account?.cloud || !data || data === lastCloudData.current) return;
     pendingSave.current = { userId: account.id, snapshot: data };
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void saveNow(), CLOUD_SAVE_DELAY_MS);
+    if (!loggingOut.current) saveTimer.current = setTimeout(() => void saveNow(), CLOUD_SAVE_DELAY_MS);
   }, [account, data, saveNow]);
+
+  const saveProfile = useCallback(async (): Promise<boolean> => {
+    if (!account || !data) return false;
+    if (!account.cloud || !supabase) {
+      try {
+        if (state) window.localStorage.setItem(KEY, JSON.stringify(localPart(state)));
+        return !!state;
+      } catch {
+        notify("Modifica non salvata. Riprova.");
+        return false;
+      }
+    }
+    const job = latestData.current?.userId === account.id ? latestData.current : { userId: account.id, snapshot: data };
+    return saveNow(job);
+  }, [account, data, state, saveNow, notify]);
 
   // Save right away when the page is hidden or closed, so no change is lost
   useEffect(() => {
@@ -437,19 +472,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setQrOrderId(null);
   }, []);
 
-  const logout = useCallback(() => {
-    if (account?.cloud && supabase) {
-      const client = supabase;
-      // save any pending change first, then end the Supabase session
-      void saveNow().finally(() => client.auth.signOut());
-      lastCloudData.current = null;
+  const logout = useCallback(async () => {
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    try {
+      if (account?.cloud && supabase) {
+        // Keep the account open until the latest state has been confirmed by the server.
+        let job = latestData.current;
+        while (job?.userId === account.id) {
+          if (!(await saveNow(job))) {
+            notify("Impossibile uscire: salva i dati e controlla la connessione.");
+            return;
+          }
+          if (latestData.current?.snapshot === job.snapshot) break;
+          job = latestData.current;
+        }
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          notify("Impossibile uscire. Riprova.");
+          return;
+        }
+        lastCloudData.current = null;
+        pendingSave.current = null;
+      } else if (account && !(await saveProfile())) {
+        return;
+      }
+      setState((s) => (s ? { ...localPart(s), session: null } : s));
+      setStaffStore(undefined);
+      setTabState("basket");
+      setProfileView("home");
+      setQrOrderId(null);
+    } catch {
+      notify("Impossibile uscire. Riprova.");
+    } finally {
+      loggingOut.current = false;
     }
-    setState((s) => (s ? { ...localPart(s), session: null } : s));
-    setStaffStore(undefined);
-    setTabState("basket");
-    setProfileView("home");
-    setQrOrderId(null);
-  }, [account, saveNow]);
+  }, [account, saveNow, saveProfile, notify]);
 
   // supermarket account? (store_staff row; a store code given at sign-up is linked at the first login)
   const accountId = account?.id;
@@ -727,6 +785,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       startDemo,
       resetDemo,
       logout,
+      saveProfile,
       updateProfile,
       toggleFavorite,
       setOnboarded,
@@ -748,7 +807,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       dismissFeedback,
       sendAppFeedback,
     }),
-    [state, partnersReady, pilot, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
+    [state, partnersReady, pilot, recovering, requestPasswordReset, setNewPassword, account, data, store, tab, setTab, profileView, qrOrderId, toast, notify, register, staffStore, storeDemo, startStoreDemo, exitStoreDemo, linkStoreCode, login, loginWithGoogle, startDemo, resetDemo, logout, saveProfile, updateProfile, toggleFavorite, setOnboarded, markFeedbackSeen, setStore, setAdvance, addToCart, setCartQty, addToList, toggleListItem, removeListItem, dismissSuggestion, setSuggestionQty, regenerate, placeOrder, completeOrder, cancelOrder, submitFeedback, dismissFeedback, sendAppFeedback]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
