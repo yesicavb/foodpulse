@@ -65,7 +65,8 @@ export function PilotShop() {
 
 function PilotProduct({ product: p }: { product: FreshProduct }) {
   const { data, store, addToCart, setCartQty, notify } = useApp();
-  const [units, setUnits] = useState(3);
+  const byWeight = p.byWeight !== false;
+  const [units, setUnits] = useState(byWeight ? 3 : 1);
   if (!data || !store) return null;
   const pi = priceInfo(p, store, data.advance);
   const inCart = data.cart.find((l) => l.productId === p.id);
@@ -79,8 +80,8 @@ function PilotProduct({ product: p }: { product: FreshProduct }) {
           <h3 className="mt-1 text-[15.5px] font-bold leading-tight text-ink-900">{p.name}</h3>
           <p className="text-[12.5px] text-ink-500">{p.desc}</p>
           <p className="mt-1 text-[13px] tabular-nums text-ink-700">
-            <strong className="text-ink-900">{money(pi.final * 10)}/kg</strong>
-            {pi.pct > 0 && <span className="ml-1.5 text-ink-400 line-through">{money(pi.price * 10)}/kg</span>}
+            <strong className="text-ink-900">{byWeight ? `${money(pi.final * 10)}/kg` : `${money(pi.final)} al pezzo`}</strong>
+            {pi.pct > 0 && <span className="ml-1.5 text-ink-400 line-through">{byWeight ? `${money(pi.price * 10)}/kg` : money(pi.price)}</span>}
           </p>
         </div>
       </div>
@@ -90,8 +91,8 @@ function PilotProduct({ product: p }: { product: FreshProduct }) {
           <QtyStepper
             value={qty}
             min={inCart ? 0 : 1}
-            max={MAX_WEIGHT_UNITS}
-            format={kgLabel}
+            max={byWeight ? MAX_WEIGHT_UNITS : 20}
+            format={byWeight ? kgLabel : (n) => `${n} pz`}
             label={p.name}
             onChange={(n) => (inCart ? setCartQty(p.id, n) : setUnits(Math.max(1, n)))}
           />
@@ -106,7 +107,7 @@ function PilotProduct({ product: p }: { product: FreshProduct }) {
               aria-label={`Aggiungi ${p.name} al carrello`}
               onClick={() => {
                 addToCart(p.id, units);
-                notify(`${p.name} · ${kgLabel(units)} aggiunto al carrello`);
+                notify(`${p.name} · ${byWeight ? kgLabel(units) : `${units} pz`} aggiunto al carrello`);
               }}
             >
               <ShoppingCart size={19} />

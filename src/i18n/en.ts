@@ -1047,6 +1047,8 @@ export const EN: Record<string, string> = {
 
 /** Texts with a changing part (number, name, date). $1, $2… are the parts captured in brackets. */
 export const EN_PATTERNS: [RegExp, string][] = [
+  [/^(.+) al pezzo$/, "{1} each"],
+  [/^(\d+) pz$/, "{1} pcs"],
   [/^Negozi a (.+)$/, "Shops in {1}"],
   [/^(.+) \(prova\)$/, "{1} (test)"],
   [/^(.+) · ([\d,]+ kg) aggiunto al carrello$/, "{1} · {2} added to the cart"],
