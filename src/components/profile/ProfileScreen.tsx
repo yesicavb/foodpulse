@@ -7,6 +7,9 @@ import { initials, formatInt } from "@/lib/format";
 import { levelOf } from "@/lib/loyalty";
 import { PROFILE_SECTIONS, completion } from "@/lib/profile";
 import { useApp, type ProfileView } from "@/store/AppStore";
+
+/** pilot: sections shown without opening "Altro" */
+const PILOT_SECTIONS = ["personal", "health", "notifications"];
 import { FeedbacksView, ImpactView, LoyaltyView, OrdersView } from "./Activity";
 import { DietSection, GoalsSection, HabitsSection, HealthSection, InterestsSection, NotificationsSection, PersonalSection } from "./ProfileSections";
 
@@ -67,8 +70,9 @@ function Row({ icon, label, detail, onClick }: { icon: ReactNode; label: string;
 }
 
 function ProfileHome() {
-  const { data, account, setProfileView, logout, resetDemo, notify, linkStoreCode } = useApp();
+  const { data, account, setProfileView, logout, resetDemo, notify, linkStoreCode, pilot } = useApp();
   const [storeSheet, setStoreSheet] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   if (!data || !account) return null;
   const p = data.profile;
   const comp = completion(p);
@@ -100,7 +104,7 @@ function ProfileHome() {
           </span>
           <span className="text-[12.5px] font-semibold text-brand-700">Punti e voucher</span>
         </button>
-        <div className="mt-4">
+        {!pilot && <div className="mt-4">
           <div className="flex items-center justify-between text-[13px]">
             <span className="font-semibold text-ink-700">Profilo completo al {comp.pct}%</span>
             {comp.pct < 100 && <span className="text-ink-500">Più completo = suggerimenti migliori</span>}
@@ -108,7 +112,7 @@ function ProfileHome() {
           <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-ink-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={comp.pct} aria-label="Completamento del profilo">
             <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${comp.pct}%` }} />
           </div>
-        </div>
+        </div>}
       </section>
 
       <section aria-labelledby="pf-activity">
@@ -124,7 +128,8 @@ function ProfileHome() {
       <section aria-labelledby="pf-info">
         <h2 id="pf-info" className="eyebrow mb-2 px-1">Il tuo profilo</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          {PROFILE_SECTIONS.map((s) => {
+          {/* pilot: the questions that only feed the Smart Basket sit under "Altro (facoltativo)" */}
+          {PROFILE_SECTIONS.filter((s) => !pilot || showMore || PILOT_SECTIONS.includes(s.id)).map((s) => {
             const missing = comp.missing.includes(s.id);
             const optional = s.id === "health" || s.id === "notifications";
             return (
@@ -137,6 +142,16 @@ function ProfileHome() {
               />
             );
           })}
+          {pilot && (
+            <button type="button" onClick={() => setShowMore((v) => !v)} aria-expanded={showMore} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-ink-50">
+              <CircleDashed size={20} className="shrink-0 text-ink-400" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[14.5px] font-semibold text-ink-900">{showMore ? "Mostra meno" : "Altro (facoltativo)"}</span>
+                {!showMore && <span className="block text-[12.5px] text-ink-500">Interessi, abitudini, budget: non servono per prenotare</span>}
+              </span>
+              <ChevronRight size={18} className={`shrink-0 text-ink-400 transition ${showMore ? "-rotate-90" : "rotate-90"}`} />
+            </button>
+          )}
         </div>
       </section>
 

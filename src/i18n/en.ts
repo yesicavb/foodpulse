@@ -1053,6 +1053,9 @@ export const EN: Record<string, string> = {
   "Nessun promemoria. Aggiungili dalla pagina del negozio con \"Alla lista\".": "No reminders. Add them from the shop page with \"Add to list\".",
   "Scegli la quantità e ritira quando vuoi.": "Choose the quantity and pick up when it suits you.",
   "Al banco del negozio": "At the shop counter",
+  "Altro (facoltativo)": "More (optional)",
+  "Mostra meno": "Show less",
+  "Interessi, abitudini, budget: non servono per prenotare": "Interests, habits, budget: not needed to book",
 };
 
 /** Texts with a changing part (number, name, date). $1, $2… are the parts captured in brackets. */
