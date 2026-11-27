@@ -37,7 +37,7 @@ export function OrderTicket({ order, showQr = true }: { order: Order; showQr?: b
               ? "Inquadra il QR sul display del locker per aprire lo scomparto"
               : order.method === "delivery"
                 ? "Mostra il QR al momento della consegna"
-                : "Mostra il QR al banco ritiri del supermercato"}
+                : "Mostra il QR al banco del negozio"}
           </p>
         </div>
       )}
@@ -53,7 +53,7 @@ export function OrderTicket({ order, showQr = true }: { order: Order; showQr?: b
           <dd className="text-[12.5px] tabular-nums text-ink-600">{order.slot}</dd>
         </div>
         <div className="col-span-2">
-          <dt className="text-[11.5px] text-ink-500">Supermercato</dt>
+          <dt className="text-[11.5px] text-ink-500">Negozio</dt>
           <dd className="font-bold text-ink-900">{order.storeName}</dd>
           <dd className="text-[12.5px] text-ink-600">{order.method === "delivery" ? order.deliveryAddress : order.pickupDetail}</dd>
         </div>
@@ -81,10 +81,10 @@ export function OrderTicket({ order, showQr = true }: { order: Order; showQr?: b
             {order.lines.map((l) => (
               <tr key={l.productId} className="border-t border-ink-100">
                 <td className="py-1.5 pr-2 text-ink-800">
-                  {l.byWeight ? kgLabel(l.qty) : `${l.qty}×`} {l.name} <span className="text-[11.5px] font-bold text-brand-700">−{l.pct}%</span>
+                  {l.byWeight ? kgLabel(l.qty) : `${l.qty}×`} {l.name} {l.pct > 0 && <span className="text-[11.5px] font-bold text-brand-700">−{l.pct}%</span>}
                 </td>
                 <td className="py-1.5 text-right tabular-nums">
-                  <span className="mr-1 text-[11.5px] text-ink-400 line-through">{money(l.unitPrice * l.qty)}</span>
+                  {l.pct > 0 && <span className="mr-1 text-[11.5px] text-ink-400 line-through">{money(l.unitPrice * l.qty)}</span>}
                   <span className="font-semibold text-ink-900">{money(l.unitFinal * l.qty)}</span>
                 </td>
               </tr>
@@ -92,8 +92,12 @@ export function OrderTicket({ order, showQr = true }: { order: Order; showQr?: b
           </tbody>
         </table>
         <div className="mt-2 space-y-1 border-t border-ink-100 pt-2 text-[13.5px]">
-          <div className="flex justify-between text-ink-600"><span>Prezzo originale</span><span className="tabular-nums">{money(order.subtotal)}</span></div>
-          <div className="flex justify-between font-semibold text-brand-700"><span>Risparmio</span><span className="tabular-nums">−{money(order.discount + order.voucherValue)}</span></div>
+          {order.discount + order.voucherValue > 0 && (
+            <>
+              <div className="flex justify-between text-ink-600"><span>Prezzo originale</span><span className="tabular-nums">{money(order.subtotal)}</span></div>
+              <div className="flex justify-between font-semibold text-brand-700"><span>Risparmio</span><span className="tabular-nums">−{money(order.discount + order.voucherValue)}</span></div>
+            </>
+          )}
           {order.fee > 0 && <div className="flex justify-between text-ink-600"><span>Consegna</span><span className="tabular-nums">{money(order.fee)}</span></div>}
           <div className="flex justify-between font-extrabold text-ink-900"><span>Totale</span><span className="tabular-nums">{money(order.total)}</span></div>
         </div>

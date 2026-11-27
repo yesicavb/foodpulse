@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, MessageSquareHeart, QrCode, ShoppingCart, Sparkles, User } from "lucide-react";
+import { CheckCircle2, MessageSquareHeart, QrCode, ShoppingCart, Sparkles, Store as StoreIcon, User } from "lucide-react";
 import { LanguageSwitch } from "@/i18n/LanguageProvider";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/ui/Logo";
@@ -19,7 +19,7 @@ const TABS: { id: Tab; label: string; icon: typeof Sparkles }[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { tab, setTab, data, store, toast, setProfileView, account, logout } = useApp();
+  const { tab, setTab, data, store, toast, setProfileView, account, logout, pilot } = useApp();
   const { unseen: statusNews } = useOrderStatus();
   /** orange dot on Feedback until the user opens it once (accounts that already sent feedback never see it) */
   const feedbackDot = !!data && !data.feedbackTabSeen && !(data.appFeedbacks?.length);
@@ -34,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="sticky top-0 z-40">
       {account?.demo && <DemoBar onExit={logout} />}
       <header className="gutter flex items-center justify-between gap-3 bg-cream/95 pb-3 pt-3 backdrop-blur">
-        <button type="button" onClick={() => setTab("basket")} aria-label="Vai allo Smart Basket">
+        <button type="button" onClick={() => setTab("basket")} aria-label={pilot ? "Vai al negozio" : "Vai allo Smart Basket"}>
           <Logo size={32} wordSize={18} />
         </button>
         <div className="flex items-center gap-2">
@@ -69,7 +69,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav aria-label="Navigazione principale" className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl bg-white/95 pb-[max(8px,env(safe-area-inset-bottom))] shadow-float backdrop-blur">
         <ul className="grid grid-cols-4 gap-1 px-2 pt-2">
-          {TABS.map(({ id, label, icon: Icon }) => {
+          {TABS.map(({ id, label: tabLabel, icon: TabIcon }) => {
+            // pilot: the first tab is the partner shop's page, not the Smart Basket
+            const label = pilot && id === "basket" ? "Negozio" : tabLabel;
+            const Icon = pilot && id === "basket" ? StoreIcon : TabIcon;
             const active = tab === id;
             const badge = id === "cart" ? cartCount : id === "qr" ? activeOrders : 0;
             return (

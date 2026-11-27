@@ -479,9 +479,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [accountId, accountCloud]);
 
   const linkStoreCode: Ctx["linkStoreCode"] = useCallback(async (code) => {
-    if (!account?.cloud) return { ok: false, error: "Per collegare un supermercato serve un account registrato (non la demo)." };
+    if (!account?.cloud) return { ok: false, error: "Per collegare un negozio serve un account registrato (non la demo)." };
     if ((await storeCodeKind(code)) === "free")
-      return { ok: false, error: "Questo codice è per un nuovo negozio: esci e usa \"Sei un supermercato?\" → \"Registra il tuo negozio\"." };
+      return { ok: false, error: "Questo codice è per un nuovo negozio: esci e usa \"Hai un negozio partner?\" → \"Registra il tuo negozio\"." };
     const r = await claimStoreCode(code);
     if (!r.storeId) return { ok: false, error: r.error ?? "Codice negozio non valido." };
     track("store_account_linked");
@@ -595,7 +595,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setQrOrderId(order.id);
       const who = `${data.profile.firstName ?? ""} ${data.profile.lastName ?? ""}`.trim() || account?.email || "Cliente";
       void sendToStore(order, who, !!account?.cloud).then((ok) => {
-        if (!ok) notify("Prenotazione salvata, ma non ancora inviata al supermercato. Riproveremo.");
+        if (!ok) notify("Prenotazione salvata, ma non ancora inviata al negozio. Riproveremo.");
       });
       track("pre_order", {
         advance_days: order.advance,

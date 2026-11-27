@@ -210,6 +210,7 @@ export function addPartnerStores(rows: { id: string; name: string; address: stri
       name: h?.name ?? r.name,
       ...(h ? { hours: h.hours, slotsByDay: h.slots } : {}),
       partner: true,
+      services: { ...st.services, instore: st.services.instore && { ...st.services.instore, desk: "Al banco del negozio" } },
       priceIndex: 1,
       categoryPromos: {},
       unavailable: [],

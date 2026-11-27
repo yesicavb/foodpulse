@@ -7,7 +7,8 @@ import { ProductArt } from "@/components/ui/FoodArt";
 import { MAX_WEIGHT_UNITS, kgLabel, shopItemsOf, type ShopItem } from "@/data/pilot";
 import { money } from "@/lib/format";
 import { availableFresh, priceInfo } from "@/lib/pricing";
-import type { FreshProduct } from "@/lib/types";
+import type { CategoryId, FreshProduct } from "@/lib/types";
+import { CATEGORIES } from "@/data/config";
 import { useApp } from "@/store/AppStore";
 
 /** PILOT: the partner shop's own catalogue, sold by weight in steps of 100 g */
@@ -16,12 +17,19 @@ export function PilotShop() {
   if (!data || !store) return null;
   const products = availableFresh(store);
   const inStore = shopItemsOf(store.catalog);
+  // one heading per department, in the shop's own order (only when there is more than one)
+  const groups: [CategoryId, FreshProduct[]][] = [];
+  for (const p of products) {
+    const g = groups.find(([c]) => c === p.category);
+    if (g) g[1].push(p);
+    else groups.push([p.category, [p]]);
+  }
   return (
     <section aria-labelledby="pilot-title" className="space-y-3">
       <div>
         <p className="eyebrow">{store.name}</p>
         <h2 id="pilot-title" className="text-[20px] font-bold leading-tight text-ink-900">Prenota i prodotti del negozio</h2>
-        <p className="mt-1 text-[13.5px] leading-snug text-ink-600">Scegli quanto ne vuoi, a partire da 100 g, e ritira quando preferisci.</p>
+        <p className="mt-1 text-[13.5px] leading-snug text-ink-600">Scegli la quantità e ritira quando vuoi.</p>
         <p className="mt-2 flex items-center gap-1.5 rounded-xl bg-orange-50 px-3 py-2 text-[12.5px] font-semibold text-orange-800">
           <Sparkles size={14} className="shrink-0" aria-hidden="true" /> Sconti per chi prenota in anticipo: prossimamente
         </p>
@@ -29,13 +37,18 @@ export function PilotShop() {
       {products.length === 0 ? (
         <p className="card p-5 text-center text-[14px] text-ink-500">Il catalogo di questo negozio arriva a breve.</p>
       ) : (
-        <ul className="grid gap-2.5">
-          {products.map((p) => (
-            <li key={p.id}>
-              <PilotProduct product={p} />
-            </li>
-          ))}
-        </ul>
+        groups.map(([cat, items]) => (
+          <div key={cat} className="space-y-2.5">
+            {groups.length > 1 && <h3 className="px-1 pt-1 text-[15px] font-bold text-ink-900">{CATEGORIES[cat].label}</h3>}
+            <ul className="grid gap-2.5">
+              {items.map((p) => (
+                <li key={p.id}>
+                  <PilotProduct product={p} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
       )}
       {products.length > 0 && (
         <button type="button" className="btn-secondary h-11 w-full" onClick={() => setTab("cart")}>

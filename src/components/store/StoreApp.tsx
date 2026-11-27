@@ -259,7 +259,7 @@ export function StoreApp({
               type="button"
               onClick={onExit}
               className="grid h-9 w-9 place-items-center rounded-full border border-brand-100 bg-white text-ink-600 hover:bg-brand-50"
-              aria-label={demo ? "Esci dalla demo supermercato" : "Esci"}
+              aria-label={demo ? "Esci dalla demo negozio" : "Esci"}
             >
               <LogOut size={17} />
             </button>
@@ -274,7 +274,7 @@ export function StoreApp({
           aria-labelledby="desk-store"
         >
           <p className="text-[11.5px] font-bold uppercase tracking-wider text-leaf">
-            Area supermercato{demo ? " · demo" : ""}
+            Area negozio{demo ? " · demo" : ""}
           </p>
           <h1
             id="desk-store"
@@ -807,7 +807,7 @@ function ScanSheet({
           <p className="text-[13.5px] text-ink-600">
             Nessun ordine con codice{" "}
             <strong className="font-mono">{found.code}</strong> in questo punto
-            vendita. Controlla che il cliente abbia scelto questo supermercato.
+            vendita. Controlla che il cliente abbia scelto questo negozio.
           </p>
           <button type="button" className="btn-primary h-12" onClick={reset}>
             Riprova

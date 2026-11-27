@@ -65,7 +65,7 @@ export const CATEGORIES: Record<CategoryId, { label: string; tile: string; text:
 export const CATEGORY_ORDER: CategoryId[] = ["panetteria", "gastronomia", "carne", "pesce", "ortofrutta", "latticini"];
 
 export const METHOD_LABEL: Record<PickupMethod, string> = {
-  instore: "Ritiro in supermercato",
+  instore: "Ritiro in negozio",
   locker: "Ritiro presso locker",
   delivery: "Consegna a domicilio",
 };

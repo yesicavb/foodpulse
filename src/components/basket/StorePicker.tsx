@@ -5,7 +5,7 @@ import { ArrowLeft, Check, ChevronDown, ChevronRight, Lock, MapPin, Search, Stor
 import { useMemo, useState } from "react";
 import { Sheet } from "@/components/ui/Controls";
 import { CATEGORIES } from "@/data/config";
-import { CITIES, STORES } from "@/data/stores";
+import { CITIES, STORES, TEST_STORE_ID } from "@/data/stores";
 import { catalogSize } from "@/data/pilot";
 import { track } from "@/lib/analytics";
 import type { CategoryId, Store } from "@/lib/types";
@@ -57,11 +57,23 @@ export function ServiceBadges({ store }: { store: Store }) {
   );
 }
 
+const TEAM_KEY = "foodpulse-team";
+/** true on the team's own devices (opened once with ?team in the address) */
+function isTeamDevice() {
+  try {
+    if (new URLSearchParams(window.location.search).has("team")) localStorage.setItem(TEAM_KEY, "1");
+    return localStorage.getItem(TEAM_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** AREA A – supermarket selection */
 export function StorePicker() {
   const { store, setStore, notify, pilot } = useApp();
   // pilot: only partner shops with a catalogue; demo: the simulated stores
-  const pool = useMemo(() => STORES.filter((x) => (pilot ? catalogSize(x.catalog) > 0 : !x.catalog)), [pilot]);
+  // the test store is only for the team: open the app once with ?team in the address to see it on this device
+  const pool = useMemo(() => STORES.filter((x) => (pilot ? catalogSize(x.catalog) > 0 && (x.id !== TEST_STORE_ID || isTeamDevice()) : !x.catalog)), [pilot]);
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   // step 1: choose the city; step 2: choose one of its supermarkets

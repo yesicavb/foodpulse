@@ -126,7 +126,7 @@ function Welcome({ go }: { go: (v: View) => void }) {
 function StoreWelcome({ go }: { go: (v: View) => void }) {
   const { startStoreDemo } = useApp();
   return (
-    <AuthLayout title="Area supermercati" subtitle="Ricevi le prenotazioni dei clienti FoodPulse nel tuo punto vendita." back={() => go("welcome")}>
+    <AuthLayout title="Area negozi" subtitle="Ricevi le prenotazioni dei clienti FoodPulse nel tuo punto vendita." back={() => go("welcome")}>
       <ul className="grid gap-2.5">
         {[
           { icon: Inbox, t: "Gli ordini arrivano in tempo reale, con le note dei clienti" },
@@ -140,7 +140,7 @@ function StoreWelcome({ go }: { go: (v: View) => void }) {
       </ul>
       <div className="mt-8 grid gap-2.5">
         <button type="button" className="btn-primary h-12 text-[15px]" onClick={startStoreDemo}>
-          Prova la demo supermercato
+          Prova la demo
         </button>
         <button type="button" className="btn-secondary h-12 text-[15px]" onClick={() => go("storeRegister")}>
           Registra il tuo negozio

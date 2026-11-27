@@ -57,7 +57,7 @@ export function FeedbackSheet({ orderId, onClose }: { orderId: string | null; on
       }
     >
       <p className="text-[14px] leading-relaxed text-ink-600">
-        Ordine <strong>{order.id}</strong> da {order.storeName}. Ci vuole un minuto e aiuta il supermercato a migliorare.
+        Ordine <strong>{order.id}</strong> da {order.storeName}. Ci vuole un minuto e aiuta il negozio a migliorare.
       </p>
       <div className="mt-4 space-y-4">
         {FEEDBACK_QUESTIONS.map((q) => (

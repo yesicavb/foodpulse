@@ -13,11 +13,13 @@ import { AdvanceSelector } from "@/components/basket/AdvanceSelector";
 import { CheckoutSheet } from "./CheckoutSheet";
 
 export function CartScreen() {
-  const { data, store, setCartQty, setTab, toggleListItem, removeListItem } = useApp();
+  const { data, store, setCartQty, setTab, toggleListItem, removeListItem, pilot } = useApp();
   const [checkout, setCheckout] = useState(false);
   if (!data) return null;
   const t = cartTotals(data.cart, store, data.advance);
   const unavailable = data.cart.filter((l) => !isAvailable(l.productId, store));
+  // no booking discount (pilot): no strike-through prices, "−0%" or "you save 0,00 €"
+  const hasDiscount = t.discount > 0;
 
   const goAdd = () => {
     setTab("basket");
@@ -31,12 +33,12 @@ export function CartScreen() {
           <BasketHero size={190} />
           <h1 className="mt-4 max-w-[14ch] text-[26px] font-bold leading-tight tracking-tight text-ink-900">Il tuo carrello è ancora vuoto</h1>
           <p className="mt-2 max-w-[30ch] text-[14.5px] leading-relaxed text-ink-600">
-            {store ? "Aggiungi i tuoi prodotti preferiti o scopri la tua spesa intelligente generata dall'AI." : "Scegli un supermercato nello Smart Basket per iniziare."}
+            {pilot ? (store ? "Torna al negozio per aggiungere prodotti." : "Scegli un negozio per iniziare.") : store ? "Aggiungi i tuoi prodotti preferiti o scopri la tua spesa intelligente generata dall'AI." : "Scegli un supermercato nello Smart Basket per iniziare."}
           </p>
           <button type="button" className="btn-primary mt-5 h-12 w-full max-w-[320px] text-[15px]" onClick={() => setTab("basket")}>
-            Vai allo Smart Basket <ArrowRight size={18} />
+            {pilot ? "Vai al negozio" : "Vai allo Smart Basket"} <ArrowRight size={18} />
           </button>
-          {store && (
+          {store && !pilot && (
             <button
               type="button"
               onClick={goAdd}
@@ -53,7 +55,7 @@ export function CartScreen() {
         </div>
       ) : (
         <>
-          <SectionTitle eyebrow={store ? store.name : "Nessun supermercato"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare." />
+          <SectionTitle eyebrow={store ? store.name : "Nessun negozio"} title="Il mio carrello" subtitle="Prodotti freschi da prenotare." />
           <AdvanceSelector />
           <section aria-label="Prodotti da prenotare" className="grid gap-2.5">
             {t.lines.map((l) => {
@@ -65,7 +67,9 @@ export function CartScreen() {
                       <div className="min-w-0">
                         <h3 className="text-[14.5px] font-bold leading-tight text-ink-900">{l.product.name}</h3>
                         <p className="text-[12px] text-ink-500">
-                          {l.product.byWeight ? `${money(l.final * 10)}/kg invece di ${money(l.price * 10)}/kg` : `${l.product.unit} · ${money(l.final)} cad. invece di ${money(l.price)}`}
+                          {l.product.byWeight
+                            ? `${money(l.final * 10)}/kg${l.pct > 0 ? ` invece di ${money(l.price * 10)}/kg` : ""}`
+                            : `${l.product.unit} · ${money(l.final)} cad.${l.pct > 0 ? ` invece di ${money(l.price)}` : ""}`}
                         </p>
                       </div>
                       <button type="button" onClick={() => setCartQty(l.product.id, 0)} aria-label={`Elimina ${l.product.name}`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-100">
@@ -75,9 +79,9 @@ export function CartScreen() {
                     <div className="mt-2 flex items-end justify-between gap-2">
                       <QtyStepper value={l.qty} onChange={(n) => setCartQty(l.product.id, n)} label={l.product.name} {...(l.product.byWeight ? { max: MAX_WEIGHT_UNITS, format: kgLabel } : {})} />
                       <div className="text-right leading-tight">
-                        <span className="badge bg-brand-400 text-white">−{l.pct}%</span>
+                        {l.pct > 0 && <span className="badge bg-brand-400 text-white">−{l.pct}%</span>}
                         <p className="mt-0.5">
-                          <span className="text-[12px] tabular-nums text-ink-400 line-through">{money(l.price * l.qty)}</span>{" "}
+                          {l.pct > 0 && <><span className="text-[12px] tabular-nums text-ink-400 line-through">{money(l.price * l.qty)}</span>{" "}</>}
                           <span className="text-[17px] font-bold tabular-nums text-ink-900">{money(l.final * l.qty)}</span>
                         </p>
                       </div>
@@ -89,23 +93,31 @@ export function CartScreen() {
           </section>
 
           <button type="button" onClick={goAdd} className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 py-3 text-[14px] font-semibold text-ink-600 hover:border-brand-300 hover:text-brand-700">
-            <Plus size={16} /> Aggiungi altri freschi
+            <Plus size={16} /> {pilot ? "Aggiungi altri prodotti" : "Aggiungi altri freschi"}
           </button>
 
           <section aria-label="Riepilogo" className="card space-y-2 p-4 text-[14px]">
-            <div className="flex justify-between text-ink-600">
-              <span>Prezzo originale ({t.items} prodotti)</span>
-              <span className="tabular-nums">{money(t.subtotal)}</span>
-            </div>
-            <div className="flex justify-between font-semibold text-brand-700">
-              <span>Sconti di prenotazione</span>
-              <span className="tabular-nums">−{money(t.discount)}</span>
-            </div>
-            <div className="flex items-baseline justify-between border-t border-dashed border-ink-200 pt-2">
-              <span className="font-bold text-ink-900">Totale prenotazione</span>
+            {hasDiscount && (
+              <>
+                <div className="flex justify-between text-ink-600">
+                  <span>Prezzo originale ({t.items} prodotti)</span>
+                  <span className="tabular-nums">{money(t.subtotal)}</span>
+                </div>
+                <div className="flex justify-between font-semibold text-brand-700">
+                  <span>Sconti di prenotazione</span>
+                  <span className="tabular-nums">−{money(t.discount)}</span>
+                </div>
+              </>
+            )}
+            <div className={`flex items-baseline justify-between ${hasDiscount ? "border-t border-dashed border-ink-200 pt-2" : ""}`}>
+              <span className="font-bold text-ink-900">{hasDiscount ? "Totale prenotazione" : `Totale (${t.items} ${t.items === 1 ? "prodotto" : "prodotti"})`}</span>
               <span key={t.afterDiscount} className="animate-pop text-[22px] font-extrabold tabular-nums text-ink-900">{money(t.afterDiscount)}</span>
             </div>
-            <p className="rounded-xl bg-brand-50 px-3 py-2 text-[13px] font-semibold text-brand-800">Risparmi {money(t.discount)} prenotando in anticipo.</p>
+            {hasDiscount ? (
+              <p className="rounded-xl bg-brand-50 px-3 py-2 text-[13px] font-semibold text-brand-800">Risparmi {money(t.discount)} prenotando in anticipo.</p>
+            ) : (
+              pilot && <p className="text-[12px] leading-snug text-ink-500">Prezzi del negozio. Il peso finale può variare leggermente: paghi al ritiro.</p>
+            )}
           </section>
         </>
       )}
@@ -126,9 +138,9 @@ export function CartScreen() {
         <h2 id="list-title" className="flex items-center gap-2 text-[15px] font-bold text-ink-900">
           <ListChecks size={18} className="text-ink-500" /> Da prendere in negozio
         </h2>
-        <p className="text-[12.5px] leading-snug text-ink-500">Prodotti da scaffale e sponsorizzati: non fanno parte della prenotazione e si pagano in cassa.</p>
+        <p className="text-[12.5px] leading-snug text-ink-500">{pilot ? "Prodotti da prendere sullo scaffale: non fanno parte della prenotazione e si pagano in cassa." : "Prodotti da scaffale e sponsorizzati: non fanno parte della prenotazione e si pagano in cassa."}</p>
         {data.list.length === 0 ? (
-          <p className="rounded-2xl bg-white p-4 text-[13px] text-ink-500 ring-1 ring-ink-100">Nessun promemoria. Aggiungili dallo Smart Basket.</p>
+          <p className="rounded-2xl bg-white p-4 text-[13px] text-ink-500 ring-1 ring-ink-100">{pilot ? "Nessun promemoria. Aggiungili dalla pagina del negozio con \"Alla lista\"." : "Nessun promemoria. Aggiungili dallo Smart Basket."}</p>
         ) : (
           <ul className="card divide-y divide-ink-100">
             {data.list.map((i) => (
@@ -158,7 +170,7 @@ export function CartScreen() {
             <div className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-2.5 pl-4 shadow-float">
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="text-[18px] font-extrabold tabular-nums text-ink-900">{money(t.afterDiscount)}</p>
-                <p className="text-[11.5px] font-semibold text-brand-700">Risparmi {money(t.discount)}</p>
+                <p className="text-[11.5px] font-semibold text-brand-700">{hasDiscount ? `Risparmi ${money(t.discount)}` : `${t.items} ${t.items === 1 ? "prodotto" : "prodotti"}`}</p>
               </div>
               <button type="button" className="btn-primary" onClick={() => setCheckout(true)} disabled={!store}>
                 Scegli il ritiro <ArrowRight size={16} />

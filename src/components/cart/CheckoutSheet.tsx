@@ -238,7 +238,7 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
         )}
 
         <div>
-          <label htmlFor="co-notes" className="field-label">Note per il supermercato (facoltativo)</label>
+          <label htmlFor="co-notes" className="field-label">Note per il negozio (facoltativo)</label>
           <textarea
             id="co-notes"
             className="input min-h-[72px] resize-y"
@@ -250,11 +250,15 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
         </div>
 
         <section className="card space-y-1.5 p-4 text-[14px]">
-          <div className="flex justify-between text-ink-600"><span>Prezzo originale</span><span className="tabular-nums">{money(t.subtotal)}</span></div>
-          <div className="flex justify-between font-semibold text-brand-700"><span>Sconti di prenotazione</span><span className="tabular-nums">−{money(t.discount)}</span></div>
+          {t.discount > 0 && (
+            <>
+              <div className="flex justify-between text-ink-600"><span>Prezzo originale</span><span className="tabular-nums">{money(t.subtotal)}</span></div>
+              <div className="flex justify-between font-semibold text-brand-700"><span>Sconti di prenotazione</span><span className="tabular-nums">−{money(t.discount)}</span></div>
+            </>
+          )}
           {voucherValue > 0 && <div className="flex justify-between font-semibold text-brand-700"><span>Voucher</span><span className="tabular-nums">−{money(voucherValue)}</span></div>}
           {method === "delivery" && <div className="flex justify-between text-ink-600"><span>Consegna</span><span className="tabular-nums">{fee ? money(fee) : "Gratis"}</span></div>}
-          <div className="flex justify-between border-t border-dashed border-ink-200 pt-2 font-extrabold text-ink-900"><span>Totale</span><span className="tabular-nums">{money(total)}</span></div>
+          <div className={`flex justify-between font-extrabold text-ink-900 ${t.discount > 0 || voucherValue > 0 || method === "delivery" ? "border-t border-dashed border-ink-200 pt-2" : ""}`}><span>Totale</span><span className="tabular-nums">{money(total)}</span></div>
           <p className="text-[12px] text-ink-500">Pagamento simulato: nella versione reale si paga in app o al ritiro, secondo le regole del punto vendita.</p>
         </section>
 

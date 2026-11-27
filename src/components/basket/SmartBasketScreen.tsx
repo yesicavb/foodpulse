@@ -21,13 +21,21 @@ export function SmartBasketScreen() {
     <div className="space-y-6">
       <div className="flex animate-rise items-center gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[14px] text-ink-700">
-            Ciao{firstName ? <> {firstName}</> : null},
-          </p>
-          <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900">
-            ecco la tua spesa della settimana{" "}
-            <span aria-hidden="true">👋</span>
-          </h1>
+          {pilot ? (
+            <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900">
+              Ciao{firstName ? <> {firstName}</> : null} <span aria-hidden="true">👋</span>
+            </h1>
+          ) : (
+            <>
+              <p className="text-[14px] text-ink-700">
+                Ciao{firstName ? <> {firstName}</> : null},
+              </p>
+              <h1 className="text-[22px] font-bold leading-tight tracking-tight text-ink-900">
+                ecco la tua spesa della settimana{" "}
+                <span aria-hidden="true">👋</span>
+              </h1>
+            </>
+          )}
         </div>
         <GroceryBag size={104} />
       </div>

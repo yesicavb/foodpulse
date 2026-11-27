@@ -84,14 +84,14 @@ export function QrScreen() {
 
       <StoreProgress status={atStore[current.id]} />
 
-      {current.status === "attivo" && <NotifyCard where="customer" text="Ricevi una notifica quando il supermercato prepara il tuo ordine e quando è pronto." />}
+      {current.status === "attivo" && <NotifyCard where="customer" text="Ricevi una notifica quando il negozio prepara il tuo ordine e quando è pronto." />}
 
       <OrderTicket order={current} />
 
       <div className="card space-y-2 p-4">
         {cloud ? (
           <p className="flex items-start gap-2 text-[13px] leading-snug text-ink-600">
-            <ScanLine size={17} className="mt-0.5 shrink-0 text-brand-600" /> Al ritiro il supermercato scansiona il tuo QR: l&apos;ordine risulterà ritirato e ti chiederemo un feedback.
+            <ScanLine size={17} className="mt-0.5 shrink-0 text-brand-600" /> Al ritiro il negozio scansiona il tuo QR: l&apos;ordine risulterà ritirato e ti chiederemo un feedback.
           </p>
         ) : (
           <>
@@ -99,7 +99,7 @@ export function QrScreen() {
           <ScanLine size={17} className="text-brand-600" /> Simulazione del ritiro
         </p>
         <p className="text-[12.5px] leading-snug text-ink-500">
-          Nella demo puoi simulare il ritiro con questo pulsante, oppure aprire la demo supermercato su questo dispositivo e scansionare il QR.
+          Nella demo puoi simulare il ritiro con questo pulsante, oppure aprire la demo negozio su questo dispositivo e scansionare il QR.
         </p>
         <button
           type="button"
@@ -160,9 +160,9 @@ function StoreProgress({ status }: { status?: DeskStatus }) {
   const at = status ? STEPS.findIndex((s) => s.id === status) : -1;
   const look = status ? CUSTOMER_STATUS[status] : undefined;
   return (
-    <section className={`overflow-hidden rounded-3xl shadow-card ${look ? look.tone : "bg-white"}`} aria-label="Stato al supermercato" aria-live="polite">
+    <section className={`overflow-hidden rounded-3xl shadow-card ${look ? look.tone : "bg-white"}`} aria-label="Stato dell'ordine" aria-live="polite">
       {!look ? (
-        <p className="p-4 text-[13px] text-ink-500">Invio al supermercato in corso…</p>
+        <p className="p-4 text-[13px] text-ink-500">Invio al negozio in corso…</p>
       ) : (
         <>
           <div className="flex items-center gap-3 p-4">
@@ -171,7 +171,7 @@ function StoreProgress({ status }: { status?: DeskStatus }) {
               <look.icon size={24} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[11.5px] font-bold uppercase tracking-wider opacity-70">Stato al supermercato</p>
+              <p className="text-[11.5px] font-bold uppercase tracking-wider opacity-70">Stato dell'ordine</p>
               <p className="text-[17px] font-extrabold leading-tight">{look.title}</p>
               <p className="mt-0.5 text-[12.5px] leading-snug opacity-80">{look.text}</p>
             </div>

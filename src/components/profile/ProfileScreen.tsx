@@ -155,15 +155,17 @@ function ProfileHome() {
             />
           )}
           {account.cloud && (
-            <Row icon={<StoreIcon size={20} className="text-ink-500" />} label="Sei un supermercato?" detail="Collega l'account al tuo punto vendita con il codice negozio" onClick={() => setStoreSheet(true)} />
+            <Row icon={<StoreIcon size={20} className="text-ink-500" />} label="Hai un negozio partner?" detail="Collega l'account al tuo punto vendita con il codice negozio" onClick={() => setStoreSheet(true)} />
           )}
           <Row icon={<LogOut size={20} className="text-ink-500" />} label="Esci" detail={account?.cloud ? "I tuoi dati restano salvati nel tuo account" : "I tuoi dati restano salvati su questo dispositivo"} onClick={logout} />
         </div>
       </section>
       <StoreCodeSheet open={storeSheet} onClose={() => setStoreSheet(false)} link={linkStoreCode} />
-      <p className="px-1 text-center text-[11.5px] leading-snug text-ink-500">
-        FOODPULSE · prototipo dimostrativo. Dati salvati solo su questo dispositivo.
-      </p>
+      {!account?.cloud && (
+        <p className="px-1 text-center text-[11.5px] leading-snug text-ink-500">
+          FOODPULSE · prototipo dimostrativo. Dati salvati solo su questo dispositivo.
+        </p>
+      )}
     </div>
   );
 }
@@ -174,7 +176,7 @@ function StoreCodeSheet({ open, onClose, link }: { open: boolean; onClose: () =>
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
-    <Sheet open={open} onClose={onClose} title="Accesso supermercato">
+    <Sheet open={open} onClose={onClose} title="Accesso negozio">
       <form
         className="grid gap-3"
         onSubmit={async (e) => {
@@ -188,7 +190,7 @@ function StoreCodeSheet({ open, onClose, link }: { open: boolean; onClose: () =>
         }}
       >
         <p className="text-[13.5px] leading-snug text-ink-600">
-          Inserisci il codice che il team FoodPulse ha dato al tuo punto vendita. L&apos;app si aprirà sulla dashboard del supermercato, con gli ordini dei clienti e lo scanner dei QR.
+          Inserisci il codice che il team FoodPulse ha dato al tuo punto vendita. L&apos;app si aprirà sulla dashboard del negozio, con gli ordini dei clienti e lo scanner dei QR.
         </p>
         <label htmlFor="pf-store-code" className="field-label">Codice negozio</label>
         <input id="pf-store-code" className="input font-mono uppercase tracking-wider" placeholder="ESS-MI-XXXXXX" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />

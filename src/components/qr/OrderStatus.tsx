@@ -11,14 +11,14 @@ import { systemNotify } from "@/lib/systemNotify";
 export const CUSTOMER_STATUS: Partial<Record<DeskStatus, { title: string; text: string; icon: typeof ChefHat; tone: string; ring: string }>> = {
   da_preparare: {
     title: "Ordine ricevuto",
-    text: "Il supermercato ha ricevuto la tua prenotazione. Ti avvisiamo quando inizia a prepararla.",
+    text: "Il negozio ha ricevuto la tua prenotazione. Ti avvisiamo quando inizia a prepararla.",
     icon: ClipboardCheck,
     tone: "bg-amber-50 text-amber-900",
     ring: "bg-amber-500",
   },
   in_preparazione: {
     title: "Stanno preparando il tuo ordine",
-    text: "Il supermercato sta mettendo insieme la tua spesa. Ti avvisiamo appena è pronta.",
+    text: "Il negozio sta mettendo insieme la tua spesa. Ti avvisiamo appena è pronta.",
     icon: ChefHat,
     tone: "bg-sky-50 text-sky-900",
     ring: "bg-sky-500",
@@ -93,7 +93,7 @@ export function OrderStatusProvider({ children }: { children: ReactNode }) {
         const s = st[id];
         if (s === "completato") {
           completeOrder(id);
-          notify("Ritiro confermato dal supermercato");
+          notify("Ritiro confermato dal negozio");
         } else if (!s) {
           void sendToStore(o, whoRef.current, cloud); // older booking the store never received
         } else if (s !== known[id] && (s === "in_preparazione" || s === "pronto")) {
