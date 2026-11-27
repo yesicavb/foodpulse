@@ -27,29 +27,53 @@ const TITLES: Record<Exclude<ProfileView, "home">, string> = {
 
 export function ProfileScreen() {
   const { profileView, setProfileView } = useApp();
-  const homeScroll = useRef<number | null>(null);
+  const homeScroll = useRef<{ top: number; view: ProfileView; offset: number } | null>(null);
   const previousView = useRef<ProfileView | null>(null);
+  const root = useRef<HTMLDivElement>(null);
   const openSection = (view: ProfileView) => {
-    homeScroll.current = window.scrollY;
+    const row = root.current?.querySelector<HTMLElement>(`[data-profile-section="${view}"]`);
+    homeScroll.current = { top: window.scrollY, view, offset: row?.getBoundingClientRect().top ?? 120 };
     setProfileView(view);
   };
 
-  // Restore after React has mounted the destination, not while the old
-  // (potentially shorter) screen is still in the document.
   useLayoutEffect(() => {
-    if (previousView.current === profileView) return;
-    if (profileView === "home") {
-      if (homeScroll.current !== null) {
-        window.scrollTo({ top: homeScroll.current, behavior: "instant" });
-        homeScroll.current = null;
-      }
-    } else {
-      window.scrollTo({ top: 0, behavior: "instant" });
-    }
+    const previous = previousView.current;
     previousView.current = profileView;
+    if (previous === profileView) return;
+    if (profileView !== "home") {
+      window.scrollTo(0, 0);
+      return;
+    }
+    const saved = homeScroll.current;
+    if (!saved) return;
+    // Wait for the menu layout and browser scroll anchoring to settle.
+    const restore = () => {
+      const row = root.current?.querySelector<HTMLElement>(`[data-profile-section="${saved.view}"]`);
+      const top = row ? window.scrollY + row.getBoundingClientRect().top - saved.offset : saved.top;
+      window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
+    };
+    restore();
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      restore();
+      second = requestAnimationFrame(restore);
+    });
+    const timer = window.setTimeout(restore, 100);
+    const cancel = () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      clearTimeout(timer);
+    };
+    window.addEventListener("touchstart", cancel, { once: true, passive: true });
+    window.addEventListener("wheel", cancel, { once: true, passive: true });
+    return () => {
+      cancel();
+      window.removeEventListener("touchstart", cancel);
+      window.removeEventListener("wheel", cancel);
+    };
   }, [profileView]);
 
-  if (profileView === "home") return <ProfileHome openSection={openSection} />;
+  if (profileView === "home") return <div ref={root} style={{ overflowAnchor: "none" }}><ProfileHome openSection={openSection} /></div>;
   const VIEWS: Record<Exclude<ProfileView, "home">, ReactNode> = {
     personal: <PersonalSection />,
     interests: <DietSection />,
@@ -76,9 +100,9 @@ export function ProfileScreen() {
   );
 }
 
-function Row({ icon, label, detail, onClick }: { icon: ReactNode; label: string; detail?: string; onClick: () => void }) {
+function Row({ icon, label, detail, onClick, section }: { icon: ReactNode; label: string; detail?: string; onClick: () => void; section?: ProfileView }) {
   return (
-    <button type="button" onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-ink-50">
+    <button type="button" data-profile-section={section} onClick={onClick} className="flex min-h-[56px] w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-ink-50">
       <span className="shrink-0">{icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-[14.5px] font-semibold text-ink-900">{label}</span>
@@ -114,6 +138,7 @@ function ProfileHome({ openSection }: { openSection: (view: ProfileView) => void
         </div>
         <button
           type="button"
+          data-profile-section="loyalty"
           onClick={() => openSection("loyalty")}
           className="mt-3 flex w-full items-center justify-between rounded-xl bg-brand-50 px-3.5 py-2.5 text-left transition hover:bg-brand-100"
         >
@@ -137,19 +162,19 @@ function ProfileHome({ openSection }: { openSection: (view: ProfileView) => void
       <section aria-labelledby="pf-activity">
         <h2 id="pf-activity" className="eyebrow mb-2 px-1">La tua attività</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<Package size={20} className="text-brand-600" />} label="Storico prenotazioni" detail={pastOrders ? `${pastOrders} prenotazioni` : "Consulta le tue prenotazioni passate"} onClick={() => openSection("orders")} />
-          <Row icon={<Leaf size={20} className="text-brand-600" />} label="Il mio impatto" detail="Risparmio, cibo non sprecato e CO₂" onClick={() => openSection("impact")} />
-          <Row icon={<MessageSquareText size={20} className="text-brand-600" />} label="I miei feedback" detail={toFeedback ? `${toFeedback} ordine da valutare` : `${data.feedbacks.length} inviati`} onClick={() => openSection("feedbacks")} />
+          <Row icon={<Package size={20} className="text-brand-600" />} label="Storico prenotazioni" detail={pastOrders ? `${pastOrders} prenotazioni` : "Consulta le tue prenotazioni passate"} section="orders" onClick={() => openSection("orders")} />
+          <Row icon={<Leaf size={20} className="text-brand-600" />} label="Il mio impatto" detail="Risparmio, cibo non sprecato e CO₂" section="impact" onClick={() => openSection("impact")} />
+          <Row icon={<MessageSquareText size={20} className="text-brand-600" />} label="I miei feedback" detail={toFeedback ? `${toFeedback} ordine da valutare` : `${data.feedbacks.length} inviati`} section="feedbacks" onClick={() => openSection("feedbacks")} />
         </div>
       </section>
 
       <section aria-labelledby="pf-info">
         <h2 id="pf-info" className="eyebrow mb-2 px-1">Informazioni e preferenze</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<UserRound size={20} className="text-brand-600" />} label="Dati personali" detail="Nome, cognome e indirizzo" onClick={() => openSection("personal")} />
-          <Row icon={<Utensils size={20} className="text-brand-600" />} label="Preferenze alimentari" detail="Alimentazione, gusti e preferiti" onClick={() => openSection("diet")} />
-          <Row icon={<ShoppingBasket size={20} className="text-brand-600" />} label="Le mie abitudini di spesa" detail="Famiglia, budget e priorità" onClick={() => openSection("habits")} />
-          <Row icon={<ShieldCheck size={20} className="text-brand-600" />} label="Allergie e intolleranze" detail="Facoltativo" onClick={() => openSection("health")} />
+          <Row icon={<UserRound size={20} className="text-brand-600" />} label="Dati personali" detail="Nome, cognome e indirizzo" section="personal" onClick={() => openSection("personal")} />
+          <Row icon={<Utensils size={20} className="text-brand-600" />} label="Preferenze alimentari" detail="Alimentazione, gusti e preferiti" section="diet" onClick={() => openSection("diet")} />
+          <Row icon={<ShoppingBasket size={20} className="text-brand-600" />} label="Le mie abitudini di spesa" detail="Famiglia, budget e priorità" section="habits" onClick={() => openSection("habits")} />
+          <Row icon={<ShieldCheck size={20} className="text-brand-600" />} label="Allergie e intolleranze" detail="Facoltativo" section="health" onClick={() => openSection("health")} />
         </div>
         <p className="mt-2 px-1 text-[12px] leading-snug text-ink-500">Le preferenze sono facoltative: non servono per prenotare.</p>
       </section>
@@ -157,7 +182,7 @@ function ProfileHome({ openSection }: { openSection: (view: ProfileView) => void
       <section aria-labelledby="pf-account">
         <h2 id="pf-account" className="eyebrow mb-2 px-1">Impostazioni account</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<Bell size={20} className="text-ink-500" />} label="Notifiche e privacy" onClick={() => openSection("notifications")} />
+          <Row icon={<Bell size={20} className="text-ink-500" />} label="Notifiche e privacy" section="notifications" onClick={() => openSection("notifications")} />
           {account.demo && (
             <Row
               icon={<RotateCcw size={20} className="text-ink-500" />}
