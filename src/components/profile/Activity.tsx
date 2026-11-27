@@ -18,7 +18,7 @@ import { useApp } from "@/store/AppStore";
 /* ---------------- Orders and bookings ---------------- */
 export function OrdersView() {
   const { data, setTab, setQrOrderId } = useApp();
-  const [filter, setFilter] = useState<OrderStatus>("attivo");
+  const [filter, setFilter] = useState<OrderStatus>("completato");
   const [open, setOpen] = useState<string | null>(null);
   const [fb, setFb] = useState<string | null>(null);
   if (!data) return null;
@@ -28,8 +28,8 @@ export function OrdersView() {
 
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label="Stato ordini" className="grid grid-cols-3 gap-1 rounded-2xl bg-ink-100 p-1">
-        {(["attivo", "completato", "annullato"] as OrderStatus[]).map((s) => (
+      <div role="tablist" aria-label="Stato ordini" className="grid grid-cols-2 gap-1 rounded-2xl bg-ink-100 p-1">
+        {(["completato", "annullato"] as OrderStatus[]).map((s) => (
           <button key={s} type="button" role="tab" aria-selected={filter === s} onClick={() => setFilter(s)} className={`min-h-[40px] rounded-xl text-[13px] font-bold ${filter === s ? "bg-white text-ink-900 shadow-sm" : "text-ink-600"}`}>
             {LABEL[s]} ({count(s)})
           </button>

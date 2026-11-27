@@ -1,27 +1,25 @@
 "use client";
 
-import { ArrowLeft, Award, ChevronRight, CircleCheck, CircleDashed, Leaf, LogOut, MessageSquareText, Package, RotateCcw, Store as StoreIcon } from "lucide-react";
+import { ArrowLeft, Award, ChevronRight, Bell, Leaf, LogOut, MessageSquareText, Package, RotateCcw, ShieldCheck, ShoppingBasket, UserRound, Utensils, Store as StoreIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Sheet } from "@/components/ui/Controls";
 import { initials, formatInt } from "@/lib/format";
 import { levelOf } from "@/lib/loyalty";
-import { PROFILE_SECTIONS, completion } from "@/lib/profile";
+import { completion } from "@/lib/profile";
 import { useApp, type ProfileView } from "@/store/AppStore";
 
-/** pilot: sections shown without opening "Altro" */
-const PILOT_SECTIONS = ["personal", "health", "notifications"];
 import { FeedbacksView, ImpactView, LoyaltyView, OrdersView } from "./Activity";
-import { DietSection, GoalsSection, HabitsSection, HealthSection, InterestsSection, NotificationsSection, PersonalSection } from "./ProfileSections";
+import { DietSection, HabitsSection, HealthSection, NotificationsSection, PersonalSection } from "./ProfileSections";
 
 const TITLES: Record<Exclude<ProfileView, "home">, string> = {
-  personal: "Informazioni personali e famiglia",
-  interests: "Interessi e stile di vita",
+  personal: "Dati personali",
+  interests: "Preferenze alimentari",
   diet: "Preferenze alimentari",
-  habits: "Abitudini di spesa",
-  goals: "Budget e obiettivi",
-  health: "Esigenze alimentari",
+  habits: "Le mie abitudini di spesa",
+  goals: "Le mie abitudini di spesa",
+  health: "Allergie e intolleranze",
   notifications: "Notifiche e privacy",
-  orders: "Ordini e prenotazioni",
+  orders: "Storico prenotazioni",
   loyalty: "Punti e voucher",
   impact: "Il mio impatto",
   feedbacks: "I miei feedback",
@@ -32,10 +30,10 @@ export function ProfileScreen() {
   if (profileView === "home") return <ProfileHome />;
   const VIEWS: Record<Exclude<ProfileView, "home">, ReactNode> = {
     personal: <PersonalSection />,
-    interests: <InterestsSection />,
+    interests: <DietSection />,
     diet: <DietSection />,
     habits: <HabitsSection />,
-    goals: <GoalsSection />,
+    goals: <HabitsSection />,
     health: <HealthSection />,
     notifications: <NotificationsSection />,
     orders: <OrdersView />,
@@ -72,12 +70,11 @@ function Row({ icon, label, detail, onClick }: { icon: ReactNode; label: string;
 function ProfileHome() {
   const { data, account, setProfileView, logout, resetDemo, notify, linkStoreCode, pilot } = useApp();
   const [storeSheet, setStoreSheet] = useState(false);
-  const [showMore, setShowMore] = useState(false);
   if (!data || !account) return null;
   const p = data.profile;
   const comp = completion(p);
   const lvl = levelOf(data.points.lifetime);
-  const active = data.orders.filter((o) => o.status === "attivo").length;
+  const pastOrders = data.orders.filter((o) => o.status !== "attivo").length;
   const toFeedback = data.orders.filter((o) => o.status === "completato" && !o.feedbackDone).length;
 
   return (
@@ -100,7 +97,7 @@ function ProfileHome() {
         >
           <span className="flex items-center gap-2 text-[14px] font-bold text-brand-800">
             <span className="h-2 w-2 rounded-full bg-brand-500" aria-hidden="true" />
-            {formatInt(data.points.balance)} punti
+            {formatInt(data.points.balance)} punti · {data.vouchers.filter((v) => !v.usedAt).length} voucher
           </span>
           <span className="text-[12.5px] font-semibold text-brand-700">Punti e voucher</span>
         </button>
@@ -118,46 +115,27 @@ function ProfileHome() {
       <section aria-labelledby="pf-activity">
         <h2 id="pf-activity" className="eyebrow mb-2 px-1">La tua attività</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          <Row icon={<Package size={20} className="text-brand-600" />} label="Ordini e prenotazioni" detail={`${active} attive · ${data.orders.length} in totale`} onClick={() => setProfileView("orders")} />
-          <Row icon={<Award size={20} className="text-brand-600" />} label="Punti e voucher" detail={`${formatInt(data.points.balance)} punti · ${data.vouchers.filter((v) => !v.usedAt).length} voucher`} onClick={() => setProfileView("loyalty")} />
+          <Row icon={<Package size={20} className="text-brand-600" />} label="Storico prenotazioni" detail={pastOrders ? `${pastOrders} prenotazioni` : "Consulta le tue prenotazioni passate"} onClick={() => setProfileView("orders")} />
           <Row icon={<Leaf size={20} className="text-brand-600" />} label="Il mio impatto" detail="Risparmio, cibo non sprecato e CO₂" onClick={() => setProfileView("impact")} />
           <Row icon={<MessageSquareText size={20} className="text-brand-600" />} label="I miei feedback" detail={toFeedback ? `${toFeedback} ordine da valutare` : `${data.feedbacks.length} inviati`} onClick={() => setProfileView("feedbacks")} />
         </div>
       </section>
 
       <section aria-labelledby="pf-info">
-        <h2 id="pf-info" className="eyebrow mb-2 px-1">Il tuo profilo</h2>
+        <h2 id="pf-info" className="eyebrow mb-2 px-1">Informazioni e preferenze</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
-          {/* pilot: the questions that only feed the Smart Basket sit under "Altro (facoltativo)" */}
-          {PROFILE_SECTIONS.filter((s) => !pilot || showMore || PILOT_SECTIONS.includes(s.id)).map((s) => {
-            const missing = comp.missing.includes(s.id);
-            const optional = s.id === "health" || s.id === "notifications";
-            return (
-              <Row
-                key={s.id}
-                icon={optional ? <CircleDashed size={20} className="text-ink-400" /> : missing ? <CircleDashed size={20} className="text-amber-500" /> : <CircleCheck size={20} className="text-brand-600" />}
-                label={s.label}
-                detail={optional ? "Facoltativo" : missing ? "Da completare" : "Completato"}
-                onClick={() => setProfileView(s.id)}
-              />
-            );
-          })}
-          {pilot && (
-            <button type="button" onClick={() => setShowMore((v) => !v)} aria-expanded={showMore} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-ink-50">
-              <CircleDashed size={20} className="shrink-0 text-ink-400" />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14.5px] font-semibold text-ink-900">{showMore ? "Mostra meno" : "Altro (facoltativo)"}</span>
-                {!showMore && <span className="block text-[12.5px] text-ink-500">Interessi, abitudini, budget: non servono per prenotare</span>}
-              </span>
-              <ChevronRight size={18} className={`shrink-0 text-ink-400 transition ${showMore ? "-rotate-90" : "rotate-90"}`} />
-            </button>
-          )}
+          <Row icon={<UserRound size={20} className="text-brand-600" />} label="Dati personali" detail="Nome, cognome e indirizzo" onClick={() => setProfileView("personal")} />
+          <Row icon={<Utensils size={20} className="text-brand-600" />} label="Preferenze alimentari" detail="Alimentazione, gusti e preferiti" onClick={() => setProfileView("diet")} />
+          <Row icon={<ShoppingBasket size={20} className="text-brand-600" />} label="Le mie abitudini di spesa" detail="Famiglia, budget e priorità" onClick={() => setProfileView("habits")} />
+          <Row icon={<ShieldCheck size={20} className="text-brand-600" />} label="Allergie e intolleranze" detail="Facoltativo" onClick={() => setProfileView("health")} />
         </div>
+        <p className="mt-2 px-1 text-[12px] leading-snug text-ink-500">Le preferenze sono facoltative: non servono per prenotare.</p>
       </section>
 
       <section aria-labelledby="pf-account">
-        <h2 id="pf-account" className="eyebrow mb-2 px-1">Account</h2>
+        <h2 id="pf-account" className="eyebrow mb-2 px-1">Impostazioni account</h2>
         <div className="card divide-y divide-ink-100 overflow-hidden">
+          <Row icon={<Bell size={20} className="text-ink-500" />} label="Notifiche e privacy" onClick={() => setProfileView("notifications")} />
           {account.demo && (
             <Row
               icon={<RotateCcw size={20} className="text-ink-500" />}
@@ -170,7 +148,7 @@ function ProfileHome() {
             />
           )}
           {account.cloud && (
-            <Row icon={<StoreIcon size={20} className="text-ink-500" />} label="Hai un negozio partner?" detail="Collega l'account al tuo punto vendita con il codice negozio" onClick={() => setStoreSheet(true)} />
+            <Row icon={<StoreIcon size={20} className="text-ink-500" />} label="Accesso negozio partner" detail="Collega l'account al tuo punto vendita con il codice negozio" onClick={() => setStoreSheet(true)} />
           )}
           <Row icon={<LogOut size={20} className="text-ink-500" />} label="Esci" detail={account?.cloud ? "I tuoi dati restano salvati nel tuo account" : "I tuoi dati restano salvati su questo dispositivo"} onClick={logout} />
         </div>

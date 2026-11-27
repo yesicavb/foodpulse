@@ -56,12 +56,12 @@ const SPEND_TO_BUDGET: Record<string, number> = {
 export const weeklyBudgetOf = (p: Profile) => p.budget ?? SPEND_TO_BUDGET[p.weeklySpend] ?? 80;
 
 export const PROFILE_SECTIONS = [
-  { id: "personal", label: "Informazioni personali e famiglia" },
+  { id: "personal", label: "Dati personali" },
   { id: "interests", label: "Interessi e stile di vita" },
   { id: "diet", label: "Preferenze alimentari" },
-  { id: "habits", label: "Abitudini di spesa" },
+  { id: "habits", label: "Le mie abitudini di spesa" },
   { id: "goals", label: "Budget e obiettivi" },
-  { id: "health", label: "Esigenze alimentari e allergeni" },
+  { id: "health", label: "Allergie e intolleranze" },
   { id: "notifications", label: "Notifiche e privacy" },
 ] as const;
 export type SectionId = (typeof PROFILE_SECTIONS)[number]["id"];
@@ -71,18 +71,16 @@ export function completion(p: Profile) {
   const checks: [SectionId, boolean][] = [
     ["personal", !!(p.firstName && p.lastName)],
     ["personal", !!p.ageRange],
-    ["personal", !!p.householdSize],
-    ["personal", !!p.shoppingFor],
-    ["personal", !!p.hasKids],
-    ["interests", p.interests.length > 0],
+    ["habits", !!(p.householdSize || p.shoppingFor)],
+    ["habits", !!p.hasKids],
+    ["diet", p.interests.length > 0],
     ["diet", !!p.diet],
     ["diet", p.favorites.length > 0],
     ["habits", !!p.frequency],
     ["habits", p.days.length > 0],
     ["habits", p.departments.length > 0],
     ["habits", !!p.priority],
-    ["goals", !!p.budget],
-    ["goals", p.goals.length > 0],
+    ["habits", !!(p.budget || p.weeklySpend)],
   ];
   const done = checks.filter(([, ok]) => ok).length;
   const missing = Array.from(new Set(checks.filter(([, ok]) => !ok).map(([s]) => s)));

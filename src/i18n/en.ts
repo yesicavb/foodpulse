@@ -4,6 +4,23 @@
  * A text that is missing here simply stays in Italian, so the app never breaks.
  */
 export const EN: Record<string, string> = {
+  "Dati personali": "Personal details",
+  "Nome, cognome e indirizzo": "Name, surname and address",
+  "Storico prenotazioni": "Booking history",
+  "Consulta le tue prenotazioni passate": "View your past bookings",
+  "Informazioni e preferenze": "Information and preferences",
+  "Alimentazione, gusti e preferiti": "Diet, tastes and favourites",
+  "Le mie abitudini di spesa": "My shopping habits",
+  "Famiglia, budget e priorità": "Household, budget and priorities",
+  "Allergie e intolleranze": "Allergies and intolerances",
+  "Le preferenze sono facoltative: non servono per prenotare.": "Preferences are optional: you do not need them to book.",
+  "Impostazioni account": "Account settings",
+  "Accesso negozio partner": "Partner store access",
+  "Per quante persone fai la spesa?": "How many people do you shop for?",
+  "Categorie alimentari preferite": "Favourite food categories",
+  "Prodotti salvati": "Saved products",
+  "Priorità di acquisto": "Shopping priorities",
+  "Dati salvati": "Details saved",
   "Ci aiuti a migliorare FOODPULSE?": "Will you help us improve FOODPULSE?",
   "Con il tuo consenso usiamo Google Analytics per contare in forma anonima come viene usata l'app (per esempio quante prenotazioni vengono confermate). Non condividiamo mai nome, email o indirizzo. Puoi cambiare idea in Profilo › Notifiche e privacy.": "With your consent we use Google Analytics to count anonymously how the app is used (for example how many bookings are confirmed). We never share your name, email or address. You can change your mind in Profile › Notifications and privacy.",
   "Rifiuta": "Decline",

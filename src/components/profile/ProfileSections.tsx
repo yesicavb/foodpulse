@@ -8,9 +8,10 @@ import { FoodArt } from "@/components/ui/FoodArt";
 import { CAMPAIGNS } from "@/data/campaigns";
 import { freshById } from "@/data/products";
 import { CATEGORIES, CATEGORY_ORDER, INTEREST_LABEL } from "@/data/config";
-import { AGE_RANGES, ALLERGENS, DAYS, DIETS, FAVORITES, FREQUENCIES, GOALS, INTERESTS, KIDS_AGES, PETS, PRIORITIES, SHOPPING_FOR, WEEKLY_SPEND } from "@/data/options";
+import { AGE_RANGES, ALLERGENS, DAYS, DIETS, FAVORITES, FREQUENCIES, INTERESTS, KIDS_AGES, PETS, PRIORITIES } from "@/data/options";
 import type { Allergen, CategoryId, Interest, Profile } from "@/lib/types";
 import { useApp } from "@/store/AppStore";
+import { householdOf, weeklyBudgetOf } from "@/lib/profile";
 
 const toggle = <T,>(arr: T[], v: T) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 const opts = (xs: string[]) => xs.map((x) => ({ id: x, label: x }));
@@ -33,14 +34,14 @@ function Single({ options, value, onChange, label }: { options: string[]; value:
 
 /** Confirm button at the bottom of every profile section (changes are kept as you type; this confirms and returns to the profile) */
 export function Saved() {
-  const { notify, setProfileView } = useApp();
+  const { notify, setProfileView, pilot } = useApp();
   return (
     <div className="sticky bottom-3 z-10 pt-2">
       <button
         type="button"
         className="btn-primary h-12 w-full shadow-card"
         onClick={() => {
-          notify("Dati salvati ✓ Lo Smart Basket è aggiornato");
+          notify(pilot ? "Dati salvati" : "Dati salvati ✓ Lo Smart Basket è aggiornato");
           setProfileView("home");
           window.scrollTo({ top: 0 });
         }}
@@ -78,39 +79,29 @@ export function PersonalSection() {
           <input id="pf-address" className="input" value={p.address} onChange={(e) => set({ address: e.target.value })} autoComplete="street-address" placeholder="Via, numero civico, città" />
         </div>
       </Block>
-      <Block title="Famiglia" hint="Serve a suggerire quantità adatte a quante persone mangiano a casa.">
-        <p className="field-label mb-0">Per chi fai normalmente la spesa?</p>
-        <Single options={SHOPPING_FOR} value={p.shoppingFor} onChange={(v) => set({ shoppingFor: v })} label="Per chi fai la spesa" />
-        <div>
-          <p className="field-label">Componenti del nucleo familiare</p>
-          <div role="radiogroup" aria-label="Componenti del nucleo familiare" className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <button key={n} type="button" role="radio" aria-checked={p.householdSize === n} onClick={() => set({ householdSize: p.householdSize === n ? null : n })} className={`chip w-12 justify-center ${p.householdSize === n ? "chip-on" : ""}`}>
-                {n === 6 ? "6+" : n}
-              </button>
-            ))}
-          </div>
-        </div>
-        <p className="field-label mb-0">Ci sono bambini?</p>
-        <Single options={["Sì", "No"]} value={p.hasKids === "si" ? "Sì" : p.hasKids === "no" ? "No" : ""} onChange={(v) => set({ hasKids: v === "Sì" ? "si" : v === "No" ? "no" : "", kidsAges: v === "Sì" ? p.kidsAges : [] })} label="Presenza di bambini" />
-        {p.hasKids === "si" && (
-          <>
-            <p className="field-label mb-0">Fascia d&apos;età dei bambini</p>
-            <ChipGroup options={opts(KIDS_AGES)} value={p.kidsAges} onToggle={(v) => set({ kidsAges: toggle(p.kidsAges, v) })} label="Età dei bambini" />
-          </>
-        )}
-        <p className="field-label mb-0">Animali domestici</p>
-        <ChipGroup options={opts(PETS)} value={p.pets} onToggle={(v) => set({ pets: toggle(p.pets, v) })} label="Animali domestici" />
-      </Block>
       <Saved />
     </div>
   );
 }
 
-export function InterestsSection() {
+export function DietSection() {
   const [p, set] = useProfile();
   return (
     <div className="space-y-3">
+      <Block title="Alimentazione">
+        <ChipGroup options={DIETS} value={p.diet ? [p.diet] : []} onToggle={(v) => set({ diet: v === p.diet ? "" : v })} label="Regime alimentare" />
+        {(p.diet === "vegetariana" || p.diet === "vegana" || p.diet === "pescetariana") && (
+          <p className="text-[12.5px] text-brand-800">Lo Smart Basket escluderà i prodotti non adatti alla tua alimentazione.</p>
+        )}
+      </Block>
+      <Block title="Categorie alimentari preferite">
+        <ChipGroup options={opts(FAVORITES)} value={p.favorites} onToggle={(v) => set({ favorites: toggle(p.favorites, v) })} label="Prodotti preferiti" />
+      </Block>
+      <SavedProducts />
+      <Block title="Alimenti non graditi" hint="Separali con una virgola, ad esempio: zucchine, salsiccia.">
+        <label htmlFor="pf-disliked" className="sr-only">Alimenti non graditi</label>
+        <textarea id="pf-disliked" className="input min-h-[80px]" value={p.disliked} onChange={(e) => set({ disliked: e.target.value })} />
+      </Block>
       <Block title="Interessi e stile di vita" hint="Scegli tutto ciò che ti rappresenta. Influenza i suggerimenti e, solo con il tuo consenso, i prodotti sponsorizzati.">
         <div role="group" aria-label="Interessi" className="grid grid-cols-2 gap-2">
           {INTERESTS.map((i: Interest) => {
@@ -131,41 +122,37 @@ export function InterestsSection() {
   );
 }
 
-export function DietSection() {
-  const [p, set] = useProfile();
-  return (
-    <div className="space-y-3">
-      <Block title="Alimentazione">
-        <ChipGroup options={DIETS} value={p.diet ? [p.diet] : []} onToggle={(v) => set({ diet: v === p.diet ? "" : v })} label="Regime alimentare" />
-        {(p.diet === "vegetariana" || p.diet === "vegana" || p.diet === "pescetariana") && (
-          <p className="text-[12.5px] text-brand-800">Lo Smart Basket escluderà i prodotti non adatti alla tua alimentazione.</p>
-        )}
-      </Block>
-      <Block title="Prodotti preferiti">
-        <ChipGroup options={opts(FAVORITES)} value={p.favorites} onToggle={(v) => set({ favorites: toggle(p.favorites, v) })} label="Prodotti preferiti" />
-      </Block>
-      <SavedProducts />
-      <Block title="Alimenti non graditi" hint="Separali con una virgola, ad esempio: zucchine, salsiccia.">
-        <label htmlFor="pf-disliked" className="sr-only">Alimenti non graditi</label>
-        <textarea id="pf-disliked" className="input min-h-[80px]" value={p.disliked} onChange={(e) => set({ disliked: e.target.value })} />
-      </Block>
-      <Saved />
-    </div>
-  );
-}
-
 export function HabitsSection() {
   const [p, set] = useProfile();
   return (
     <div className="space-y-3">
+      <Block title="Famiglia" hint="Serve a suggerire quantità adatte a quante persone mangiano a casa.">
+        <div>
+          <p className="field-label">Per quante persone fai la spesa?</p>
+          <div role="radiogroup" aria-label="Per quante persone fai la spesa?" className="flex flex-wrap gap-2">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <button key={n} type="button" role="radio" aria-checked={(p.householdSize ?? (p.shoppingFor ? householdOf(p) : null)) === n} onClick={() => set({ householdSize: n })} className={`chip w-12 justify-center ${(p.householdSize ?? (p.shoppingFor ? householdOf(p) : null)) === n ? "chip-on" : ""}`}>
+                {n === 6 ? "6+" : n}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="field-label mb-0">Ci sono bambini?</p>
+        <Single options={["Sì", "No"]} value={p.hasKids === "si" ? "Sì" : p.hasKids === "no" ? "No" : ""} onChange={(v) => set({ hasKids: v === "Sì" ? "si" : v === "No" ? "no" : "", kidsAges: v === "Sì" ? p.kidsAges : [] })} label="Presenza di bambini" />
+        {p.hasKids === "si" && (
+          <>
+            <p className="field-label mb-0">Fascia d&apos;età dei bambini</p>
+            <ChipGroup options={opts(KIDS_AGES)} value={p.kidsAges} onToggle={(v) => set({ kidsAges: toggle(p.kidsAges, v) })} label="Età dei bambini" />
+          </>
+        )}
+        <p className="field-label mb-0">Animali domestici</p>
+        <ChipGroup options={opts(PETS)} value={p.pets} onToggle={(v) => set({ pets: toggle(p.pets, v) })} label="Animali domestici" />
+      </Block>
       <Block title="Quanto spesso fai la spesa?">
         <Single options={FREQUENCIES} value={p.frequency} onChange={(v) => set({ frequency: v })} label="Frequenza della spesa" />
       </Block>
       <Block title="Quali giorni preferisci?">
         <ChipGroup options={opts(DAYS)} value={p.days} onToggle={(v) => set({ days: toggle(p.days, v) })} label="Giorni preferiti" />
-      </Block>
-      <Block title="Quanto spendi mediamente a settimana?">
-        <Single options={WEEKLY_SPEND} value={p.weeklySpend} onChange={(v) => set({ weeklySpend: v })} label="Spesa settimanale" />
       </Block>
       <Block title="Quali reparti acquisti di più?">
         <ChipGroup
@@ -175,28 +162,6 @@ export function HabitsSection() {
           label="Reparti più acquistati"
         />
       </Block>
-      <Block title="Quanto ti interessano le offerte?">
-        <div role="radiogroup" aria-label="Interesse per le offerte" className="grid grid-cols-5 gap-1.5">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} type="button" role="radio" aria-checked={p.offersInterest === n} onClick={() => set({ offersInterest: n })} className={`chip justify-center ${p.offersInterest === n ? "chip-on" : ""}`}>
-              {n}
-            </button>
-          ))}
-        </div>
-        <p className="flex justify-between text-[12px] text-ink-500"><span>Poco</span><span>Moltissimo</span></p>
-      </Block>
-      <Block title="Cosa cerchi principalmente?">
-        <Single options={PRIORITIES} value={p.priority} onChange={(v) => set({ priority: v })} label="Priorità" />
-      </Block>
-      <Saved />
-    </div>
-  );
-}
-
-export function GoalsSection() {
-  const [p, set] = useProfile();
-  return (
-    <div className="space-y-3">
       <Block title="Budget medio settimanale" hint="Lo Smart Basket tiene la lista dei freschi entro circa il 60% del budget.">
         <div className="flex items-center gap-3">
           <input
@@ -204,26 +169,25 @@ export function GoalsSection() {
             min={20}
             max={300}
             step={5}
-            value={p.budget ?? 80}
+            value={weeklyBudgetOf(p)}
             onChange={(e) => set({ budget: Number(e.target.value) })}
             aria-label="Budget settimanale in euro"
             className="flex-1 accent-brand-600"
           />
-          <span className="w-20 text-right text-[18px] font-extrabold tabular-nums text-ink-900">{p.budget ? `${p.budget} €` : "—"}</span>
+          <span className="w-20 text-right text-[18px] font-extrabold tabular-nums text-ink-900">{p.budget || p.weeklySpend ? `${weeklyBudgetOf(p)} €` : "—"}</span>
         </div>
-        {!p.budget && <p className="text-[12.5px] text-ink-500">Sposta il cursore per impostare il budget.</p>}
+        {!p.budget && !p.weeklySpend && <p className="text-[12.5px] text-ink-500">Sposta il cursore per impostare il budget.</p>}
       </Block>
-      <Block title="I tuoi obiettivi">
-        <div className="grid gap-1">
-          {GOALS.map((g) => (
-            <Toggle key={g.id} checked={p.goals.includes(g.id)} onChange={() => set({ goals: toggle(p.goals, g.id) })} label={g.label} />
-          ))}
-        </div>
+      <Block title="Priorità di acquisto">
+        <Single options={PRIORITIES} value={p.priority} onChange={(v) => set({ priority: v })} label="Priorità" />
       </Block>
       <Saved />
     </div>
   );
 }
+
+export function InterestsSection() { return <DietSection />; }
+export function GoalsSection() { return <HabitsSection />; }
 
 export function HealthSection() {
   const [p, set] = useProfile();
@@ -322,7 +286,7 @@ function SavedProducts() {
     })
     .filter((x): x is { id: string; name: string; detail: string } => !!x);
   return (
-    <Block title="I tuoi preferiti" hint="Tocca il cuore su un prodotto per salvarlo qui. Lo Smart Basket te lo proporrà più spesso.">
+    <Block title="Prodotti salvati" hint="Tocca il cuore su un prodotto per salvarlo qui. Lo Smart Basket te lo proporrà più spesso.">
       {items.length === 0 ? (
         <p className="text-[13px] text-ink-500">Nessun prodotto salvato.</p>
       ) : (
