@@ -192,7 +192,16 @@ const AM7 = ["7:00 – 9:00", "9:00 – 11:00", "11:00 – 13:00"];
 // pending direct confirmation from the shop (26 Nov 2026).
 const BC_AM = [...AM7, "13:00 – 13:30"];
 const BC_PM = ["16:30 – 18:30", "18:30 – 20:00"];
+/** 8:00 – 20:00 split into 2-hour slots */
+const DAY8 = ["8:00 – 10:00", "10:00 – 12:00", "12:00 – 14:00", "14:00 – 16:00", "16:00 – 18:00", "18:00 – 20:00"];
 export const SHOP_HOURS: Record<string, ShopHours> = {
+  // Benvenuti al Sud: hours confirmed by the team on 27 Nov 2026 (open every day, Sunday mornings only)
+  "benvenuti-sud": {
+    name: "Benvenuti al Sud",
+    city: "Bologna",
+    hours: "Lun–Sab 8:00–20:00 · Dom 8:00–14:00",
+    slots: { 0: DAY8.slice(0, 3), 1: DAY8, 2: DAY8, 3: DAY8, 4: DAY8, 5: DAY8, 6: DAY8 },
+  },
   "bottega-carne": {
     name: "La Bottega della Carne",
     city: "San Lazzaro di Savena",

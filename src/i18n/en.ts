@@ -976,6 +976,7 @@ export const EN: Record<string, string> = {
   "Tigelle": "Tigelle flatbreads",
   "pezzo": "piece",
   // Benvenuti al Sud · pilot catalogue
+  "Lun–Sab 8:00–20:00 · Dom 8:00–14:00": "Mon–Sat 8:00–20:00 · Sun 8:00–14:00",
   "Spianata": "Spianata (spicy salami)",
   "Mortadella": "Mortadella",
   "Prosciutto cotto": "Cooked ham",
