@@ -54,7 +54,8 @@ export function CheckoutSheet({ open, onClose }: { open: boolean; onClose: () =>
 
   function confirm() {
     if (!store) return;
-    if (!slot) return setError("Scegli una fascia oraria.");
+    if (store.closedDays?.includes(pickupDay)) return setError("Ritiro non disponibile in questa data. Scegli un altro giorno nel calendario.");
+    if (!slot || !slots.includes(slot)) return setError("Scegli una fascia oraria.");
     if (method === "locker") {
       if (!lockerPoint) return setError("Scegli un locker.");
       if (!lockerPoint.types.includes(lockerType)) return setError("Questo locker non ha lo scomparto scelto.");

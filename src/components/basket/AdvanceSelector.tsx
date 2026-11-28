@@ -36,7 +36,7 @@ export function AdvanceSelector() {
     for (let i = 0; i < 7 && !isOpen(pickupDateFor(a)); i++) a = a + 1 > MAX_ADVANCE_DAYS ? 1 : a + 1;
     if (a !== data.advance) setAdvance(a);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data?.advance, store?.id]);
+  }, [data?.advance, store?.id, closed.join(",")]);
 
   const cells = useMemo(() => {
     const first = new Date(month);
@@ -98,7 +98,7 @@ export function AdvanceSelector() {
           const n = daysBetween(today, d);
           const inRange = n >= 1 && n <= MAX_ADVANCE_DAYS;
           const can = inRange && isOpen(d);
-          const on = n === advance;
+          const on = can && n === advance;
           const pct = tierPct(n);
           return (
             <button
@@ -120,7 +120,7 @@ export function AdvanceSelector() {
           );
         })}
       </div>
-      {closed.length > 0 && <p className="mt-1.5 text-[11.5px] text-ink-500">Giorni barrati: il negozio è chiuso.</p>}
+      {store?.catalog === "tipici-sud" ? <p className="mt-1.5 text-[11.5px] text-ink-500">Ritiro disponibile solo martedì e venerdì. Giorni barrati: ritiro non disponibile.</p> : closed.length > 0 && <p className="mt-1.5 text-[11.5px] text-ink-500">Giorni barrati: il negozio è chiuso.</p>}
 
       <div className={`mt-3 rounded-2xl p-3 ${pilot ? "bg-orange-50" : "bg-brand-50"}`}>
         <p className={`mb-2 flex items-center gap-1.5 text-[12.5px] font-bold ${pilot ? "text-orange-800" : "text-brand-800"}`}>

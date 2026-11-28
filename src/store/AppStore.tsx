@@ -637,6 +637,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const placeOrder: Ctx["placeOrder"] = useCallback(
     (input) => {
       if (!data || !store) return null;
+      if (store.closedDays?.includes(pickupDateFor(data.advance).getDay())) return null;
       const voucher = input.voucherId ? data.vouchers.find((v) => v.id === input.voucherId && !v.usedAt) ?? null : null;
       const order = buildOrder({ ...input, cart: data.cart, store, advance: data.advance, voucher });
       if (!order.lines.length) return null;

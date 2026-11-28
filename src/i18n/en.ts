@@ -4,6 +4,9 @@
  * A text that is missing here simply stays in Italian, so the app never breaks.
  */
 export const EN: Record<string, string> = {
+  "Ritiro: martedì e venerdì": "Pickup: Tuesday and Friday",
+  "Ritiro disponibile solo martedì e venerdì. Giorni barrati: ritiro non disponibile.": "Pickup available only on Tuesdays and Fridays. Crossed-out days: pickup unavailable.",
+  "Ritiro non disponibile in questa data. Scegli un altro giorno nel calendario.": "Pickup unavailable on this date. Choose another day in the calendar.",
   "Salvataggio…": "Saving…",
   "Modifica non salvata. Riprova.": "Change not saved. Try again.",
   "Impossibile uscire: salva i dati e controlla la connessione.": "Unable to sign out: save your data and check your connection.",

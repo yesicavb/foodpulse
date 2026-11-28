@@ -218,14 +218,10 @@ export const SHOP_HOURS: Record<string, ShopHours> = {
   "tipici-sud": {
     name: "Prodotti Tipici del Sud",
     city: "San Lazzaro di Savena",
-    hours: "Lun–Sab · Dom chiuso",
+    hours: "Ritiro: martedì e venerdì",
     slots: {
-      1: ["10:00 – 13:00", "16:00 – 19:00"],
       2: ["9:00 – 13:00", "16:00 – 19:00"],
-      3: ["9:00 – 13:00", "16:00 – 19:00"],
-      4: ["11:00 – 13:00"],
       5: ["9:00 – 11:00", "11:00 – 13:00", "13:00 – 15:00", "15:00 – 17:00", "17:00 – 19:00"],
-      6: ["9:00 – 13:00", "17:00 – 19:00"],
     },
   },
   "regno-pasta": {
@@ -241,7 +237,15 @@ export const SHOP_HOURS: Record<string, ShopHours> = {
     },
   },
 };
-SHOP_HOURS.prova = { hours: SHOP_HOURS["tipici-sud"].hours, slots: SHOP_HOURS["tipici-sud"].slots };
+// Keep the test store's original schedule independent of partner pickup restrictions.
+SHOP_HOURS.prova = { hours: "Lun–Sab · Dom chiuso", slots: {
+      1: ["10:00 – 13:00", "16:00 – 19:00"],
+      2: ["9:00 – 13:00", "16:00 – 19:00"],
+      3: ["9:00 – 13:00", "16:00 – 19:00"],
+      4: ["11:00 – 13:00"],
+      5: ["9:00 – 11:00", "11:00 – 13:00", "13:00 – 15:00", "15:00 – 17:00", "17:00 – 19:00"],
+      6: ["9:00 – 13:00", "17:00 – 19:00"],
+} };
 
 /** closed weekdays = days without slots */
 export const closedDaysOf = (h?: ShopHours) => (h ? [0, 1, 2, 3, 4, 5, 6].filter((d) => !h.slots[d]?.length) : [0]);
