@@ -220,7 +220,7 @@ export const SHOP_HOURS: Record<string, ShopHours> = {
     city: "San Lazzaro di Savena",
     hours: "Ritiro: martedì e venerdì",
     slots: {
-      2: ["9:00 – 13:00", "16:00 – 19:00"],
+      2: ["9:00 – 13:00"],
       5: ["9:00 – 11:00", "11:00 – 13:00", "13:00 – 15:00", "15:00 – 17:00", "17:00 – 19:00"],
     },
   },
