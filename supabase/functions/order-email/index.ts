@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const pieces = lines.reduce((a, l) => a + (l.kg ? 1 : Number(l.qty) || 0), 0);
     const when = `${dayLabel(o.pickup_date)}, ${o.slot}`;
     const total = `€ ${Number(o.total).toFixed(2).replace(".", ",")}`;
-    const subject = `Nuovo ordine da ${o.customer_name} · ritiro ${when}`;
+    const subject = `FoodPulse - Nuovo ordine ${o.id}`;
 
     const text = [
       `Nuovo ordine FoodPulse ${o.id}`,
@@ -81,7 +81,8 @@ Deno.serve(async (req) => {
       `Totale: ${total}`,
       ...(o.notes ? [``, `Note del cliente: ${o.notes}`] : []),
       ``,
-      `Apri la dashboard: ${APP_URL}`,
+      `Apri la dashboard del negozio: ${APP_URL}`,
+      `Se necessario, accedi con il tuo account negoziante.`,
     ].join("\n");
 
     const html = `<div style="font-family:Arial,sans-serif;max-width:520px;color:#1f2a1f">
@@ -94,7 +95,9 @@ Deno.serve(async (req) => {
   </table>
   <p style="margin:0 0 12px">Totale: <b>${esc(total)}</b> (${pieces} prodotti)</p>
   ${o.notes ? `<p style="background:#fff8e1;padding:10px 12px;border-radius:8px;margin:0 0 12px"><b>Note del cliente:</b> ${esc(o.notes)}</p>` : ""}
-  <p><a href="${APP_URL}" style="display:inline-block;background:#1b5e20;color:#fff;padding:10px 16px;border-radius:20px;text-decoration:none;font-weight:bold">Apri la dashboard</a></p>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0"><tr><td bgcolor="#1b5e20" style="border-radius:8px"><a href="${APP_URL}" target="_blank" rel="noopener noreferrer" style="display:block;border:12px solid #1b5e20;color:#ffffff;text-decoration:none;font-weight:bold">Apri la dashboard</a></td></tr></table>
+  <p>Se necessario, accedi con il tuo account negoziante.</p>
+  <p style="font-size:13px">Se il pulsante non si apre, usa questo indirizzo nel browser:<br><a href="${APP_URL}" target="_blank" rel="noopener noreferrer">${APP_URL}</a></p>
   <p style="color:#8a948a;font-size:12px">Ordine ${esc(o.id)}. Ricevi questa email perché il tuo account è collegato a questo punto vendita su FoodPulse.</p>
 </div>`;
 
@@ -104,8 +107,13 @@ Deno.serve(async (req) => {
       secure: true,
       auth: { user: gmailUser, pass: gmailPass },
     });
-    await mail.sendMail({ from: `FoodPulse Ordini <${gmailUser}>`, to: emails.join(", "), subject, text, html });
-    return new Response(`sent to ${emails.length}`, { status: 200 });
+    let accepted = 0;
+    for (const recipient of [...new Set(emails)]) {
+      const info = await mail.sendMail({ from: { name: "FoodPulse", address: gmailUser }, replyTo: gmailUser, to: recipient, subject, text, html, disableFileAccess: true, disableUrlAccess: true });
+      accepted += info.accepted.length;
+    }
+    if (!accepted) throw new Error("SMTP recipient rejected");
+    return new Response(`sent to ${accepted}`, { status: 200 });
   } catch (e) {
     // the message is also returned, so it can be read in SQL: select * from net._http_response
     const msg = e instanceof Error ? e.message : String(e);
